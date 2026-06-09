@@ -1,0 +1,39 @@
+# Python
+ai-hub/backend/.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+ai-hub/backend/app.db
+ai-hub/backend/chroma_data/
+ai-hub/backend/uploads/
+ai-hub/backend/workspace/
+
+# Node
+ai-hub/frontend/node_modules/
+ai-hub/frontend/dist/
+ai-hub/frontend/src/auto-imports.d.ts
+
+# macOS
+.DS_Store
+
+# Claude
+.claude/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+*.local
+
+# Data (runtime generated)
+ai-hub/backend/data/
+
+# Generated frontend files
+ai-hub/frontend/src/components.d.ts
+
+# PNG screenshots
+*.png
