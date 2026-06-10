@@ -58,6 +58,11 @@ export const useConversationStore = defineStore('conversation', () => {
     // 哄哄类型会话不加载到 chatStore（防止混合）
     if (conv?.type === 'comfort') return
     const chatStore = useChatStore()
+    // 清理非当前对话的流状态，释放内存
+    const keepId = id
+    for (const sid of Object.keys(chatStore.streamStates)) {
+      if (sid !== keepId) chatStore.clearStreamState(sid)
+    }
     chatStore.clearMessages()
     try {
       const res = await getMessages(id)

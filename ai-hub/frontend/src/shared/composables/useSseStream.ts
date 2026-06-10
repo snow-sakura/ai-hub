@@ -97,12 +97,6 @@ function handleEvent(convId: string, event: { type: string; data: Record<string,
     case 'progress':
       chatStore.setProgress(convId, event.data as any)
       break
-    case 'emotion':
-      useComfortStore().handleEmotionEvent(event.data as any)
-      break
-    case 'forgiveness':
-      useComfortStore().handleForgivenessEvent(event.data as any)
-      break
     case 'done':
       chatStore.finalizeStreamingMessage(convId, event.data.message_id)
       break

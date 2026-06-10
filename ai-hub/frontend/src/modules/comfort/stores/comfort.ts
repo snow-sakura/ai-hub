@@ -129,6 +129,10 @@ export const useComfortStore = defineStore('comfort', () => {
   function handleEmotionEvent(data: EmotionData) {
     currentEmotion.value = data
     emotionHistory.value.push(data)
+    // 保留最近 50 条，避免无限增长
+    if (emotionHistory.value.length > 50) {
+      emotionHistory.value = emotionHistory.value.slice(-50)
+    }
   }
 
   /** 处理原谅值事件 */
