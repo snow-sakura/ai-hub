@@ -23,7 +23,7 @@
         <div class="kb-header-left">
           <button class="back-btn" @click="router.push('/')">
             <span class="back-arrow">←</span>
-            <span class="back-text">AI 超级智能助手</span>
+            <span class="back-text">AI-HUB工作台</span>
           </button>
           <div class="kb-title-area">
             <h1 class="kb-title">📚 知识库管理</h1>

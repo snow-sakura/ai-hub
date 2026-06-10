@@ -3,8 +3,8 @@
     <div class="sidebar-header">
       <div class="brand-row">
         <span class="brand-title" @click="goHome" title="返回首页">
-          <span class="brand-icon">🧪</span>
-          AI 超级智能助手
+          <span class="brand-icon">✦</span>
+          AI-HUB工作台
         </span>
         <n-button size="tiny" quaternary circle @click="goHome" title="返回首页">
           <template #icon>

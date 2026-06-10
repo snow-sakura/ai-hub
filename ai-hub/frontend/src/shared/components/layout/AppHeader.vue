@@ -17,9 +17,9 @@ import { useConversationStore } from '@/shared/stores/conversation'
 const convStore = useConversationStore()
 
 const activeTitle = computed(() => {
-  if (!convStore.activeConversationId) return 'AI 超级智能助手'
+  if (!convStore.activeConversationId) return 'AI-HUB工作台'
   const conv = convStore.conversations.find(c => c.id === convStore.activeConversationId)
-  return conv?.title || 'AI 超级智能助手'
+  return conv?.title || 'AI-HUB工作台'
 })
 </script>
 

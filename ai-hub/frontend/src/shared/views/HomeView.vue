@@ -4,10 +4,10 @@
       <!-- 标题区 -->
       <header class="home-header">
         <div class="logo-area">
-          <div class="logo-icon">🧪</div>
+          <div class="logo-icon">✦</div>
           <div class="logo-text-wrap">
-            <h1 class="logo-text">AI 超级智能助手</h1>
-            <p class="subtitle">超级智能 · 高效工具 · 无限创意</p>
+            <h1 class="logo-text">AI-HUB工作台</h1>
+            <p class="subtitle">智能对话 · 知识管理 · 创意无限</p>
           </div>
         </div>
       </header>
@@ -64,7 +64,7 @@ interface AppCard {
 const cards: AppCard[] = [
   {
     id: 'chat',
-    icon: '💬',
+    icon: '⚡',
     title: 'AI 聊天室',
     description: '与超级智能体对话，支持多模型切换、RAG 知识库、7 大内置工具，自动规划复杂任务',
     tags: ['多模型', 'RAG', '工具调用'],
@@ -73,7 +73,7 @@ const cards: AppCard[] = [
   },
   {
     id: 'knowledge',
-    icon: '📚',
+    icon: '🎯',
     title: '知识库管理',
     description: '上传 PDF/Word/TXT 文档，AI 自动理解并引用，打造专属知识助手',
     tags: ['PDF', 'Word', '向量检索'],
@@ -81,7 +81,7 @@ const cards: AppCard[] = [
   },
   {
     id: 'test-gen',
-    icon: '🧪',
+    icon: '🛠️',
     title: '测试用例生成',
     description: '输入需求文档或代码，自动生成单元测试、集成测试和 E2E 测试方案',
     tags: ['单元测试', 'E2E', '覆盖率'],
@@ -90,7 +90,7 @@ const cards: AppCard[] = [
   },
   {
     id: 'code-review',
-    icon: '🔍',
+    icon: '🛡️',
     title: '代码审查',
     description: 'AI 自动审查代码质量、安全漏洞、性能隐患，输出专业报告',
     tags: ['安全', '质量', '规范'],
@@ -99,7 +99,7 @@ const cards: AppCard[] = [
   },
   {
     id: 'comfort',
-    icon: '🎭',
+    icon: '💖',
     title: '哄哄模拟器',
     description: 'AI 模拟各种场景下的情绪反应，学习安慰话术，实时分析安慰效果',
     tags: ['角色扮演', '情绪分析', '原谅值'],

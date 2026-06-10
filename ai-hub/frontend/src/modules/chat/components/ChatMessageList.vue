@@ -41,7 +41,7 @@
     <!-- 空状态 -->
     <div v-if="chatStore.messages.length === 0 && !streamState.isStreaming" class="empty-state">
       <div class="empty-icon">🤖</div>
-      <h3>AI 超级智能助手</h3>
+      <h3>AI聊天室</h3>
       <p>发送消息开始对话，支持工具调用、文件上传、联网搜索等功能</p>
     </div>
   </div>

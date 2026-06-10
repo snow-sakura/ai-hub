@@ -37,3 +37,4 @@ ai-hub/frontend/src/components.d.ts
 
 # PNG screenshots
 *.png
+ai-hub/frontend/tsconfig.tsbuildinfo
