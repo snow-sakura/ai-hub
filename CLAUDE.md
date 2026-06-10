@@ -24,10 +24,18 @@ qoder_one/
 ### 常用命令
 
 ```bash
+# 首次运行：初始化环境
+cd ai-hub/backend
+python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+cp .env.example .env   # 编辑 .env 填入至少一个 LLM Provider 的 API Key
+
+cd ../frontend
+npm install
+
 # 使用 Docker Compose 同时启动前后端
 cd ai-hub && docker-compose up
 
-# 独立启动后端
+# 独立启动后端（--reload 自动重载代码变更）
 cd ai-hub/backend
 source .venv/bin/activate
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -37,6 +45,14 @@ cd ai-hub/frontend
 npm run dev       # 开发服务器，端口 5173
 npm run build     # 生产构建（先执行 vue-tsc 类型检查）
 ```
+
+### 环境变量
+
+后端依赖项在 `ai-hub/backend/.env.example` 中列出。只需配置至少一个 LLM Provider 即可运行：
+- **DeepSeek**（默认推荐，支持 thinking mode 思考过程流式输出）
+- **OpenAI / Qwen / Zhipu / Ollama**
+
+其他可选：`PEXELS_API_KEY`（图片搜索）、`UNSPLASH_ACCESS_KEY`（图片搜索）。
 
 ### 技术栈
 

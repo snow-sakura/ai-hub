@@ -176,7 +176,7 @@ SSE 格式化函数位于 `backend/app/shared/utils/sse_helper.py`。
 
 ### 数据库表结构
 
-表在 `app/core/database.py` 的 `init_db()` 中创建。模块特有的表在各模块 repo 中创建：
+表在 `app/shared/core/database.py` 的 `init_db()` 中创建。模块特有的表在各模块 repo 中创建：
 - 聊天相关：`conversations`、`messages` + `_graph.db`（LangGraph checkpoint）
 - 知识库相关：`documents`、`chunks` + ChromaDB（向量检索）
 - 哄哄模拟器：`comfort_scenes`、`comfort_characters`、`comfort_memories`、`emotion_stats`
@@ -283,3 +283,7 @@ frontend/src/
 - 后端目前 **没有测试文件**（`tests/` 目录不存在），新增代码时建议遵循 `.qoder/rules/test-standard.md` 补充测试
 - 哄哄模拟器使用独立于聊天模块的 LangGraph graph 和 checkpoint 数据库，两者通过共享的 `AgentState` 类型进行状态传递
 - 内置场景/角色数据在应用启动时通过 `seed_builtin_data()` 自动初始化，重复启动不会重复插入
+- Graph 对象通过模块级变量（`_agent_graph` / `_comfort_graph`）缓存为单例，修改节点逻辑后需重启后端才能生效
+- `duck checker`：后端使用**双 checkpointer** 模式——主 SQLite（`app.db`）存储消息和会话元数据，独立的 `_graph.db` / `_comfort_graph.db` 存储 LangGraph 执行状态（thread checkpoint）
+- 事件管道：所有 node 通过 `dispatch_custom_event()` 发送自定义事件，service.py 通过 `graph.astream_events(version="v2")` 消费。**不要使用 `StreamWriter`**（已被 `astream_events` 忽略）
+- 递归限制：`recursion_limit=100` 设置在 `service.py` 的 config 中，而非 `graph.compile()` — 后者不支持该参数
