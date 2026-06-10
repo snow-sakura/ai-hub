@@ -97,12 +97,21 @@ def comfort_agent_node(state: AgentState, writer: StreamWriter) -> dict:
   # 单次 stream() 获取所有输出 + tool_call_chunks，无需额外 invoke
   content_buffer = ""
   tool_call_chunks_acc = []
+  reasoning_content = ""  # DeepSeek thinking mode 推理内容
   for chunk in llm_with_tools.stream(messages):
     if chunk.content:
       content_buffer += chunk.content
     if hasattr(chunk, "tool_call_chunks") and chunk.tool_call_chunks:
       tool_call_chunks_acc.extend(chunk.tool_call_chunks)
+    # 保留 DeepSeek reasoning_content，后续发回 API 时必需
+    if hasattr(chunk, "additional_kwargs") and chunk.additional_kwargs:
+      rc = chunk.additional_kwargs.get("reasoning_content", "")
+      if rc:
+        reasoning_content += rc
 
   final_tool_calls = _merge_tool_call_chunks(tool_call_chunks_acc)
-  response = AIMessage(content=content_buffer, tool_calls=final_tool_calls)
+  additional_kwargs = {}
+  if reasoning_content:
+    additional_kwargs["reasoning_content"] = reasoning_content
+  response = AIMessage(content=content_buffer, tool_calls=final_tool_calls, additional_kwargs=additional_kwargs)
   return {"messages": [response]}
