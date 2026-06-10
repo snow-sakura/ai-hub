@@ -32,8 +32,8 @@ export default defineConfig({
     },
   },
   build: {
-    // 提高代码分割警告阈值到 1MB
-    chunkSizeWarningLimit: 1000,
+    // 提高代码分割警告阈值（优化后 500KB 即可发现异常大 chunk）
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
         // 手动配置代码分割策略（仅针对 node_modules）
