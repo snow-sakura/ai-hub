@@ -132,6 +132,22 @@ export function useSseStream() {
       useChatStore().startStreaming(conversationId)
     }
 
+    // Token RAF 批处理：积攒一帧内的 token 批量提交，避免每 token 触发渲染
+    let tokenBuffer = ''
+    let rafId: number | null = null
+
+    function flushTokens() {
+      if (!tokenBuffer) { rafId = null; return }
+      const content = tokenBuffer
+      tokenBuffer = ''
+      if (comfortMode) {
+        useComfortStore().appendStreamingContent(content)
+      } else {
+        useChatStore().appendStreamingContent(conversationId, content)
+      }
+      rafId = null
+    }
+
     try {
       const response = await fetch('/api/v1/chat/send', {
         method: 'POST',
@@ -172,9 +188,26 @@ export function useSseStream() {
         for (const eventBlock of events) {
           if (!eventBlock.trim()) continue
           const parsed = parseSseEvent(eventBlock)
-          if (parsed) handleEvent(conversationId, parsed, comfortMode)
+          if (!parsed) continue
+
+          // token 事件走 RAF 批处理缓冲区
+          if (parsed.type === 'token') {
+            tokenBuffer += parsed.data.content
+            if (!rafId) rafId = requestAnimationFrame(flushTokens)
+            continue
+          }
+
+          // 非 token 事件：先刷空 token 缓冲区再处理
+          if (rafId !== null) {
+            cancelAnimationFrame(rafId)
+            flushTokens()
+          }
+          handleEvent(conversationId, parsed, comfortMode)
         }
       }
+
+      // 流结束后刷空残留 token
+      if (rafId !== null) flushTokens()
     } catch (e: any) {
       if (e.name !== 'AbortError') {
         if (comfortMode) {

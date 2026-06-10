@@ -26,9 +26,9 @@
           :tool-call="tc"
         />
       </div>
-      <!-- 流式内容 -->
+      <!-- 流式内容（纯文本，避免每 token 全量 markdown 渲染，完成后再由 MarkdownBody 渲染） -->
       <div class="assistant-bubble">
-        <MarkdownBody :content="streamState.streamingContent" />
+        <div class="streaming-content">{{ streamState.streamingContent }}</div>
         <StreamingCursor />
       </div>
     </div>
@@ -54,8 +54,6 @@ import ChatMessage from '@/modules/chat/components/ChatMessage.vue'
 import ThinkingProcess from '@/modules/chat/components/ThinkingProcess.vue'
 import ToolCallStatus from '@/modules/chat/components/ToolCallStatus.vue'
 import StreamingCursor from '@/modules/chat/components/StreamingCursor.vue'
-import MarkdownBody from '@/shared/components/message/MarkdownBody.vue'
-
 const chatStore = useChatStore()
 const listRef = ref<HTMLElement>()
 

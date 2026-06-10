@@ -112,9 +112,9 @@ const cards: AppCard[] = [
 
 .logo-area {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 16px;
 }
 
 .logo-icon {

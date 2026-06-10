@@ -1,6 +1,8 @@
 """哄哄模拟器 Agent 节点 - 角色扮演的 LLM 推理"""
 
-from langchain_core.messages import SystemMessage
+import json
+import uuid
+from langchain_core.messages import SystemMessage, AIMessage
 from langgraph.types import StreamWriter
 
 from app.shared.agent.state import AgentState
@@ -8,6 +10,36 @@ from app.modules.comfort.prompts import COMFORT_SYSTEM_PROMPT, COMFORT_MEMORY_PR
 from app.shared.core.llm_factory import LLMFactory
 from app.shared.agent.tools.web_search import web_search
 from app.shared.agent.tools.image_search import image_search
+
+
+def _merge_tool_call_chunks(chunks: list) -> list[dict]:
+  """将 stream() 中跨 chunk 的 tool_call_chunks 聚合成完整的 tool_calls"""
+  merged: dict[int, dict] = {}
+  for chunk in chunks:
+    idx = getattr(chunk, "index", 0) or 0
+    if idx not in merged:
+      merged[idx] = {"name": "", "args": "", "id": ""}
+    if getattr(chunk, "name", None):
+      merged[idx]["name"] = chunk.name
+    if getattr(chunk, "args", None):
+      merged[idx]["args"] += chunk.args
+    if getattr(chunk, "id", None):
+      merged[idx]["id"] = chunk.id
+
+  tool_calls = []
+  for idx in sorted(merged.keys()):
+    tc = merged[idx]
+    try:
+      args = json.loads(tc["args"]) if tc["args"] else {}
+    except json.JSONDecodeError:
+      args = {}
+    tool_calls.append({
+      "name": tc["name"],
+      "args": args,
+      "id": tc["id"] or f"call_{uuid.uuid4().hex[:12]}",
+      "type": "tool_call",
+    })
+  return tool_calls
 
 
 def comfort_agent_node(state: AgentState, writer: StreamWriter) -> dict:
@@ -62,13 +94,15 @@ def comfort_agent_node(state: AgentState, writer: StreamWriter) -> dict:
 
   # comfort 模式下不发送 thinking 事件，避免原始推理内容泄露到前端
 
-  # 流式获取推理内容
-  reasoning_buffer = ""
+  # 单次 stream() 获取所有输出 + tool_call_chunks，无需额外 invoke
+  content_buffer = ""
+  tool_call_chunks_acc = []
   for chunk in llm_with_tools.stream(messages):
     if chunk.content:
-      reasoning_buffer += chunk.content
+      content_buffer += chunk.content
+    if hasattr(chunk, "tool_call_chunks") and chunk.tool_call_chunks:
+      tool_call_chunks_acc.extend(chunk.tool_call_chunks)
 
-  # 完整 invoke 获取 tool_calls
-  response = llm_with_tools.invoke(messages)
-
+  final_tool_calls = _merge_tool_call_chunks(tool_call_chunks_acc)
+  response = AIMessage(content=content_buffer, tool_calls=final_tool_calls)
   return {"messages": [response]}

@@ -140,20 +140,6 @@ class ChatService:
                   inner.get("message", ""),
                 )
 
-        # 3. 处理 chain stream 中的 tool_calls
-        elif kind == "on_chain_stream":
-          data = event.get("data", {})
-          if isinstance(data, dict):
-            output = data.get("output")
-            if isinstance(output, dict) and "messages" in output:
-              for msg in output.get("messages", []):
-                if hasattr(msg, "tool_calls") and msg.tool_calls:
-                  for tc in msg.tool_calls:
-                    yield format_thinking_event(
-                      "action",
-                      f"计划调用: {tc['name']}",
-                    )
-
       if full_response:
         await conv_service.save_message(
           conversation_id, "assistant", full_response,

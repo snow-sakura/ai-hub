@@ -79,6 +79,9 @@ class LLMFactory:
         base_url=settings.openai_base_url,
         streaming=True,
         temperature=0.7,
+        timeout=60,
+        max_retries=2,
+        stream_usage=True,
       )
     elif provider == "deepseek":
       return ChatOpenAI(
@@ -87,6 +90,9 @@ class LLMFactory:
         base_url=settings.deepseek_base_url,
         streaming=True,
         temperature=0.7,
+        timeout=60,
+        max_retries=2,
+        stream_usage=True,
       )
     elif provider == "qwen":
       return ChatOpenAI(
@@ -95,6 +101,9 @@ class LLMFactory:
         base_url=settings.qwen_base_url,
         streaming=True,
         temperature=0.7,
+        timeout=60,
+        max_retries=2,
+        stream_usage=True,
       )
     elif provider == "zhipu":
       return ChatOpenAI(
@@ -103,6 +112,9 @@ class LLMFactory:
         base_url=settings.zhipu_base_url,
         streaming=True,
         temperature=0.7,
+        timeout=60,
+        max_retries=2,
+        stream_usage=True,
       )
     elif provider == "ollama":
       return ChatOllama(
@@ -110,6 +122,7 @@ class LLMFactory:
         base_url=settings.ollama_base_url,
         streaming=True,
         temperature=0.7,
+        timeout=60,
       )
     else:
       # 默认 fallback 到国产 DeepSeek
@@ -125,6 +138,9 @@ class LLMFactory:
         base_url=settings.deepseek_base_url,
         streaming=True,
         temperature=0.7,
+        timeout=60,
+        max_retries=2,
+        stream_usage=True,
       )
 
   @staticmethod

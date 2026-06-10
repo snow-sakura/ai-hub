@@ -45,7 +45,7 @@
           <span class="char-name-label">
             {{ comfortStore.selectedCharacter?.name || '对方' }}
           </span>
-          <MarkdownBody :content="comfortStore.streamingContent" />
+          <div class="streaming-text">{{ comfortStore.streamingContent }}</div>
           <span class="streaming-cursor" />
         </div>
       </div>
@@ -77,8 +77,6 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useComfortStore } from '@/modules/comfort/stores/comfort'
 import ComfortMessage from '@/modules/comfort/components/ComfortMessage.vue'
 import CharacterAvatar from '@/modules/comfort/components/CharacterAvatar.vue'
-import MarkdownBody from '@/shared/components/message/MarkdownBody.vue'
-
 const comfortStore = useComfortStore()
 const listRef = ref<HTMLElement>()
 

@@ -23,11 +23,11 @@ def should_continue(state: AgentState) -> Literal["tool_node", END]:
 
 
 def should_rag(state: AgentState) -> Literal["rag_node", "agent"]:
-  """判断是否需要 RAG 检索"""
-  rag_context = state.get("rag_context")
-  if rag_context:
-    return "agent"
-  return "rag_node"
+  """判断是否需要 RAG 检索：无知识库文档时跳过，节省一次无用 ChromaDB 查询"""
+  knowledge_doc_ids = state.get("knowledge_doc_ids")
+  if knowledge_doc_ids and len(knowledge_doc_ids) > 0:
+    return "rag_node"
+  return "agent"
 
 
 async def build_agent_graph():
@@ -38,8 +38,8 @@ async def build_agent_graph():
   builder.add_node("tool_node", tool_node)
   builder.add_node("rag_node", rag_node)
 
-  # START → rag_node → agent（先检索知识库再推理）
-  builder.add_edge(START, "rag_node")
+  # START → 条件判断 → rag_node（有选中文档时检索）/ agent（无文档直接推理）
+  builder.add_conditional_edges(START, should_rag, ["rag_node", "agent"])
   builder.add_edge("rag_node", "agent")
   # agent 根据是否有 tool_calls 决定走 tool_node 还是 END
   builder.add_conditional_edges("agent", should_continue, ["tool_node", END])
