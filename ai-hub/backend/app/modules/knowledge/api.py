@@ -1,6 +1,8 @@
 """知识库 API 端点"""
 
+from io import BytesIO
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from starlette.datastructures import UploadFile as StarletteUploadFile
 
 from app.shared.api.schemas.common import ApiResponse
 from app.shared.api.schemas.knowledge import KnowledgeUploadResponse, KnowledgeItemResponse
@@ -73,9 +75,6 @@ async def upload_document(file: UploadFile = File(...)) -> ApiResponse[Knowledge
     logger.warning("未知的 MIME 类型: %s (文件: %s)", file.content_type, raw_name)
 
   # 6. 处理文件（需要重新构造 UploadFile，因为已经读取了内容）
-  from io import BytesIO
-  from starlette.datastructures import UploadFile as StarletteUploadFile
-
   new_file = StarletteUploadFile(
     filename=raw_name,
     file=BytesIO(content),

@@ -190,6 +190,6 @@ export const useChatStore = defineStore('chat', () => {
 }, {
   persist: {
     storage: localStorage,
-    paths: [], // 【修复】不持久化消息，避免 localStorage 膨胀，消息从后端加载
+    paths: [], // 不持久化消息，避免 localStorage 膨胀，消息从后端加载
   },
 })

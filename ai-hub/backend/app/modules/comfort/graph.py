@@ -1,10 +1,7 @@
 """哄哄模拟器 LangGraph 图构建"""
 
-import os
-import aiosqlite
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from app.shared.agent.state import AgentState
 from app.shared.agent.nodes.tool_node import tool_node
@@ -12,7 +9,7 @@ from app.shared.agent.nodes.rag_node import rag_node
 from app.modules.comfort.nodes.emotion_node import emotion_node
 from app.modules.comfort.nodes.forgiveness_node import forgiveness_node
 from app.modules.comfort.nodes.comfort_agent_node import comfort_agent_node
-from app.config import get_settings
+from app.shared.core.managed_graph import ManagedGraphBase
 
 
 def should_continue(state: AgentState) -> Literal["tool_node", "forgiveness_node"]:
@@ -24,18 +21,13 @@ def should_continue(state: AgentState) -> Literal["tool_node", "forgiveness_node
   return "forgiveness_node"
 
 
-class ManagedComfortGraph:
+class ManagedComfortGraph(ManagedGraphBase):
   """管理哄哄模拟器 LangGraph 图的生命周期（包括数据库连接）"""
 
   def __init__(self):
-    self._conn = None
-    self._graph = None
+    super().__init__('_comfort_graph.db')
 
-  async def initialize(self):
-    """初始化图和连接"""
-    if self._graph is not None:
-      return self._graph
-
+  def _build_graph(self) -> StateGraph:
     builder = StateGraph(AgentState)
 
     builder.add_node("emotion_node", emotion_node)
@@ -55,23 +47,7 @@ class ManagedComfortGraph:
     # forgiveness_node 是终点
     builder.add_edge("forgiveness_node", END)
 
-    # 持久化 checkpointer
-    settings = get_settings()
-    db_dir = os.path.dirname(settings.sqlite_db_path)
-    os.makedirs(db_dir, exist_ok=True)
-    graph_db_path = settings.sqlite_db_path.replace('.db', '_comfort_graph.db')
-    self._conn = await aiosqlite.connect(graph_db_path)
-    checkpointer = AsyncSqliteSaver(self._conn)
-
-    self._graph = builder.compile(checkpointer=checkpointer)
-    return self._graph
-
-  async def close(self):
-    """关闭数据库连接"""
-    if self._conn:
-      await self._conn.close()
-      self._conn = None
-      self._graph = None
+    return builder
 
 
 # 全局单例管理器

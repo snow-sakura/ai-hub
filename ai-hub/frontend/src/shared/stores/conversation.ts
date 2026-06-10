@@ -124,6 +124,6 @@ export const useConversationStore = defineStore('conversation', () => {
 }, {
   persist: {
     storage: localStorage,
-    paths: ['activeConversationId'], // 【修复】只持久化当前选中的会话 ID
+    paths: ['activeConversationId'], // 只持久化当前选中的会话 ID
   },
 })

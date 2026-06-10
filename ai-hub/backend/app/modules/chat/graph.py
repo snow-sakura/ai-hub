@@ -1,16 +1,13 @@
 """LangGraph Agent 图构建"""
 
-import os
-import aiosqlite
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from app.shared.agent.state import AgentState
 from app.shared.agent.nodes.agent_node import agent_node
 from app.shared.agent.nodes.tool_node import tool_node
 from app.shared.agent.nodes.rag_node import rag_node
-from app.config import get_settings
+from app.shared.core.managed_graph import ManagedGraphBase
 
 
 def should_continue(state: AgentState) -> Literal["tool_node", END]:
@@ -30,18 +27,10 @@ def should_rag(state: AgentState) -> Literal["rag_node", "agent"]:
   return "agent"
 
 
-class ManagedAgentGraph:
+class ManagedAgentGraph(ManagedGraphBase):
   """管理 LangGraph Agent 图的生命周期（包括数据库连接）"""
 
-  def __init__(self):
-    self._conn = None
-    self._graph = None
-
-  async def initialize(self):
-    """初始化图和连接"""
-    if self._graph is not None:
-      return self._graph
-
+  def _build_graph(self) -> StateGraph:
     builder = StateGraph(AgentState)
 
     builder.add_node("agent", agent_node)
@@ -56,23 +45,7 @@ class ManagedAgentGraph:
     # tool_node 执行完回到 agent
     builder.add_edge("tool_node", "agent")
 
-    # 使用 AsyncSqliteSaver 持久化对话状态
-    settings = get_settings()
-    db_dir = os.path.dirname(settings.sqlite_db_path)
-    os.makedirs(db_dir, exist_ok=True)
-    graph_db_path = settings.sqlite_db_path.replace('.db', '_graph.db')
-    self._conn = await aiosqlite.connect(graph_db_path)
-    checkpointer = AsyncSqliteSaver(self._conn)
-
-    self._graph = builder.compile(checkpointer=checkpointer)
-    return self._graph
-
-  async def close(self):
-    """关闭数据库连接"""
-    if self._conn:
-      await self._conn.close()
-      self._conn = None
-      self._graph = None
+    return builder
 
 
 # 全局单例管理器

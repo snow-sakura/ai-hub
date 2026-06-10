@@ -1,7 +1,6 @@
 """LLM 推理节点 - Agent 决策核心"""
 
 import json
-import uuid
 from langchain_core.messages import SystemMessage, AIMessage
 from langchain_core.callbacks.manager import dispatch_custom_event
 
@@ -9,36 +8,7 @@ from app.shared.agent.state import AgentState
 from app.shared.agent.prompts import SYSTEM_PROMPT, RAG_CONTEXT_TEMPLATE, KNOWLEDGE_SECTION, KNOWLEDGE_RULE
 from app.shared.core.llm_factory import LLMFactory
 from app.shared.agent.tools import get_all_tools
-
-
-def _merge_tool_call_chunks(chunks: list) -> list[dict]:
-  """将 stream() 中跨 chunk 的 tool_call_chunks 聚合成完整的 tool_calls"""
-  merged: dict[int, dict] = {}
-  for chunk in chunks:
-    idx = getattr(chunk, "index", 0) or 0
-    if idx not in merged:
-      merged[idx] = {"name": "", "args": "", "id": ""}
-    if getattr(chunk, "name", None):
-      merged[idx]["name"] = chunk.name
-    if getattr(chunk, "args", None):
-      merged[idx]["args"] += chunk.args
-    if getattr(chunk, "id", None):
-      merged[idx]["id"] = chunk.id
-
-  tool_calls = []
-  for idx in sorted(merged.keys()):
-    tc = merged[idx]
-    try:
-      args = json.loads(tc["args"]) if tc["args"] else {}
-    except json.JSONDecodeError:
-      args = {}
-    tool_calls.append({
-      "name": tc["name"],
-      "args": args,
-      "id": tc["id"] or f"call_{uuid.uuid4().hex[:12]}",
-      "type": "tool_call",
-    })
-  return tool_calls
+from app.shared.agent.agent_utils import merge_tool_call_chunks
 
 
 def agent_node(state: AgentState) -> dict:
@@ -105,7 +75,7 @@ def agent_node(state: AgentState) -> dict:
           dispatch_custom_event("reasoning_token", {"content": rc})
 
   # 从 tool_call_chunks 重构完整的 tool_calls
-  final_tool_calls = _merge_tool_call_chunks(tool_call_chunks_acc)
+  final_tool_calls = merge_tool_call_chunks(tool_call_chunks_acc)
 
   # 标记思考阶段结束，让 service 层刷新缓存的 content token
   dispatch_custom_event("reasoning_end", {})

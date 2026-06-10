@@ -115,7 +115,6 @@ function handleEvent(convId: string, event: { type: string; data: Record<string,
 /** SSE 流式接收 Hook（支持多对话并行 + 断线重连） */
 export function useSseStream() {
   const controllers = new Map<string, AbortController>()
-  const activeRequests = new Map<string, boolean>()
   const MAX_RETRIES = 3
   const RETRY_DELAY_BASE = 1000
 
@@ -161,14 +160,6 @@ export function useSseStream() {
     }
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      activeRequests.set(conversationId, true)
-
-      if (!convStore.conversations.some(c => c.id === conversationId)) {
-        console.warn(`[SSE] 对话 ${conversationId} 已不存在，取消重试`)
-        activeRequests.delete(conversationId)
-        return
-      }
-
       const controller = new AbortController()
       controllers.set(conversationId, controller)
 
@@ -237,13 +228,12 @@ export function useSseStream() {
         }
 
         if (rafId !== null) flushTokens()
-        activeRequests.delete(conversationId)
+        controllers.delete(conversationId)
         return
       } catch (e: any) {
         controllers.delete(conversationId)
 
         if (e.name === 'AbortError') {
-          activeRequests.delete(conversationId)
           return
         }
 
@@ -255,7 +245,6 @@ export function useSseStream() {
           } else {
             useChatStore().setStreamError(conversationId, errMsg)
           }
-          activeRequests.delete(conversationId)
           return
         }
 
@@ -278,7 +267,6 @@ export function useSseStream() {
   function abort(conversationId: string) {
     controllers.get(conversationId)?.abort()
     controllers.delete(conversationId)
-    activeRequests.delete(conversationId)
   }
 
   return { sendChat, abort }

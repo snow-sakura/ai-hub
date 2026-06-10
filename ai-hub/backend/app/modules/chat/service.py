@@ -45,6 +45,7 @@ class ChatService:
     deep_thinking_enabled: bool = True,
   ) -> AsyncGenerator[str, None]:
     """流式处理聊天消息，返回 SSE 事件流"""
+    db = None
     try:
       db = await get_db()
       conv_service = ConversationService(db)
@@ -188,7 +189,7 @@ class ChatService:
       error_detail = traceback.format_exc()
       yield format_error_event("CHAT_ERROR", f"{str(e)}\n{error_detail[-500:]}")
     finally:
-      # 【修复】确保数据库连接总是被关闭
+      # 确保数据库连接总是被关闭
       if db is not None:
         try:
           await db.close()
