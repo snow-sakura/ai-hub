@@ -13,10 +13,8 @@
       </div>
     </div>
 
-    <!-- 用户消息：靠右胶囊气泡 -->
-    <div v-else class="user-bubble">
-      {{ message.content }}
-    </div>
+    <!-- 用户消息 -->
+    <UserBubble v-else :content="message.content" />
   </div>
 </template>
 
@@ -25,6 +23,7 @@ import type { ChatMessage } from '@/modules/chat/types/chat'
 import type { ComfortCharacter } from '@/modules/comfort/types/comfort'
 import CharacterAvatar from '@/modules/comfort/components/CharacterAvatar.vue'
 import MarkdownBody from '@/shared/components/message/MarkdownBody.vue'
+import UserBubble from '@/shared/components/message/UserBubble.vue'
 
 defineProps<{
   message: ChatMessage
@@ -77,20 +76,6 @@ defineProps<{
   color: var(--text-muted);
   margin-bottom: 4px;
   letter-spacing: 0.02em;
-}
-
-/* 用户消息：暖色胶囊气泡 */
-.user-bubble {
-  background: var(--user-bubble-bg);
-  border: 1px solid var(--user-bubble-border);
-  border-radius: 24px;
-  padding: 10px 20px;
-  max-width: 75%;
-  font-size: 15px;
-  line-height: 1.65;
-  color: var(--text-primary);
-  word-break: break-word;
-  white-space: pre-wrap;
 }
 
 /* 消息间距 */
