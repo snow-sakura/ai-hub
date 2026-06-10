@@ -11,109 +11,25 @@
         @keydown="handleKeydown"
       />
 
-      <!-- 第二行：控件栏 → 左侧两个独立入口 + 右侧模型/发送 -->
-      <div class="composer-actions">
-        <div class="tool-group">
-          <!-- 📎 上传附件入口 -->
-          <n-upload
-            :show-file-list="false"
-            :custom-request="handleFileUpload"
-            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp,.svg"
-            :multiple="true"
-          >
-            <n-button size="tiny" secondary class="tool-btn">
-              <template #icon>
-                <span class="tool-btn-icon">📎</span>
-              </template>
-              <span class="tool-btn-text">附件</span>
-            </n-button>
-          </n-upload>
-
-          <!-- 📚 知识库入口 → 打开 Modal 进行选择管理 -->
-          <n-button size="tiny" secondary class="tool-btn" @click="showKnowledgeModal = true">
-            <template #icon>
-              <span class="tool-btn-icon">📚</span>
-            </template>
-            <span class="tool-btn-text">知识库</span>
-          </n-button>
-
-          <!-- 🧠 深度思考开关 -->
-          <button
-            class="toggle-btn"
-            :class="{ 'toggle-btn--active': deepThinkingEnabled }"
-            @click="deepThinkingEnabled = !deepThinkingEnabled"
-          >
-            <span class="toggle-icon">🧠</span>
-            <span class="toggle-label">深度思考</span>
-          </button>
-
-          <!-- 🌐 联网搜索开关 -->
-          <button
-            class="toggle-btn"
-            :class="{ 'toggle-btn--active': webSearchEnabled }"
-            @click="webSearchEnabled = !webSearchEnabled"
-          >
-            <span class="toggle-icon">🌐</span>
-            <span class="toggle-label">联网搜索</span>
-          </button>
-        </div>
-
-        <!-- 占位弹簧 -->
-        <div class="spacer" />
-
-        <!-- 右侧控件组 -->
-        <div class="right-group">
-          <!-- 模型选择器 -->
-          <ModelSelector />
-
-          <!-- 发送按钮 -->
-          <n-button
-            circle
-            size="small"
-            class="send-btn"
-            :disabled="!canSend"
-            :type="canSend ? 'primary' : 'default'"
-            @click="send"
-          >
-            <template #icon>
-              <span v-if="!streamState.isStreaming" class="send-icon">↑</span>
-              <span v-else class="stop-icon">■</span>
-            </template>
-          </n-button>
-        </div>
-      </div>
+      <ComposerToolbar
+        :deep-thinking-enabled="deepThinkingEnabled"
+        :web-search-enabled="webSearchEnabled"
+        :can-send="Boolean(canSend)"
+        :is-streaming="Boolean(streamState.isStreaming)"
+        @file-upload="handleFileUpload"
+        @knowledge-open="showKnowledgeModal = true"
+        @send="send"
+        @update:deep-thinking-enabled="toggleDeepThinking"
+        @update:web-search-enabled="toggleWebSearch"
+      />
     </div>
 
-    <!-- 📎 当前附件区（随消息发送的临时附件） -->
-    <div v-if="attachments.length > 0" class="chips-area">
-      <span class="chips-label">附件</span>
-      <div
-        v-for="(att, i) in attachments"
-        :key="i"
-        class="attach-chip"
-        :title="att.name"
-      >
-        <span class="chip-icon">{{ att.type === 'image' ? '🖼️' : '📄' }}</span>
-        <span class="chip-name">{{ att.name }}</span>
-        <button class="chip-remove" @click="removeAttachment(i)">✕</button>
-      </div>
-    </div>
-
-    <!-- 📚 已选知识库文档区（仅展示用户在弹窗中选择的文档） -->
-    <div v-if="selectedKnowledgeDocs.length > 0" class="chips-area">
-      <span class="chips-label">知识库</span>
-      <div
-        v-for="doc in selectedKnowledgeDocs"
-        :key="doc.id"
-        class="attach-chip"
-        :title="doc.filename"
-      >
-        <span class="chip-icon">📄</span>
-        <span class="chip-name">{{ doc.filename }}</span>
-        <span class="chip-meta">{{ doc.chunkCount }} 片段</span>
-        <button class="chip-remove" @click="removeSelectedDoc(doc.id)">✕</button>
-      </div>
-    </div>
+    <AttachmentChips
+      :attachments="attachments"
+      :knowledge-docs="selectedKnowledgeDocs"
+      @remove-attachment="removeAttachment"
+      @remove-knowledge-doc="removeSelectedDoc"
+    />
 
     <!-- 📚 知识库选择 Modal -->
     <n-modal
@@ -154,11 +70,13 @@ import { useSettingsStore } from '@/shared/stores/settings'
 import { useKnowledgeStore } from '@/modules/knowledge/stores/knowledge'
 import { useSseStream } from '@/shared/composables/useSseStream'
 import { useAtMention } from '@/modules/chat/composables/useAtMention'
-import ModelSelector from '@/shared/components/common/ModelSelector.vue'
 import KnowledgePopover from '@/modules/chat/components/KnowledgePopover.vue'
+import ComposerToolbar from '@/modules/chat/components/ComposerToolbar.vue'
+import AttachmentChips from '@/modules/chat/components/AttachmentChips.vue'
 import { uploadChatAttachment } from '@/modules/chat/api/chat'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import type { KnowledgeDoc } from '@/modules/knowledge/types/knowledge'
+import type { UploadAttachment } from '@/modules/chat/types/chat'
 
 const IMAGE_EXTS = ['jpg','jpeg','png','gif','webp','svg']
 
@@ -174,13 +92,7 @@ const streamState = computed(() => chatStore.activeStreamState)
 const inputText = ref('')
 const { showToolList, filteredTools, selectTool } = useAtMention(inputText)
 
-/** 临时附件（本次消息带上的文件） */
-interface Attachment {
-  name: string
-  type: 'file' | 'image'
-  file: File
-}
-const attachments = ref<Attachment[]>([])
+const attachments = ref<UploadAttachment[]>([])
 
 /** 深度思考/联网搜索开关 */
 const deepThinkingEnabled = ref(true)
@@ -205,6 +117,10 @@ watch(() => convStore.activeConversationId, () => {
 const canSend = computed(() =>
   (inputText.value.trim() || attachments.value.length > 0) && !streamState.value.isStreaming
 )
+
+/** 切换深度思考/联网搜索 */
+function toggleDeepThinking(v: boolean) { deepThinkingEnabled.value = v }
+function toggleWebSearch(v: boolean) { webSearchEnabled.value = v }
 
 /** 📎 上传文件/图片附件（仅本次消息） */
 async function handleFileUpload(options: UploadCustomRequestOptions) {
@@ -373,110 +289,6 @@ function handleKeydown(e: KeyboardEvent) {
   vertical-align: top;
 }
 
-/* 控件栏 */
-.composer-actions {
-  display: flex;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.spacer {
-  flex: 1;
-}
-
-/* 左侧工具按钮组：📎附件 📚知识库 */
-.tool-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tool-btn {
-  flex-shrink: 0;
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 15px;
-  gap: 4px;
-  border: 1px solid rgba(180, 150, 120, 0.2) !important;
-}
-
-.tool-btn-icon {
-  font-size: 14px;
-  line-height: 1;
-}
-
-.tool-btn-text {
-  font-size: 12px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* Toggle 开关按钮 */
-.toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(180, 150, 120, 0.15);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 12px;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-  height: 28px;
-}
-
-.toggle-btn:hover {
-  border-color: rgba(180, 150, 120, 0.3);
-  background: rgba(180, 150, 120, 0.04);
-}
-
-.toggle-btn--active {
-  border-color: rgba(198, 123, 92, 0.35);
-  background: rgba(198, 123, 92, 0.06);
-  color: var(--accent);
-}
-
-.toggle-icon { font-size: 13px; }
-
-.toggle-label {
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-/* 右侧控件组 */
-.right-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.send-btn {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border: 1px solid rgba(180, 150, 120, 0.25) !important;
-}
-
-.send-btn:not(.n-button--primary) {
-  border-color: rgba(180, 150, 120, 0.35) !important;
-}
-
-.send-icon {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.stop-icon {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--danger);
-}
-
 .tool-popup {
   position: absolute;
   bottom: calc(100% + 4px);
@@ -522,70 +334,4 @@ function handleKeydown(e: KeyboardEvent) {
   margin-top: 2px;
 }
 
-/* 附件/知识库 chips 区域 */
-.chips-area {
-  max-width: 768px;
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.chips-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  flex-shrink: 0;
-  margin-right: 2px;
-}
-
-.attach-chip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  background: var(--bg-secondary);
-  border: 1px solid rgba(180, 150, 120, 0.12);
-  border-radius: 20px;
-  font-size: 12px;
-  cursor: default;
-  max-width: 240px;
-}
-
-.chip-icon {
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.chip-name {
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chip-meta {
-  color: var(--text-muted);
-  font-size: 10px;
-  flex-shrink: 0;
-}
-
-.chip-remove {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 10px;
-  color: var(--text-muted);
-  padding: 1px 3px;
-  border-radius: 3px;
-  flex-shrink: 0;
-  line-height: 1;
-  transition: all 0.15s;
-}
-
-.chip-remove:hover {
-  color: var(--danger);
-  background: rgba(212, 116, 92, 0.1);
-}
 </style>

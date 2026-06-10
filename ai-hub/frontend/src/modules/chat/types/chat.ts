@@ -1,3 +1,10 @@
+/** 上传中的附件（含 File 对象） */
+export interface UploadAttachment {
+  name: string
+  type: 'file' | 'image'
+  file: File
+}
+
 /** 附件信息 */
 export interface MessageAttachment {
   name: string
