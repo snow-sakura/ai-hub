@@ -6,7 +6,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.core.database import init_db
+from app.shared.core.database import init_db
+from app.modules.comfort.database import init_comfort_tables
+from app.modules.comfort.scene_seed import seed_builtin_data
 from app.api.v1.router import api_router
 
 
@@ -14,6 +16,8 @@ from app.api.v1.router import api_router
 async def lifespan(app: FastAPI):
   """应用生命周期管理"""
   await init_db()
+  await init_comfort_tables()
+  await seed_builtin_data()
   yield
 
 

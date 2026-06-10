@@ -6,7 +6,7 @@ import aiosqlite
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from app.config import Settings, get_settings
-from app.core.database import get_db
+from app.shared.core.database import get_db
 
 
 async def get_settings_dep() -> Settings:

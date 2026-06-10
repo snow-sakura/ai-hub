@@ -6,16 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 qoder_one/
-├── ai-hub/    # 主要项目：AI 测试平台（全栈 AI 聊天应用）
-├── .qoder/              # Qoder 平台配置
-│   ├── agents/          # AI Agent 定义（code-reviewer, security-scanner 等）
-│   └── rules/           # 项目规范（架构、代码风格、测试、安全等）
-└── .claude/             # Claude 配置
+├── ai-hub/                # 主项目：AI 测试平台（全栈 AI 聊天应用 + 哄哄模拟器）
+├── .qoder/                # Qoder 平台配置
+│   ├── agents/            # AI Agent 定义（code-reviewer, security-scanner 等）
+│   └── rules/             # 项目规范（架构、代码风格、测试、安全等）
+└── .claude/               # Claude 配置
 ```
 
 ## AI 测试平台（ai-hub/）
 
-基于 LangGraph 的全栈 AI 聊天应用，支持多模型、RAG 知识库检索和工具调用。
+基于 LangGraph 的全栈 AI 应用，包含两大模块：
+- **AI 聊天室**：多模型对话 + RAG 知识库 + 工具调用
+- **哄哄模拟器**：角色扮演情绪安抚场景 + 原谅值系统 + 情绪统计看板
 
 详细文档见 `ai-hub/CLAUDE.md`。
 
@@ -33,7 +35,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 # 独立启动前端
 cd ai-hub/frontend
 npm run dev       # 开发服务器，端口 5173
-npm run build     # 生产构建
+npm run build     # 生产构建（先执行 vue-tsc 类型检查）
 ```
 
 ### 技术栈
@@ -52,6 +54,18 @@ API（路由/入参校验）→ Service（业务编排）→ Repository（数据
 - Service 层是唯一可操作数据库的模块
 - `core/` 模块不得引用业务代码
 - 禁止反向依赖和循环依赖
+
+### Agent 执行流
+
+**聊天 Agent 流**：`START → rag_node → agent → [tool_node ↔ agent] → END`
+
+**哄哄模拟器流**：`START → emotion_node → rag_node → comfort_agent ↔ tool_node → forgiveness_node → END`
+
+### SSE 事件类型
+
+聊天 SSE 事件：`token` / `tool_start` / `tool_result` / `thinking` / `progress` / `done` / `error`
+
+哄哄模拟器补充事件：`emotion`（情绪分析） / `forgiveness`（原谅值变化）
 
 ### 前端架构
 
@@ -87,3 +101,9 @@ API（路由/入参校验）→ Service（业务编排）→ Repository（数据
 - API 入参必须经过校验
 - 禁止硬编码凭证
 - 禁止使用 `eval()`/`Function()` 动态执行代码
+
+## 注意事项
+
+- 后端目前 **没有测试文件**（`tests/` 目录不存在）
+- 前端 `npm run build` 会先执行 `vue-tsc -b` 类型检查，构建失败时优先排查类型错误
+- 首次运行需复制 `backend/.env.example` 为 `.env` 并填入至少一个 LLM Provider 的 API Key

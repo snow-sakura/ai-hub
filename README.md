@@ -1,10 +1,11 @@
-# AI Hub
+# AI Hub — AI 超级智能助手
 
-基于 LangGraph 的全栈 AI 智能平台，支持多模型对话、RAG 知识库检索和工具调用。
+基于 LangGraph 的全栈 AI 智能平台，支持多模型对话、RAG 知识库检索、工具调用和情绪安抚模拟。
 
 ## 功能特性
 
 - **💬 AI 聊天室** — 多模型自由切换（DeepSeek、Qwen、OpenAI 等），流式 SSE 输出，自动规划复杂任务
+- **🤗 哄哄模拟器** — 角色扮演情绪安抚场景，情绪分析 + 原谅值系统 + 情绪统计看板
 - **📚 知识库管理** — 上传 PDF/Word/TXT 文档，向量化存储，聊天时自动检索相关片段
 - **🔧 内置工具库** — Web 搜索、网页抓取、图片搜索、文件处理、PDF 生成、终端执行等 7 大工具
 - **🧠 思考过程** — 类 DeepSeek/Kimi 的思考链展示，折叠式时间轴，推理过程透明可见
@@ -70,20 +71,20 @@ qoder_one/
 ├── ai-hub/                # 主项目
 │   ├── backend/           # Python FastAPI 后端
 │   │   ├── app/
-│   │   │   ├── api/       # 路由层（chat, conversation, knowledge, models, tools）
-│   │   │   ├── service/   # 业务逻辑层
-│   │   │   ├── repository/# 数据访问层
-│   │   │   ├── agent/     # LangGraph Agent（graph, nodes, tools）
+│   │   │   ├── api/v1/    # 路由层（chat, conversation, knowledge, comfort, models）
+│   │   │   ├── api/schemas/# Pydantic 请求/响应模型
+│   │   │   ├── service/   # 业务逻辑层（chat, conversation, knowledge, comfort）
+│   │   │   ├── repository/# 数据访问层（conversation, knowledge, comfort）
+│   │   │   ├── agent/     # 聊天 LangGraph Agent（graph, state, nodes, tools）
+│   │   │   ├── comfort/   # 哄哄模拟器 LangGraph Agent（独立 graph, nodes, 情绪分析, 原谅值引擎）
 │   │   │   ├── core/      # LLM 工厂、数据库、Embedding
 │   │   │   └── domain/    # 领域实体与异常
 │   │   └── main.py
-│   ├── frontend/          # Vue 3 前端
+│   ├── frontend/          # Vue 3 前端（模块化架构）
 │   │   └── src/
-│   │       ├── views/     # 页面（HomeView, ChatView, KnowledgeView）
-│   │       ├── components/# UI 组件（chat, common, layout, message, sidebar）
-│   │       ├── stores/    # Pinia 状态管理
-│   │       ├── api/       # API 请求封装
-│   │       └── router/    # 路由配置
+│   │       ├── shared/    # 公共模块（路由/布局/通用组件/Store/API/Composable）
+│   │       ├── modules/   # 业务模块（chat/ comfort/ knowledge/，各含 views/components/stores/api/types）
+│   │       └── App.vue
 │   └── docker-compose.yml
 ├── .qoder/                # AI Agent 定义与项目规范
 └── CLAUDE.md              # Claude Code 协作指引
