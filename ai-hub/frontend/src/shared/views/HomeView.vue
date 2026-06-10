@@ -106,12 +106,15 @@ const cards: AppCard[] = [
 
 .home-header {
   margin-bottom: 48px;
+  display: flex;
+  justify-content: center;
 }
 
 .logo-area {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .logo-icon {
