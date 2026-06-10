@@ -80,24 +80,6 @@ const cards: AppCard[] = [
     route: '/knowledge',
   },
   {
-    id: 'test-gen',
-    icon: '🛠️',
-    title: '测试用例生成',
-    description: '输入需求文档或代码，自动生成单元测试、集成测试和 E2E 测试方案',
-    tags: ['单元测试', 'E2E', '覆盖率'],
-    route: '/chat',
-    disabled: true,
-  },
-  {
-    id: 'code-review',
-    icon: '🛡️',
-    title: '代码审查',
-    description: 'AI 自动审查代码质量、安全漏洞、性能隐患，输出专业报告',
-    tags: ['安全', '质量', '规范'],
-    route: '/chat',
-    disabled: true,
-  },
-  {
     id: 'comfort',
     icon: '💖',
     title: '哄哄模拟器',
@@ -175,8 +157,6 @@ const cards: AppCard[] = [
 .app-card:nth-child(1) { animation-delay: 0.05s }
 .app-card:nth-child(2) { animation-delay: 0.1s }
 .app-card:nth-child(3) { animation-delay: 0.15s }
-.app-card:nth-child(4) { animation-delay: 0.2s }
-.app-card:nth-child(5) { animation-delay: 0.25s }
 
 @keyframes cardIn {
   from {
