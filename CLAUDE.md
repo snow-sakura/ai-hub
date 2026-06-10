@@ -63,9 +63,15 @@ API（路由/入参校验）→ Service（业务编排）→ Repository（数据
 
 ### SSE 事件类型
 
-聊天 SSE 事件：`token` / `tool_start` / `tool_result` / `thinking` / `progress` / `done` / `error`
+聊天 SSE 事件：`token` / `reasoning_token` / `reasoning_end` / `tool_start` / `tool_result` / `thinking` / `progress` / `done` / `error`
 
 哄哄模拟器补充事件：`emotion`（情绪分析） / `forgiveness`（原谅值变化）
+
+### DeepSeek 思考模式
+
+- `reasoning_effort`：`high`（标准）、`max`（深度思考）、`disabled`（关闭）
+- `deep_thinking_enabled`：控制前端是否展示思考过程，开启后 service.py 会缓存 content token 直到思考结束，实现"先思考后输出"
+- `web_search_enabled`：控制是否绑定联网搜索工具
 
 ### 前端架构
 

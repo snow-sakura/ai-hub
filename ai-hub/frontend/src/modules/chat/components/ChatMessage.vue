@@ -1,28 +1,31 @@
 <template>
   <div :class="['chat-message', `role-${message.role}`]">
-    <!-- AI 消息：无头像、无气泡 → 纯内容 -->
+    <!-- AI 消息 -->
     <div v-if="message.role === 'assistant'" class="ai-content">
-      <!-- 思考过程（历史消息：默认折叠） -->
-      <ThinkingProcess
-        v-if="message.thinkingSteps && message.thinkingSteps.length > 0"
-        :steps="message.thinkingSteps"
+      <!-- DeepSeek 推理过程 -->
+      <ReasoningBlock
+        v-if="message.reasoning"
+        :content="message.reasoning"
         :is-streaming="false"
-        :tool-calls="message.toolCalls"
       />
-      <!-- 工具调用结果 -->
-      <div v-if="message.toolCalls && message.toolCalls.length > 0" class="tool-calls-area">
-        <ToolCallStatus
+      <!-- 工具调用简单摘要 -->
+      <div v-if="message.toolCalls && message.toolCalls.length > 0" class="tool-chips">
+        <div
           v-for="tc in message.toolCalls"
           :key="tc.toolCallId"
-          :tool-call="tc"
-        />
+          class="tool-chip"
+        >
+          <span class="tool-chip-icon">{{ tc.status === 'done' ? '✅' : tc.status === 'error' ? '⚠️' : '🔄' }}</span>
+          <span class="tool-chip-name">{{ tc.toolName }}</span>
+          <span v-if="tc.summary" class="tool-chip-summary">{{ tc.summary.slice(0, 40) }}</span>
+        </div>
       </div>
       <div class="message-content">
         <MarkdownBody :content="message.content" />
       </div>
     </div>
 
-    <!-- 用户消息：胶囊气泡 + 右对齐 -->
+    <!-- 用户消息 -->
     <div v-else class="user-bubble">
       <!-- 附件展示 -->
       <div v-if="message.attachments && message.attachments.length > 0" class="user-attachments">
@@ -42,8 +45,7 @@
 
 <script setup lang="ts">
 import type { ChatMessage } from '@/modules/chat/types/chat'
-import ThinkingProcess from '@/modules/chat/components/ThinkingProcess.vue'
-import ToolCallStatus from '@/modules/chat/components/ToolCallStatus.vue'
+import ReasoningBlock from '@/modules/chat/components/ReasoningBlock.vue'
 import MarkdownBody from '@/shared/components/message/MarkdownBody.vue'
 
 defineProps<{
@@ -61,16 +63,13 @@ defineProps<{
 }
 
 .role-assistant {
-  /* AI 消息靠左 */
   justify-content: flex-start;
 }
 
 .role-user {
-  /* 用户消息靠右 */
   justify-content: flex-end;
 }
 
-/* AI 消息：纯内容，无气泡背景 */
 .ai-content {
   display: flex;
   flex-direction: column;
@@ -79,16 +78,46 @@ defineProps<{
   padding-bottom: 4px;
 }
 
-.tool-calls-area {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .message-content {
   font-size: 15px;
   line-height: 1.75;
   color: var(--text-primary);
+}
+
+/* 工具调用简单芯片 */
+.tool-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tool-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(180, 150, 120, 0.12);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tool-chip-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.tool-chip-name {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.tool-chip-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
 }
 
 /* 用户消息：暖色胶囊气泡 */
@@ -105,7 +134,6 @@ defineProps<{
   white-space: pre-wrap;
 }
 
-/* 用户消息中的附件展示 */
 .user-attachments {
   display: flex;
   flex-wrap: wrap;
@@ -137,7 +165,6 @@ defineProps<{
   max-width: 120px;
 }
 
-/* 消息间距 */
 .chat-message + .chat-message {
   margin-top: 24px;
 }

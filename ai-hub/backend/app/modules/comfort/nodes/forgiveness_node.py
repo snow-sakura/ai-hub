@@ -1,13 +1,11 @@
 """原谅值计算节点 - 基于情绪分析结果更新原谅值"""
 
-from langgraph.types import StreamWriter
-
 from app.shared.agent.state import AgentState
 from app.modules.comfort.domain import EmotionResult
 from app.modules.comfort.forgiveness_engine import calculate_forgiveness
 
 
-def forgiveness_node(state: AgentState, writer: StreamWriter) -> dict:
+def forgiveness_node(state: AgentState) -> dict:
   """根据情绪分析结果计算原谅值变化"""
   emotion_data = state.get("emotion_result")
   comfort_meta = state.get("comfort_metadata", {})

@@ -1,12 +1,10 @@
 """情绪分析节点 - 分析用户最新消息的情绪"""
 
-from langgraph.types import StreamWriter
-
 from app.shared.agent.state import AgentState
 from app.modules.comfort.emotion_analyzer import EmotionAnalyzer
 
 
-async def emotion_node(state: AgentState, writer: StreamWriter) -> dict:
+async def emotion_node(state: AgentState) -> dict:
   """分析用户消息中的情绪，将结果存入状态"""
   messages = state["messages"]
   if not messages:

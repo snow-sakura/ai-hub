@@ -3,8 +3,6 @@
 import json
 import uuid
 from langchain_core.messages import SystemMessage, AIMessage
-from langgraph.types import StreamWriter
-
 from app.shared.agent.state import AgentState
 from app.modules.comfort.prompts import COMFORT_SYSTEM_PROMPT, COMFORT_MEMORY_PROMPT, COMFORT_TIPS_PROMPT
 from app.shared.core.llm_factory import LLMFactory
@@ -42,7 +40,7 @@ def _merge_tool_call_chunks(chunks: list) -> list[dict]:
   return tool_calls
 
 
-def comfort_agent_node(state: AgentState, writer: StreamWriter) -> dict:
+def comfort_agent_node(state: AgentState) -> dict:
   """哄哄模拟器 Agent：注入角色人设 prompt 进行角色扮演推理"""
   provider = state.get("model_provider", "deepseek")
   model_name = state.get("model_name", "")

@@ -76,4 +76,36 @@
 
 ---
 
+## v1.3.0（2026-06-10）
+
+### 新增功能
+
+- **🧠 深度思考模式**：接入 DeepSeek thinking mode，支持 `reasoning_effort: high/max/disabled`，实时流式显示思考过程
+- **🔍 联网搜索开关**：前端新增联网搜索 toggle，关闭时 agent 不绑定 web_search 工具
+- **💭 深度思考开关**：前端新增深度思考 toggle，控制是否展示推理过程
+- **Ultra Think 模式**：`reasoning_effort: "max"` 开启 DeepSeek 深度思考
+
+### 架构改进
+
+- **事件管道重构**：所有 LangGraph node 从 `StreamWriter`（空操作）迁移到 `dispatch_custom_event()`，修复 `astream_events` 无法消费自定义事件的架构 Bug
+- **先思考后输出**：`service.py` 实现 token 缓存机制，思考期间（`reasoning_token` 阶段）缓存所有 content token，收到 `reasoning_end` 后一次性释放
+- **递归限制**：图 config 设置 `recursion_limit=100`，避免多工具调用场景触达默认 25 步上限
+- **LLMFactory 扩展**：`create()` 新增 `reasoning_effort` 参数，DeepSeek 分支通过 `extra_body` 控制 thinking mode，monkey-patch 捕获 `reasoning_content`
+
+### 新增组件
+
+- **ReasoningBlock.vue**：🧠 推理块组件，流式时实时展开显示思考内容，推理完成后可折叠，显示耗时
+
+### SSE 事件扩展
+
+| 事件 | 说明 |
+|------|------|
+| `reasoning_token` | DeepSeek 思考过程实时流 |
+| `reasoning_end` | 思考结束信号，前端的 `ReasoningBlock` 由此切换为折叠态 |
+
+### 问题修复
+
+- **思考内容与输出同时出现**：前端 `useSseStream` 补充 `reasoning_end` 事件处理，后端 service.py 实现 token 缓存，严格"先思考后输出"
+- **StreamWriter 空操作**：所有 node 文件从 `writer()` 迁移到 `dispatch_custom_event()`
+
 > 格式说明：后续版本记录请按 `vX.Y.Z（YYYY-MM-DD）` 格式追加，标注新增/变更/修复内容。

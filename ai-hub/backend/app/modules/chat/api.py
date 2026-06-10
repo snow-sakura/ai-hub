@@ -26,6 +26,9 @@ async def send_chat(request: ChatRequest):
       knowledge_doc_ids=request.knowledge_doc_ids,
       attachments=request.attachments,
       comfort_mode=request.comfort_mode,
+      reasoning_effort=request.reasoning_effort,
+      web_search_enabled=request.web_search_enabled,
+      deep_thinking_enabled=request.deep_thinking_enabled,
     ),
     media_type="text/event-stream",
     headers={

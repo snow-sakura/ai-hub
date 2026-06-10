@@ -42,6 +42,11 @@ def format_thinking_event(step: str, content: str) -> str:
   return format_sse_event("thinking", {"step": step, "content": content})
 
 
+def format_reasoning_token_event(content: str) -> str:
+  """格式化推理 token 事件（DeepSeek 思考过程实时流）"""
+  return format_sse_event("reasoning_token", {"content": content})
+
+
 def format_progress_event(current: int, total: int, message: str) -> str:
   """格式化进度事件"""
   return format_sse_event("progress", {

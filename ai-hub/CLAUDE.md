@@ -49,68 +49,59 @@ cp backend/.env.example backend/.env
 ```
 backend/
 ├── app/
-│   ├── api/v1/          # FastAPI 路由层
-│   │   ├── chat.py           # 聊天 SSE 端点
-│   │   ├── conversation.py   # 会话 CRUD
-│   │   ├── knowledge.py      # 知识库管理
-│   │   ├── models.py         # 模型列表
-│   │   ├── tools.py          # 工具列表
-│   │   ├── comfort.py        # 哄哄模拟器 CRUD + 统计
-│   │   └── router.py         # 路由聚合，注册所有模块
-│   ├── api/schemas/     # Pydantic 请求/响应模型
-│   │   ├── chat.py
-│   │   ├── conversation.py
-│   │   ├── knowledge.py
-│   │   ├── common.py         # ApiResponse 泛型包装
-│   │   └── comfort.py        # 哄哄模拟器场景/角色/记忆/统计 Schema
-│   ├── service/         # 业务逻辑层
-│   │   ├── chat_service.py         # 聊天核心编排
-│   │   ├── conversation_service.py
-│   │   ├── knowledge_service.py
-│   │   └── comfort_service.py      # 哄哄业务：场景/角色/记忆/统计/会话
-│   ├── repository/      # 数据访问层（SQLite，aiosqlite 异步驱动）
-│   │   ├── conversation_repo.py
-│   │   ├── knowledge_repo.py
-│   │   └── comfort_repo.py         # 哄哄表：scenes/characters/memories/emotion_stats
-│   ├── core/            # 基础设施
-│   │   ├── database.py           # SQLite 连接管理 + 表创建
-│   │   ├── llm_factory.py        # LLM 工厂（多 provider）
-│   │   └── embedding_factory.py  # Embedding 工厂
-│   ├── agent/           # AI 聊天室 LangGraph Agent
-│   │   ├── graph.py         # 图构建与编译
-│   │   ├── state.py         # AgentState（含 comfort 扩展字段）
-│   │   ├── prompts.py       # 系统提示词
-│   │   ├── nodes/           # 图节点
-│   │   │   ├── agent_node.py   # LLM 推理节点
-│   │   │   ├── rag_node.py     # ChromaDB 检索
-│   │   │   └── tool_node.py    # 工具执行节点
-│   │   └── tools/           # 工具实现
-│   │       ├── web_search.py
-│   │       ├── web_scraper.py
-│   │       ├── image_search.py
-│   │       ├── pdf_generator.py
-│   │       ├── file_ops.py
-│   │       ├── downloader.py
-│   │       └── terminal.py
-│   ├── comfort/         # 哄哄模拟器 LangGraph Agent
-│   │   ├── graph.py            # 图构建（独立 checkpointer）
-│   │   ├── scene_seed.py       # 内置场景/角色种子数据
-│   │   ├── emotion_analyzer.py # 情绪分析逻辑
-│   │   ├── forgiveness_engine.py # 原谅值计算引擎
-│   │   ├── comfort_prompts.py  # 系统提示词
-│   │   └── nodes/
-│   │       ├── emotion_node.py     # 情绪分析节点
-│   │       ├── comfort_agent_node.py # 安抚回复生成节点
-│   │       └── forgiveness_node.py # 原谅值计算节点
-│   ├── domain/          # 领域实体与异常
-│   │   ├── entities.py
-│   │   ├── comfort_entities.py # ComfortScene/Character/Memory/EmotionResult/ForgivenessResult
-│   │   └── exceptions.py
-│   └── utils/
-│       └── sse_helper.py      # SSE 事件格式化（含 emotion/forgiveness 事件）
-├── main.py              # FastAPI 应用入口
-├── config.py            # Pydantic Settings 配置
-└── requirements.txt     # 依赖清单
+│   ├── modules/                  # 功能模块
+│   │   ├── chat/                 # AI 聊天室
+│   │   │   ├── api.py            # FastAPI 路由（SSE 端点）
+│   │   │   ├── schemas.py        # ChatRequest（含 reasoning_effort/web_search/deep_thinking）
+│   │   │   ├── graph.py          # LangGraph 图定义（recursion_limit=100）
+│   │   │   └── service.py        # SSE 流式编排 + token 缓存 + 先思考后输出
+│   │   ├── comfort/              # 哄哄模拟器
+│   │   │   ├── graph.py          # 独立 LangGraph 图
+│   │   │   ├── scene_seed.py     # 内置场景/角色种子数据
+│   │   │   ├── emotion_analyzer.py
+│   │   │   ├── forgiveness_engine.py
+│   │   │   ├── comfort_prompts.py
+│   │   │   └── nodes/
+│   │   │       ├── emotion_node.py
+│   │   │       ├── comfort_agent_node.py
+│   │   │       └── forgiveness_node.py
+│   │   └── knowledge/            # 知识库管理（API 路由）
+│   ├── shared/                   # 公共模块
+│   │   ├── agent/                # LangGraph Agent 基础设施
+│   │   │   ├── state.py          # AgentState 定义
+│   │   │   ├── prompts.py        # 系统提示词模板
+│   │   │   ├── nodes/
+│   │   │   │   ├── agent_node.py     # LLM 推理节点（dispatch_custom_event）
+│   │   │   │   ├── rag_node.py       # ChromaDB 检索节点
+│   │   │   │   └── tool_node.py      # 工具并行执行节点
+│   │   │   └── tools/
+│   │   │       ├── web_search.py     # 联网搜索
+│   │   │       ├── web_scraper.py    # 网页抓取
+│   │   │       ├── image_search.py   # 图片搜索
+│   │   │       ├── pdf_generator.py  # PDF 生成
+│   │   │       ├── file_ops.py       # 文件读写
+│   │   │       ├── downloader.py     # 资源下载
+│   │   │       └── terminal.py       # 终端执行
+│   │   ├── core/
+│   │   │   ├── database.py       # SQLite 连接管理
+│   │   │   ├── llm_factory.py    # LLM 工厂（reasoning_effort + thinking mode）
+│   │   │   └── embedding_factory.py
+│   │   ├── service/              # 共享服务
+│   │   │   └── conversation_service.py
+│   │   ├── repository/           # 共享数据访问
+│   │   │   ├── conversation_repo.py
+│   │   │   └── knowledge_repo.py
+│   │   ├── domain/
+│   │   │   ├── entities.py
+│   │   │   ├── comfort_entities.py
+│   │   │   └── exceptions.py
+│   │   └── utils/
+│   │       ├── sse_helper.py     # SSE 事件格式化
+│   │       └── file_parser.py
+│   ├── config.py                 # Pydantic Settings 配置
+│   └── main.py                   # FastAPI 应用入口
+├── requirements.txt
+└── .env.example
 ```
 
 ### 聊天 Agent 执行流
@@ -123,9 +114,10 @@ START → rag_node → agent → [conditional]
 ```
 
 - **rag_node**：根据最后一条用户消息从 ChromaDB 检索相关知识片段，注入 `rag_context`。
-- **agent_node**：调用 LLM 进行推理，LLM 可输出 `tool_calls`。
-- **tool_node**：并行执行 `tool_calls` 中注册的工具，通过 `StreamWriter` 向前端发送进度和结果事件。
+- **agent_node**：调用 LLM 进行推理，LLM 可输出 `tool_calls`。通过 `dispatch_custom_event()` 实时推送 `reasoning_token`（DeepSeek 思考过程）和 `reasoning_end`（思考结束信号），service.py 在思考期间缓存 content token，收到 `reasoning_end` 后一次性释放，实现"先思考后输出"。
+- **tool_node**：并行执行 `tool_calls` 中注册的工具，通过 `dispatch_custom_event()` 向前端发送进度和结果事件。
 - 对话状态通过 `AsyncSqliteSaver` 持久化到 `_graph.db`，以 `conversation_id` 作为 `thread_id`。
+- 图编译时通过 config 设置 `recursion_limit=100`，避免多工具调用场景触达默认 25 步上限。
 
 ### 哄哄模拟器 Agent 执行流
 
@@ -145,7 +137,9 @@ START → emotion_node → rag_node → comfort_agent → [conditional]
 
 ### 多模型支持
 
-`LLMFactory` 统一管理模型实例化，支持 provider：`openai`、`deepseek`、`qwen`、`zhipu`、`ollama`。可用模型列表定义在 `app/core/llm_factory.py` 的 `AVAILABLE_MODELS` 中。
+`LLMFactory` 统一管理模型实例化，支持 provider：`openai`、`deepseek`、`qwen`、`zhipu`、`ollama`。可用模型列表定义在 `app/shared/core/llm_factory.py` 的 `AVAILABLE_MODELS` 中。
+
+**DeepSeek thinking mode**：当 `reasoning_effort` 为 `high` 或 `max` 时，通过 `extra_body={"thinking": {"type": "enabled"}}` 开启 DeepSeek 思考模式，LLM 在响应中返回 `reasoning_content` 字段。通过 monkey-patch（`_convert_delta_to_message_chunk` / `_convert_message_to_dict`）从 stream delta 中捕获 `reasoning_content` 存入 `additional_kwargs`，并在消息序列化时回传。`reasoning_effort="disabled"` 时设置 `extra_body={"thinking": {"type": "disabled"}}` 以关闭思考模式。
 
 ### SSE 流式响应
 
@@ -153,7 +147,9 @@ START → emotion_node → rag_node → comfort_agent → [conditional]
 
 | 事件类型 | 说明 |
 |---------|------|
-| `token` | LLM 流式输出片段 |
+| `token` | LLM 流式输出片段（思考结束后一次性释放） |
+| `reasoning_token` | DeepSeek 思考过程实时流（先思考后输出） |
+| `reasoning_end` | 思考结束信号，标记推理完成 |
 | `tool_start` / `tool_result` | 工具调用开始与结果 |
 | `thinking` | 思考/观察步骤 |
 | `progress` | 多工具执行进度 |
@@ -161,7 +157,22 @@ START → emotion_node → rag_node → comfort_agent → [conditional]
 | `emotion` | 情绪分析结果（哄哄模拟器） |
 | `forgiveness` | 原谅值变化（哄哄模拟器） |
 
-SSE 格式化函数位于 `backend/app/utils/sse_helper.py`。
+SSE 格式化函数位于 `backend/app/shared/utils/sse_helper.py`。
+
+### ChatRequest 参数（POST /api/v1/chat/send）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `message` | string | 必填 | 用户消息 |
+| `conversation_id` | string | 必填 | 对话 ID |
+| `model_provider` | string | `"deepseek"` | 模型提供商 |
+| `model_name` | string | `""` | 模型名称（空则使用各 provider 默认） |
+| `reasoning_effort` | string | `"high"` | DeepSeek thinking 深度：`high` / `max` / `disabled` |
+| `web_search_enabled` | bool | `false` | 是否启用联网搜索 |
+| `deep_thinking_enabled` | bool | `true` | 是否展示思考过程（为 false 时 content 直出，不经过 token 缓存） |
+| `attachments` | list[string] | `null` | 附件 file_id 列表 |
+| `knowledge_doc_ids` | list[string] | `null` | 知识库文档 ID 列表 |
+| `comfort_mode` | bool | `false` | 是否为哄哄模拟器模式 |
 
 ### 数据库表结构
 
@@ -207,7 +218,7 @@ frontend/src/
 │   │   ├── stores/chat.ts
 │   │   ├── types/chat.ts
 │   │   ├── composables/useAtMention.ts
-│   │   ├── components/ (ChatInput, ChatMessage, ChatMessageList, ThinkingProcess,
+│   │   ├── components/ (ChatInput, ChatMessage, ChatMessageList, ReasoningBlock,
 │   │   │                ToolCallStatus, AgentProgressBar, KnowledgePopover, StreamingCursor)
 │   │   └── views/ChatView.vue
 │   │
@@ -235,7 +246,9 @@ frontend/src/
 
 ### 关键机制
 
-**SSE 流式处理**：`useSseStream` 封装了 `fetch` + `ReadableStream` 的 SSE 消费逻辑，解析后端推送的事件并调用 `chatStore` 或 `comfortStore` 的方法更新 UI 状态。
+**SSE 流式处理**：`useSseStream` 封装了 `fetch` + `ReadableStream` 的 SSE 消费逻辑，解析后端推送的事件并调用 `chatStore` 或 `comfortStore` 的方法更新 UI 状态。支持事件类型：`token`（RAF 批处理）、`reasoning_token`（实时追加推理内容）、`reasoning_end`（标记推理完成）、`tool_start/tool_result`、`thinking`、`progress`、`done`/`error`。
+
+**先思考后输出**：后端 `service.py` 在思考期间（`reasoning_token` 阶段）缓存所有 content token，收到 `reasoning_end` 后一次性释放并刷新 SSE 流。前端 `ReasoningBlock` 组件在推理流式时展开显示 `🧠` 块，推理完成后折叠为"已深度思考（X秒）"。通过 `streamState.reasoningComplete` 控制展开/折叠状态。
 
 **路径别名**：`@/` 映射到 `./src/`，在 `vite.config.ts` 和 `tsconfig.json` 中配置。所有模块间的 import 统一使用 `@/` 前缀。
 
@@ -254,10 +267,11 @@ frontend/src/
 
 如需扩展 Agent 的工具能力：
 
-1. 在 `backend/app/agent/tools/` 下新建工具模块，实现 `BaseTool` 子类。
-2. 在 `backend/app/agent/tools/__init__.py` 的 `TOOL_REGISTRY` 中注册。
+1. 在 `backend/app/shared/agent/tools/` 下新建工具模块，实现 `BaseTool` 子类。
+2. 在 `backend/app/shared/agent/tools/__init__.py` 的 `TOOL_REGISTRY` 中注册。
 3. 在 `DISPLAY_NAMES` 和 `info_map` 中添加前端展示用的名称与图标分类。
-4. 前端无需额外修改，工具列表通过 `/api/v1/tools` 动态获取。
+4. `agent_node.py` 支持条件绑定：`web_search_enabled=False` 时自动移除 `web_search` 工具。
+5. 前端无需额外修改，工具列表通过 `/api/v1/tools` 动态获取。
 
 如需扩展哄哄模拟器的场景/角色：
 

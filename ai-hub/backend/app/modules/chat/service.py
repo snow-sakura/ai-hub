@@ -14,10 +14,12 @@ from app.shared.service.conversation_service import ConversationService
 from app.config import get_settings
 from app.shared.utils.file_parser import parse_file
 from app.shared.utils.sse_helper import (
+  format_sse_event,
   format_token_event,
   format_tool_start_event,
   format_tool_result_event,
   format_thinking_event,
+  format_reasoning_token_event,
   format_progress_event,
   format_done_event,
   format_error_event,
@@ -38,6 +40,9 @@ class ChatService:
     knowledge_doc_ids: list[str] | None = None,
     attachments: list[str] | None = None,
     comfort_mode: bool = False,
+    reasoning_effort: str = "high",
+    web_search_enabled: bool = False,
+    deep_thinking_enabled: bool = True,
   ) -> AsyncGenerator[str, None]:
     """流式处理聊天消息，返回 SSE 事件流"""
     try:
@@ -60,7 +65,10 @@ class ChatService:
       else:
         graph = await get_agent_graph()
         comfort_meta = None
-      config = {"configurable": {"thread_id": conversation_id}}
+      config = {
+        "configurable": {"thread_id": conversation_id},
+        "recursion_limit": 100,
+      }
 
       # 处理附件：解析文件内容
       attachment_contents = []
@@ -81,6 +89,9 @@ class ChatService:
         "thinking_steps": [],
         "progress": None,
         "current_tool_calls": [],
+        "reasoning_effort": reasoning_effort,
+        "web_search_enabled": web_search_enabled,
+        "deep_thinking_enabled": deep_thinking_enabled,
         "emotion_result": None,
         "forgiveness_result": None,
         "comfort_metadata": comfort_meta,
@@ -91,6 +102,10 @@ class ChatService:
 
       # comfort 模式仅捕获 comfort_agent 节点的 token，避免情绪分析 LLM 输出泄露
       agent_node_name = "comfort_agent" if comfort_mode else "agent"
+
+      # 先思考后输出：思考期间缓存 token，思考结束（reasoning_end）后一次性释放
+      thinking_active = deep_thinking_enabled and not comfort_mode
+      token_buffer: list[str] = []
 
       async for event in graph.astream_events(input_state, config=config, version="v2"):
         kind = event.get("event", "")
@@ -104,41 +119,54 @@ class ChatService:
           if chunk and hasattr(chunk, "content") and chunk.content:
             token = chunk.content
             full_response += token
-            yield format_token_event(token)
+            if thinking_active:
+              token_buffer.append(token)
+            else:
+              yield format_token_event(token)
 
-        # 2. 处理 StreamWriter 写入的自定义事件
+        # 2. 处理 dispatch_custom_event 写入的自定义事件
         elif kind == "on_custom_event":
-          custom_data = event.get("data", {})
-          if isinstance(custom_data, dict):
-            inner = custom_data.get("input", custom_data)
-            if isinstance(inner, dict):
-              event_type = inner.get("type", "")
+          event_type = event.get("name", "")
+          inner = event.get("data", {})
+          if isinstance(inner, dict):
 
-              if event_type == "tool_start":
-                yield format_tool_start_event(
-                  inner.get("tool_name", ""),
-                  inner.get("tool_call_id", ""),
-                  inner.get("display", "执行中..."),
-                  inner.get("input"),
-                )
-              elif event_type == "tool_result":
-                yield format_tool_result_event(
-                  inner.get("tool_name", ""),
-                  inner.get("tool_call_id", ""),
-                  inner.get("summary", ""),
-                  inner.get("result"),
-                )
-              elif event_type == "thinking":
-                yield format_thinking_event(
-                  inner.get("step", "thought"),
-                  inner.get("content", ""),
-                )
-              elif event_type == "progress":
-                yield format_progress_event(
-                  inner.get("current", 0),
-                  inner.get("total", 1),
-                  inner.get("message", ""),
-                )
+            if event_type == "tool_start":
+              yield format_tool_start_event(
+                inner.get("tool_name", ""),
+                inner.get("tool_call_id", ""),
+                inner.get("display", "执行中..."),
+                inner.get("input"),
+              )
+            elif event_type == "tool_result":
+              yield format_tool_result_event(
+                inner.get("tool_name", ""),
+                inner.get("tool_call_id", ""),
+                inner.get("summary", ""),
+                inner.get("result"),
+              )
+            elif event_type == "thinking":
+              yield format_thinking_event(
+                inner.get("step", "thought"),
+                inner.get("content", ""),
+              )
+            elif event_type == "progress":
+              yield format_progress_event(
+                inner.get("current", 0),
+                inner.get("total", 1),
+                inner.get("message", ""),
+              )
+            elif event_type == "reasoning_token":
+              thinking_active = True
+              yield format_reasoning_token_event(
+                inner.get("content", ""),
+              )
+            elif event_type == "reasoning_end" and thinking_active:
+              # 思考结束：刷新之前缓存的 content token
+              thinking_active = False
+              for t in token_buffer:
+                yield format_token_event(t)
+              token_buffer = []
+              yield format_sse_event("reasoning_end", {})
 
       if full_response:
         await conv_service.save_message(

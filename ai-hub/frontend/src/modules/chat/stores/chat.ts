@@ -8,6 +8,8 @@ function createStreamState(): StreamState {
   return {
     isStreaming: false,
     streamingContent: '',
+    reasoning: '',
+    reasoningComplete: false,
     currentThinkingSteps: [],
     currentToolCalls: [],
     progress: null,
@@ -53,6 +55,8 @@ export const useChatStore = defineStore('chat', () => {
     const state = getOrCreate(convId)
     state.isStreaming = true
     state.streamingContent = ''
+    state.reasoning = ''
+    state.reasoningComplete = false
     state.currentThinkingSteps = []
     state.currentToolCalls = []
     state.progress = null
@@ -64,6 +68,24 @@ export const useChatStore = defineStore('chat', () => {
   function appendStreamingContent(convId: string, token: string) {
     const state = streamStates.value[convId]
     if (state) state.streamingContent += token
+  }
+
+  /** 追加推理内容（指定对话） */
+  function appendReasoning(convId: string, content: string) {
+    const state = streamStates.value[convId]
+    if (state) state.reasoning += content
+  }
+
+  /** 清理推理内容（指定对话） */
+  function clearReasoning(convId: string) {
+    const state = streamStates.value[convId]
+    if (state) state.reasoning = ''
+  }
+
+  /** 标记推理结束（指定对话） */
+  function setReasoningComplete(convId: string) {
+    const state = streamStates.value[convId]
+    if (state) state.reasoningComplete = true
   }
 
   /** 添加思考步骤（指定对话） */
@@ -100,6 +122,7 @@ export const useChatStore = defineStore('chat', () => {
         id: messageId || `assistant_${Date.now()}`,
         role: 'assistant',
         content: state.streamingContent,
+        reasoning: state.reasoning || undefined,
         timestamp: Date.now(),
         thinkingSteps: [...state.currentThinkingSteps],
         toolCalls: [...state.currentToolCalls],
@@ -108,6 +131,8 @@ export const useChatStore = defineStore('chat', () => {
     }
     state.isStreaming = false
     state.streamingContent = ''
+    state.reasoning = ''
+    state.reasoningComplete = false
     state.currentThinkingSteps = []
     state.currentToolCalls = []
     state.progress = null
@@ -150,6 +175,9 @@ export const useChatStore = defineStore('chat', () => {
     addUserMessage,
     startStreaming,
     appendStreamingContent,
+    appendReasoning,
+    clearReasoning,
+    setReasoningComplete,
     addThinkingStep,
     setToolCallStatus,
     setProgress,

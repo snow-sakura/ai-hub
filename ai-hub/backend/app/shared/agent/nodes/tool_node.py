@@ -3,7 +3,7 @@
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from langchain_core.messages import ToolMessage
-from langgraph.types import StreamWriter
+from langchain_core.callbacks.manager import dispatch_custom_event
 
 from app.shared.agent.state import AgentState
 from app.shared.agent.tools import TOOL_REGISTRY
@@ -21,7 +21,7 @@ DISPLAY_NAMES = {
 }
 
 
-def tool_node(state: AgentState, writer: StreamWriter) -> dict:
+def tool_node(state: AgentState) -> dict:
   """执行工具调用并返回结果（并行执行，带进度追踪）"""
   messages = state["messages"]
   last_message = messages[-1]
@@ -32,20 +32,17 @@ def tool_node(state: AgentState, writer: StreamWriter) -> dict:
   # Phase 1: 同步发送所有 tool_start / thinking 事件（建立前端卡片）
   for idx, tc in enumerate(tool_calls):
     display = DISPLAY_NAMES.get(tc["name"], f"正在执行 {tc['name']}")
-    writer({
-      "type": "progress",
+    dispatch_custom_event("progress", {
       "current": idx, "total": total_tools,
       "message": f"{display}...",
     })
-    writer({
-      "type": "tool_start",
+    dispatch_custom_event("tool_start", {
       "tool_name": tc["name"],
       "tool_call_id": tc["id"],
       "display": f"{display}...",
       "input": tc["args"],
     })
-    writer({
-      "type": "thinking",
+    dispatch_custom_event("thinking", {
       "step": "action",
       "content": f"步骤 {idx + 1}/{total_tools}: 执行 {tc['name']}",
     })
@@ -71,8 +68,7 @@ def tool_node(state: AgentState, writer: StreamWriter) -> dict:
 
       if error:
         summary = error[:200]
-        writer({
-          "type": "tool_result",
+        dispatch_custom_event("tool_result", {
           "tool_name": name,
           "tool_call_id": tool_call_id,
           "summary": summary,
@@ -81,22 +77,19 @@ def tool_node(state: AgentState, writer: StreamWriter) -> dict:
         results.append(ToolMessage(content=error, tool_call_id=tool_call_id))
       else:
         summary = result[:200] if len(result) > 200 else result
-        writer({
-          "type": "tool_result",
+        dispatch_custom_event("tool_result", {
           "tool_name": name,
           "tool_call_id": tool_call_id,
           "summary": summary,
           "result": {"output": result[:1000]},
         })
-        writer({
-          "type": "thinking",
+        dispatch_custom_event("thinking", {
           "step": "observation",
           "content": f"{name} 结果: {summary}",
         })
         results.append(ToolMessage(content=result, tool_call_id=tool_call_id))
 
-      writer({
-        "type": "progress",
+      dispatch_custom_event("progress", {
         "current": done_count, "total": total_tools,
         "message": f"已完成 {done_count}/{total_tools} 个步骤",
       })

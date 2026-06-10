@@ -36,6 +36,26 @@
             </template>
             <span class="tool-btn-text">知识库</span>
           </n-button>
+
+          <!-- 🧠 深度思考开关 -->
+          <button
+            class="toggle-btn"
+            :class="{ 'toggle-btn--active': deepThinkingEnabled }"
+            @click="deepThinkingEnabled = !deepThinkingEnabled"
+          >
+            <span class="toggle-icon">🧠</span>
+            <span class="toggle-label">深度思考</span>
+          </button>
+
+          <!-- 🌐 联网搜索开关 -->
+          <button
+            class="toggle-btn"
+            :class="{ 'toggle-btn--active': webSearchEnabled }"
+            @click="webSearchEnabled = !webSearchEnabled"
+          >
+            <span class="toggle-icon">🌐</span>
+            <span class="toggle-label">联网搜索</span>
+          </button>
         </div>
 
         <!-- 占位弹簧 -->
@@ -162,6 +182,10 @@ interface Attachment {
 }
 const attachments = ref<Attachment[]>([])
 
+/** 深度思考/联网搜索开关 */
+const deepThinkingEnabled = ref(true)
+const webSearchEnabled = ref(false)
+
 /** 知识库选择相关 */
 const showKnowledgeModal = ref(false)
 const selectedKnowledgeDocIds = ref<string[]>([])
@@ -267,6 +291,10 @@ async function send() {
     settingsStore.currentModel.model,
     fileIds,
     kbDocIds,
+    false,
+    deepThinkingEnabled.value ? 'high' : 'disabled',
+    webSearchEnabled.value,
+    deepThinkingEnabled.value,
   )
 }
 
@@ -381,6 +409,42 @@ function handleKeydown(e: KeyboardEvent) {
   font-size: 12px;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+/* Toggle 开关按钮 */
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(180, 150, 120, 0.15);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  height: 28px;
+}
+
+.toggle-btn:hover {
+  border-color: rgba(180, 150, 120, 0.3);
+  background: rgba(180, 150, 120, 0.04);
+}
+
+.toggle-btn--active {
+  border-color: rgba(198, 123, 92, 0.35);
+  background: rgba(198, 123, 92, 0.06);
+  color: var(--accent);
+}
+
+.toggle-icon { font-size: 13px; }
+
+.toggle-label {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* 右侧控件组 */

@@ -16,6 +16,10 @@ class AgentState(TypedDict):
   thinking_steps: list[dict[str, str]]
   progress: dict[str, Any] | None
   current_tool_calls: list[dict[str, Any]]
+  # DeepSeek 功能扩展字段
+  reasoning_effort: str  # thinking 深度：high / max / disabled
+  web_search_enabled: bool  # 是否绑定联网搜索工具
+  deep_thinking_enabled: bool  # 是否向前端推送 reasoning_content
   # 哄哄模拟器扩展字段
   emotion_result: dict[str, Any] | None       # 情绪分析结果
   forgiveness_result: dict[str, Any] | None   # 原谅值计算结果

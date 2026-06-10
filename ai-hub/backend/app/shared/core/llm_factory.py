@@ -1,11 +1,57 @@
 """LLM 模型工厂 - 按 provider 创建模型实例"""
 
 from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 
 from app.config import get_settings, ENV_FILE
 from app.shared.domain.entities import ModelConfig
+
+# --------------------------------------------------------------
+# Monkey-patch: DeepSeek thinking mode 适配
+#
+# DeepSeek 要求将 reasoning_content 回传给 API，但 LangChain 的
+# ChatOpenAI 实现不处理该字段（README 明确标注"not extracted"）。
+#
+# 需要补丁两处：
+#   1. _convert_delta_to_message_chunk — 从 stream delta 中提取
+#      reasoning_content 存入 additional_kwargs（捕获阶段）
+#   2. _convert_message_to_dict — 从 additional_kwargs 注入到
+#      序列化的消息 dict（回传阶段）
+# --------------------------------------------------------------
+import langchain_openai.chat_models.base as _lc_base
+
+# ---- 补丁 1：从 stream delta 捕获 reasoning_content ----
+_original_convert_delta = _lc_base._convert_delta_to_message_chunk
+
+
+def _patched_convert_delta_to_message_chunk(_dict, default_class):
+    chunk = _original_convert_delta(_dict, default_class)
+    if isinstance(chunk, AIMessageChunk):
+        rc = _dict.get("reasoning_content", "")
+        if rc:
+            chunk.additional_kwargs["reasoning_content"] = rc
+    return chunk
+
+
+_lc_base._convert_delta_to_message_chunk = _patched_convert_delta_to_message_chunk
+
+# ---- 补丁 2：序列化时将 reasoning_content 注入消息 dict ----
+_original_convert = _lc_base._convert_message_to_dict
+
+
+def _patched_convert_message_to_dict(message, api="chat/completions"):
+    result = _original_convert(message, api)
+    if isinstance(message, AIMessage):
+        rc = message.additional_kwargs.get("reasoning_content", "")
+        if rc:
+            result["reasoning_content"] = rc
+    return result
+
+
+_lc_base._convert_message_to_dict = _patched_convert_message_to_dict
+# --------------------------------------------------------------
 
 
 AVAILABLE_MODELS: list[ModelConfig] = [
@@ -57,8 +103,15 @@ class LLMFactory:
   """LLM 模型工厂"""
 
   @staticmethod
-  def create(provider: str, model_name: str = "") -> BaseChatModel:
-    """根据 provider 创建 LLM 实例"""
+  def create(provider: str, model_name: str = "",
+             reasoning_effort: str = "high") -> BaseChatModel:
+    """根据 provider 创建 LLM 实例
+
+    Args:
+      provider: 模型提供商
+      model_name: 模型名称
+      reasoning_effort: DeepSeek thinking 深度（high/max/disabled），其他 provider 忽略
+    """
     settings = get_settings()
 
     # 统一校验 API Key（Ollama 不需要）
@@ -84,12 +137,23 @@ class LLMFactory:
         stream_usage=True,
       )
     elif provider == "deepseek":
+      # DeepSeek thinking mode：
+      #   - reasoning_effort 作为显式参数（high / max）
+      #   - thinking 放入 extra_body（DeepSeek 特有，非 OpenAI 标准参数）
+      extra_body = {}
+      effort = reasoning_effort
+      if reasoning_effort == "disabled":
+        extra_body["thinking"] = {"type": "disabled"}
+        effort = None
+      else:
+        extra_body["thinking"] = {"type": "enabled"}
       return ChatOpenAI(
         model=model_name or "deepseek-chat",
         api_key=settings.deepseek_api_key,
         base_url=settings.deepseek_base_url,
         streaming=True,
-        temperature=0.7,
+        reasoning_effort=effort,
+        extra_body=extra_body,
         timeout=60,
         max_retries=2,
         stream_usage=True,

@@ -12,6 +12,7 @@ export interface ChatMessage {
   timestamp: number
   thinkingSteps?: ThinkingStep[]
   toolCalls?: ToolCallStatus[]
+  reasoning?: string                  // DeepSeek 推理过程内容
   isStreaming?: boolean
   metadata?: Record<string, any>
   attachments?: MessageAttachment[]
@@ -34,7 +35,7 @@ export interface ToolCallStatus {
 }
 
 export interface ChatEvent {
-  type: 'token' | 'tool_start' | 'tool_result' | 'thinking' | 'progress' | 'done' | 'error' | 'emotion' | 'forgiveness'
+  type: 'token' | 'reasoning_token' | 'reasoning_end' | 'tool_start' | 'tool_result' | 'thinking' | 'progress' | 'done' | 'error' | 'emotion' | 'forgiveness'
   data: Record<string, any>
 }
 
@@ -48,6 +49,8 @@ export interface ProgressInfo {
 export interface StreamState {
   isStreaming: boolean
   streamingContent: string
+  reasoning: string                   // DeepSeek 推理内容（实时流式）
+  reasoningComplete: boolean          // 推理是否已完成
   currentThinkingSteps: ThinkingStep[]
   currentToolCalls: ToolCallStatus[]
   progress: ProgressInfo | null

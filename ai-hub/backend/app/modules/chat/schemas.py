@@ -13,6 +13,9 @@ class ChatRequest(BaseModel):
   attachments: list[str] | None = None  # 上传附件返回的 file_id 列表
   knowledge_doc_ids: list[str] | None = None  # 选中的知识库文档 ID 列表
   comfort_mode: bool = False  # 是否为哄哄模拟器模式
+  reasoning_effort: str = "high"  # DeepSeek thinking 深度：high / max / disabled
+  web_search_enabled: bool = False  # 是否启用联网搜索
+  deep_thinking_enabled: bool = True  # 是否在前端展示思考过程
 
 
 class ChatTokenEvent(BaseModel):

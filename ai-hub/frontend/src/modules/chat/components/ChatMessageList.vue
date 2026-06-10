@@ -10,27 +10,14 @@
 
     <!-- 流式消息 -->
     <div v-if="streamState.isStreaming" class="streaming-message">
-      <!-- 思考过程（流式状态：显示动画指示器） -->
-      <ThinkingProcess
-        v-if="streamState.currentThinkingSteps.length > 0"
-        :steps="streamState.currentThinkingSteps"
-        :is-streaming="true"
-        :tool-calls="streamState.currentToolCalls"
-        :progress="streamState.progress"
+      <!-- DeepSeek 推理过程（推理结束前实时流式，结束后可折叠） -->
+      <ReasoningBlock
+        :content="streamState.reasoning"
+        :is-streaming="!streamState.reasoningComplete"
       />
-      <!-- 独立的工具调用卡片 -->
-      <div v-if="streamState.currentToolCalls.length > 0 && streamState.currentThinkingSteps.length === 0" class="tool-calls-area">
-        <ToolCallStatus
-          v-for="tc in streamState.currentToolCalls"
-          :key="tc.toolCallId"
-          :tool-call="tc"
-        />
-      </div>
-      <!-- 流式内容（纯文本，避免每 token 全量 markdown 渲染，完成后再由 MarkdownBody 渲染） -->
-      <div class="assistant-bubble">
-        <div class="streaming-content">{{ streamState.streamingContent }}</div>
-        <StreamingCursor />
-      </div>
+      <!-- 流式内容 -->
+      <div class="streaming-content">{{ streamState.streamingContent }}</div>
+      <StreamingCursor />
     </div>
 
     <!-- 错误提示 -->
@@ -51,8 +38,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { useChatStore } from '@/modules/chat/stores/chat'
 import ChatMessage from '@/modules/chat/components/ChatMessage.vue'
-import ThinkingProcess from '@/modules/chat/components/ThinkingProcess.vue'
-import ToolCallStatus from '@/modules/chat/components/ToolCallStatus.vue'
+import ReasoningBlock from '@/modules/chat/components/ReasoningBlock.vue'
 import StreamingCursor from '@/modules/chat/components/StreamingCursor.vue'
 const chatStore = useChatStore()
 const listRef = ref<HTMLElement>()
@@ -93,16 +79,12 @@ watch(() => streamState.value.currentThinkingSteps.length, scrollToBottom)
   margin: 0 auto;
 }
 
-.tool-calls-area {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.assistant-bubble {
-  border-radius: 12px;
-  padding: 0;
-  max-width: 100%;
+.streaming-content {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .error-banner {

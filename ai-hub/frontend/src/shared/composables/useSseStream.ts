@@ -57,6 +57,12 @@ function handleEvent(convId: string, event: { type: string; data: Record<string,
     case 'token':
       chatStore.appendStreamingContent(convId, event.data.content)
       break
+    case 'reasoning_token':
+      chatStore.appendReasoning(convId, event.data.content)
+      break
+    case 'reasoning_end':
+      chatStore.setReasoningComplete(convId)
+      break
     case 'tool_start':
       chatStore.setToolCallStatus(convId, event.data.tool_call_id, {
         toolName: event.data.tool_name,
@@ -118,6 +124,9 @@ export function useSseStream() {
     fileIds?: string[],
     knowledgeDocIds?: string[],
     comfortMode: boolean = false,
+    reasoningEffort: string = 'high',
+    webSearchEnabled: boolean = false,
+    deepThinkingEnabled: boolean = true,
   ) {
     // 中止该对话的已有流
     const existing = controllers.get(conversationId)
@@ -160,6 +169,9 @@ export function useSseStream() {
           attachments: fileIds || [],
           knowledge_doc_ids: knowledgeDocIds || [],
           comfort_mode: comfortMode,
+          reasoning_effort: reasoningEffort,
+          web_search_enabled: webSearchEnabled,
+          deep_thinking_enabled: deepThinkingEnabled,
         }),
         signal: controller.signal,
       })

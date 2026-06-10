@@ -3,7 +3,7 @@
 import json
 import uuid
 from langchain_core.messages import SystemMessage, AIMessage
-from langgraph.types import StreamWriter
+from langchain_core.callbacks.manager import dispatch_custom_event
 
 from app.shared.agent.state import AgentState
 from app.shared.agent.prompts import SYSTEM_PROMPT, RAG_CONTEXT_TEMPLATE, KNOWLEDGE_SECTION, KNOWLEDGE_RULE
@@ -41,13 +41,21 @@ def _merge_tool_call_chunks(chunks: list) -> list[dict]:
   return tool_calls
 
 
-def agent_node(state: AgentState, writer: StreamWriter) -> dict:
+def agent_node(state: AgentState) -> dict:
   """LLM 推理节点：根据当前状态决定下一步行动，
-  流式捕获 LLM 推理文本作为思考过程"""
+  实时流式输出 reasoning_content 和 content token"""
   provider = state.get("model_provider", "deepseek")
   model_name = state.get("model_name", "")
-  llm = LLMFactory.create(provider, model_name)
+  reasoning_effort = state.get("reasoning_effort", "high")
+  web_search_enabled = state.get("web_search_enabled", False)
+  deep_thinking_enabled = state.get("deep_thinking_enabled", True)
+
+  llm = LLMFactory.create(provider, model_name, reasoning_effort)
+
+  # 条件绑定工具：web_search_enabled=False 时移除 web_search
   tools = get_all_tools()
+  if not web_search_enabled:
+    tools = [t for t in tools if getattr(t, "name", "") != "web_search"]
   llm_with_tools = llm.bind_tools(tools)
 
   rag_context = state.get("rag_context")
@@ -88,30 +96,24 @@ def agent_node(state: AgentState, writer: StreamWriter) -> dict:
       content_buffer += chunk.content
     if hasattr(chunk, "tool_call_chunks") and chunk.tool_call_chunks:
       tool_call_chunks_acc.extend(chunk.tool_call_chunks)
-    # 保留 DeepSeek reasoning_content，后续发回 API 时必需
+    # 实时向前端推送 reasoning_content（DeepSeek 思考过程）
     if hasattr(chunk, "additional_kwargs") and chunk.additional_kwargs:
       rc = chunk.additional_kwargs.get("reasoning_content", "")
       if rc:
         reasoning_content += rc
-
-  # 将前 500 字符作为思考摘要发送
-  if content_buffer.strip():
-    thinking_summary = content_buffer[:500]
-    writer({
-      "type": "thinking",
-      "step": "thought",
-      "content": thinking_summary,
-    })
+        if deep_thinking_enabled:
+          dispatch_custom_event("reasoning_token", {"content": rc})
 
   # 从 tool_call_chunks 重构完整的 tool_calls
   final_tool_calls = _merge_tool_call_chunks(tool_call_chunks_acc)
 
+  # 标记思考阶段结束，让 service 层刷新缓存的 content token
+  dispatch_custom_event("reasoning_end", {})
+
   if final_tool_calls:
     total_tools = len(final_tool_calls)
-    writer({
-      "type": "progress",
-      "current": 0,
-      "total": total_tools,
+    dispatch_custom_event("progress", {
+      "current": 0, "total": total_tools,
       "message": f"规划执行 {total_tools} 个步骤...",
     })
 
@@ -119,8 +121,7 @@ def agent_node(state: AgentState, writer: StreamWriter) -> dict:
       args_preview = json.dumps(tc.get("args", {}), ensure_ascii=False)
       if len(args_preview) > 100:
         args_preview = args_preview[:100] + "..."
-      writer({
-        "type": "thinking",
+      dispatch_custom_event("thinking", {
         "step": "action",
         "content": f"步骤 {i + 1}/{total_tools}: 调用 {tc['name']}({args_preview})",
       })
