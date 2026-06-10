@@ -2,6 +2,7 @@
 
 import aiosqlite
 from pathlib import Path
+from contextlib import asynccontextmanager
 from app.config import get_settings
 
 
@@ -42,13 +43,32 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation
 
 
 async def get_db() -> aiosqlite.Connection:
-  """获取数据库连接"""
+  """获取数据库连接（不推荐，建议使用 get_db_context）"""
   DB_PATH.parent.mkdir(parents=True, exist_ok=True)
   db = await aiosqlite.connect(str(DB_PATH))
   db.row_factory = aiosqlite.Row
   await db.execute("PRAGMA journal_mode=WAL")
   await db.execute("PRAGMA foreign_keys=ON")
   return db
+
+
+@asynccontextmanager
+async def get_db_context():
+  """获取数据库连接的上下文管理器（推荐）
+
+  用法：
+    async with get_db_context() as db:
+      await db.execute(...)
+  """
+  DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+  db = await aiosqlite.connect(str(DB_PATH))
+  db.row_factory = aiosqlite.Row
+  await db.execute("PRAGMA journal_mode=WAL")
+  await db.execute("PRAGMA foreign_keys=ON")
+  try:
+    yield db
+  finally:
+    await db.close()
 
 
 MIGRATIONS_SQL = """

@@ -1,5 +1,6 @@
 """会话管理 Service 层"""
 
+from datetime import datetime
 from typing import Any
 
 import aiosqlite
@@ -22,7 +23,15 @@ class ConversationService:
   ) -> dict[str, Any]:
     """创建新会话"""
     conv = await self.repo.create_conversation(title, conv_type, metadata)
-    return await self.repo.get_conversation(conv.id) or {}
+    now = datetime.now().isoformat()
+    return {
+      "id": conv.id,
+      "title": conv.title,
+      "type": conv_type,
+      "metadata": metadata or {},
+      "created_at": now,
+      "updated_at": now,
+    }
 
   async def list_all(self, conv_type: str | None = None) -> list[dict[str, Any]]:
     """获取会话列表"""
@@ -40,7 +49,11 @@ class ConversationService:
     success = await self.repo.update_conversation_title(conv_id, title)
     if not success:
       raise ConversationNotFoundError(conv_id)
-    return await self.repo.get_conversation(conv_id) or {}
+    return {
+      "id": conv_id,
+      "title": title,
+      "updated_at": datetime.now().isoformat(),
+    }
 
   async def delete(self, conv_id: str) -> bool:
     """删除会话"""
@@ -51,10 +64,14 @@ class ConversationService:
 
   async def get_messages(self, conv_id: str) -> list[dict[str, Any]]:
     """获取会话消息历史"""
-    conv = await self.repo.get_conversation(conv_id)
-    if not conv:
-      raise ConversationNotFoundError(conv_id)
-    return await self.repo.list_messages(conv_id)
+    # 直接查询消息，让数据库处理空结果集
+    msgs = await self.repo.list_messages(conv_id)
+    if not msgs:
+      # 如果无消息，检查会话是否存在
+      conv = await self.repo.get_conversation(conv_id)
+      if not conv:
+        raise ConversationNotFoundError(conv_id)
+    return msgs
 
   async def save_message(self, conv_id: str, role: str, content: str,
                          metadata: dict[str, Any] | None = None) -> dict[str, Any]:

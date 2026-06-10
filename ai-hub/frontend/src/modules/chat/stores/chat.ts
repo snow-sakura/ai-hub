@@ -187,4 +187,9 @@ export const useChatStore = defineStore('chat', () => {
     clearMessages,
     clearStreamState,
   }
+}, {
+  persist: {
+    storage: localStorage,
+    paths: [], // 【修复】不持久化消息，避免 localStorage 膨胀，消息从后端加载
+  },
 })

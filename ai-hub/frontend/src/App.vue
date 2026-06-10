@@ -3,17 +3,20 @@
     <n-global-style />
     <n-message-provider>
       <n-dialog-provider>
-        <router-view v-slot="{ Component }">
-          <transition name="page" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
+        <ErrorBoundary>
+          <router-view v-slot="{ Component }">
+            <transition name="page" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </ErrorBoundary>
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>
 </template>
 
 <script setup lang="ts">
+import ErrorBoundary from '@/shared/components/common/ErrorBoundary.vue'
 import type { GlobalThemeOverrides } from 'naive-ui'
 
 /** 拍立得暖色调主题覆盖 */

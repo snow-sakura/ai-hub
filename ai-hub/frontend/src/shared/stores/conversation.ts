@@ -30,13 +30,14 @@ export const useConversationStore = defineStore('conversation', () => {
   }
 
   /** 创建新会话（映射后端字段） */
-  async function create(title = '新会话') {
+  async function create(title = '新会话', type: 'chat' | 'comfort' = 'chat') {
     try {
-      const res = await createConversation(title)
+      const res = await createConversation({ title, type })
       const data = res.data
       const conv: Conversation = {
         id: data.id,
         title: data.title,
+        type: data.type || type,
         createdAt: (data as any).created_at || data.createdAt,
         updatedAt: (data as any).updated_at || data.updatedAt,
       }
@@ -80,7 +81,7 @@ export const useConversationStore = defineStore('conversation', () => {
   /** 重命名会话 */
   async function rename(id: string, title: string) {
     try {
-      await renameConversation(id, title)
+      await renameConversation(id, { title })
       const conv = conversations.value.find(c => c.id === id)
       if (conv) {
         conv.title = title
@@ -120,4 +121,9 @@ export const useConversationStore = defineStore('conversation', () => {
     rename,
     remove,
   }
+}, {
+  persist: {
+    storage: localStorage,
+    paths: ['activeConversationId'], // 【修复】只持久化当前选中的会话 ID
+  },
 })

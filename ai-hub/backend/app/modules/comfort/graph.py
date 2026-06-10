@@ -24,49 +24,65 @@ def should_continue(state: AgentState) -> Literal["tool_node", "forgiveness_node
   return "forgiveness_node"
 
 
-async def build_comfort_graph():
-  """构建并编译哄哄模拟器图
+class ManagedComfortGraph:
+  """管理哄哄模拟器 LangGraph 图的生命周期（包括数据库连接）"""
 
-  图结构:
-  START → emotion_node → rag_node → comfort_agent_node ↔ tool_node → forgiveness_node → END
-  """
-  builder = StateGraph(AgentState)
+  def __init__(self):
+    self._conn = None
+    self._graph = None
 
-  builder.add_node("emotion_node", emotion_node)
-  builder.add_node("rag_node", rag_node)
-  builder.add_node("comfort_agent", comfort_agent_node)
-  builder.add_node("tool_node", tool_node)
-  builder.add_node("forgiveness_node", forgiveness_node)
+  async def initialize(self):
+    """初始化图和连接"""
+    if self._graph is not None:
+      return self._graph
 
-  # 流程编排
-  builder.add_edge(START, "emotion_node")
-  builder.add_edge("emotion_node", "rag_node")
-  builder.add_edge("rag_node", "comfort_agent")
-  # comfort_agent 判断是否需要工具
-  builder.add_conditional_edges("comfort_agent", should_continue, ["tool_node", "forgiveness_node"])
-  # tool_node 执行完回到 comfort_agent
-  builder.add_edge("tool_node", "comfort_agent")
-  # forgiveness_node 是终点
-  builder.add_edge("forgiveness_node", END)
+    builder = StateGraph(AgentState)
 
-  # 持久化 checkpointer
-  settings = get_settings()
-  db_dir = os.path.dirname(settings.sqlite_db_path)
-  os.makedirs(db_dir, exist_ok=True)
-  graph_db_path = settings.sqlite_db_path.replace('.db', '_comfort_graph.db')
-  conn = await aiosqlite.connect(graph_db_path)
-  checkpointer = AsyncSqliteSaver(conn)
+    builder.add_node("emotion_node", emotion_node)
+    builder.add_node("rag_node", rag_node)
+    builder.add_node("comfort_agent", comfort_agent_node)
+    builder.add_node("tool_node", tool_node)
+    builder.add_node("forgiveness_node", forgiveness_node)
 
-  graph = builder.compile(checkpointer=checkpointer)
-  return graph
+    # 流程编排
+    builder.add_edge(START, "emotion_node")
+    builder.add_edge("emotion_node", "rag_node")
+    builder.add_edge("rag_node", "comfort_agent")
+    # comfort_agent 判断是否需要工具
+    builder.add_conditional_edges("comfort_agent", should_continue, ["tool_node", "forgiveness_node"])
+    # tool_node 执行完回到 comfort_agent
+    builder.add_edge("tool_node", "comfort_agent")
+    # forgiveness_node 是终点
+    builder.add_edge("forgiveness_node", END)
+
+    # 持久化 checkpointer
+    settings = get_settings()
+    db_dir = os.path.dirname(settings.sqlite_db_path)
+    os.makedirs(db_dir, exist_ok=True)
+    graph_db_path = settings.sqlite_db_path.replace('.db', '_comfort_graph.db')
+    self._conn = await aiosqlite.connect(graph_db_path)
+    checkpointer = AsyncSqliteSaver(self._conn)
+
+    self._graph = builder.compile(checkpointer=checkpointer)
+    return self._graph
+
+  async def close(self):
+    """关闭数据库连接"""
+    if self._conn:
+      await self._conn.close()
+      self._conn = None
+      self._graph = None
 
 
-_comfort_graph = None
+# 全局单例管理器
+_comfort_graph_manager = ManagedComfortGraph()
 
 
 async def get_comfort_graph():
   """获取哄哄模拟器图单例"""
-  global _comfort_graph
-  if _comfort_graph is None:
-    _comfort_graph = await build_comfort_graph()
-  return _comfort_graph
+  return await _comfort_graph_manager.initialize()
+
+
+async def close_comfort_graph():
+  """关闭哄哄模拟器图连接（应用 shutdown 时调用）"""
+  await _comfort_graph_manager.close()

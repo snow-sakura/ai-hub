@@ -40,6 +40,7 @@ import { useChatStore } from '@/modules/chat/stores/chat'
 import ChatMessage from '@/modules/chat/components/ChatMessage.vue'
 import ReasoningBlock from '@/modules/chat/components/ReasoningBlock.vue'
 import StreamingCursor from '@/modules/chat/components/StreamingCursor.vue'
+
 const chatStore = useChatStore()
 const listRef = ref<HTMLElement>()
 
@@ -55,7 +56,10 @@ function scrollToBottom() {
   })
 }
 
+// 监听消息数量变化，自动滚动
 watch(() => chatStore.messages.length, scrollToBottom)
+
+// 监听流式内容变化，自动滚动
 watch(() => streamState.value.streamingContent, scrollToBottom)
 watch(() => streamState.value.currentThinkingSteps.length, scrollToBottom)
 </script>

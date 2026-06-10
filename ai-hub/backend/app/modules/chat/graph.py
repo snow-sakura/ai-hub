@@ -30,40 +30,60 @@ def should_rag(state: AgentState) -> Literal["rag_node", "agent"]:
   return "agent"
 
 
-async def build_agent_graph():
-  """构建并编译 Agent 图，使用持久化 checkpointer"""
-  builder = StateGraph(AgentState)
+class ManagedAgentGraph:
+  """管理 LangGraph Agent 图的生命周期（包括数据库连接）"""
 
-  builder.add_node("agent", agent_node)
-  builder.add_node("tool_node", tool_node)
-  builder.add_node("rag_node", rag_node)
+  def __init__(self):
+    self._conn = None
+    self._graph = None
 
-  # START → 条件判断 → rag_node（有选中文档时检索）/ agent（无文档直接推理）
-  builder.add_conditional_edges(START, should_rag, ["rag_node", "agent"])
-  builder.add_edge("rag_node", "agent")
-  # agent 根据是否有 tool_calls 决定走 tool_node 还是 END
-  builder.add_conditional_edges("agent", should_continue, ["tool_node", END])
-  # tool_node 执行完回到 agent
-  builder.add_edge("tool_node", "agent")
+  async def initialize(self):
+    """初始化图和连接"""
+    if self._graph is not None:
+      return self._graph
 
-  # 使用 AsyncSqliteSaver 持久化对话状态
-  settings = get_settings()
-  db_dir = os.path.dirname(settings.sqlite_db_path)
-  os.makedirs(db_dir, exist_ok=True)
-  graph_db_path = settings.sqlite_db_path.replace('.db', '_graph.db')
-  conn = await aiosqlite.connect(graph_db_path)
-  checkpointer = AsyncSqliteSaver(conn)
+    builder = StateGraph(AgentState)
 
-  graph = builder.compile(checkpointer=checkpointer)
-  return graph
+    builder.add_node("agent", agent_node)
+    builder.add_node("tool_node", tool_node)
+    builder.add_node("rag_node", rag_node)
+
+    # START → 条件判断 → rag_node（有选中文档时检索）/ agent（无文档直接推理）
+    builder.add_conditional_edges(START, should_rag, ["rag_node", "agent"])
+    builder.add_edge("rag_node", "agent")
+    # agent 根据是否有 tool_calls 决定走 tool_node 还是 END
+    builder.add_conditional_edges("agent", should_continue, ["tool_node", END])
+    # tool_node 执行完回到 agent
+    builder.add_edge("tool_node", "agent")
+
+    # 使用 AsyncSqliteSaver 持久化对话状态
+    settings = get_settings()
+    db_dir = os.path.dirname(settings.sqlite_db_path)
+    os.makedirs(db_dir, exist_ok=True)
+    graph_db_path = settings.sqlite_db_path.replace('.db', '_graph.db')
+    self._conn = await aiosqlite.connect(graph_db_path)
+    checkpointer = AsyncSqliteSaver(self._conn)
+
+    self._graph = builder.compile(checkpointer=checkpointer)
+    return self._graph
+
+  async def close(self):
+    """关闭数据库连接"""
+    if self._conn:
+      await self._conn.close()
+      self._conn = None
+      self._graph = None
 
 
-_agent_graph = None
+# 全局单例管理器
+_agent_graph_manager = ManagedAgentGraph()
 
 
 async def get_agent_graph():
   """获取 Agent 图单例"""
-  global _agent_graph
-  if _agent_graph is None:
-    _agent_graph = await build_agent_graph()
-  return _agent_graph
+  return await _agent_graph_manager.initialize()
+
+
+async def close_agent_graph():
+  """关闭 Agent 图连接（应用 shutdown 时调用）"""
+  await _agent_graph_manager.close()

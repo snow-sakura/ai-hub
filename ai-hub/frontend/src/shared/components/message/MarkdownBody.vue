@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useMarkdownRenderer } from '@/shared/composables/useMarkdownRenderer'
 import ImagePreview from '@/shared/components/message/ImagePreview.vue'
 import FilePreview from '@/shared/components/message/FilePreview.vue'
@@ -31,6 +31,47 @@ const previewFile = ref<{ url: string; name: string } | null>(null)
 
 const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg']
 const FILE_EXTS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'txt', 'csv']
+
+let imageObserver: IntersectionObserver | null = null
+
+/** 初始化图片懒加载观察器 */
+function initImageObserver() {
+  if (!bodyRef.value) return
+
+  imageObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const img = entry.target as HTMLImageElement
+          const dataSrc = img.getAttribute('data-src')
+          if (dataSrc) {
+            img.src = dataSrc
+            img.removeAttribute('data-src')
+            imageObserver?.unobserve(img)
+          }
+        }
+      })
+    },
+    {
+      rootMargin: '200px', // 提前 200px 开始加载
+      threshold: 0.01,
+    }
+  )
+
+  // 观察所有带 data-src 的图片
+  const lazyImages = bodyRef.value.querySelectorAll('img[data-src]')
+  lazyImages.forEach((img) => {
+    imageObserver?.observe(img)
+  })
+}
+
+/** 清理观察器 */
+function cleanupObserver() {
+  if (imageObserver) {
+    imageObserver.disconnect()
+    imageObserver = null
+  }
+}
 
 function handleClick(e: MouseEvent) {
   const target = e.target as HTMLElement
@@ -58,6 +99,24 @@ function handleClick(e: MouseEvent) {
     }
   }
 }
+
+// 监听内容变化，重新初始化观察器
+watch(rendered, () => {
+  nextTick(() => {
+    cleanupObserver()
+    initImageObserver()
+  })
+})
+
+onMounted(() => {
+  nextTick(() => {
+    initImageObserver()
+  })
+})
+
+onUnmounted(() => {
+  cleanupObserver()
+})
 </script>
 
 <style>

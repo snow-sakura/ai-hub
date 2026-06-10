@@ -40,4 +40,9 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return { currentModel, availableModels, fetchModels, setModel }
+}, {
+  persist: {
+    storage: localStorage,
+    paths: ['currentModel'], // 只持久化当前选中的模型
+  },
 })

@@ -188,8 +188,12 @@ class ChatService:
       error_detail = traceback.format_exc()
       yield format_error_event("CHAT_ERROR", f"{str(e)}\n{error_detail[-500:]}")
     finally:
-      if "db" in locals():
-        await db.close()
+      # 【修复】确保数据库连接总是被关闭
+      if db is not None:
+        try:
+          await db.close()
+        except Exception:
+          pass  # 忽略关闭时的错误
 
   async def _load_attachment(self, file_id: str) -> dict | None:
     """加载并解析附件文件内容"""

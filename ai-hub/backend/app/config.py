@@ -52,6 +52,9 @@ class Settings(BaseSettings):
   upload_dir: str = "./data/uploads"
   workspace_dir: str = "./data/workspace"
 
+  # CORS 配置
+  cors_allowed_origins: str = "http://localhost:5173"
+
   model_config = {
     "env_file": str(ENV_FILE) if ENV_FILE.exists() else ".env",
     "env_file_encoding": "utf-8",

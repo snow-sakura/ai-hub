@@ -1,5 +1,6 @@
 import { useChatStore } from '@/modules/chat/stores/chat'
 import { useComfortStore } from '@/modules/comfort/stores/comfort'
+import { useConversationStore } from '@/shared/stores/conversation'
 
 /** 解析 SSE 事件块 */
 function parseSseEvent(block: string): { type: string; data: Record<string, any> } | null {
@@ -111,11 +112,25 @@ function handleEvent(convId: string, event: { type: string; data: Record<string,
   }
 }
 
-/** SSE 流式接收 Hook（支持多对话并行） */
+/** SSE 流式接收 Hook（支持多对话并行 + 断线重连） */
 export function useSseStream() {
   const controllers = new Map<string, AbortController>()
+  const activeRequests = new Map<string, boolean>()
+  const MAX_RETRIES = 3
+  const RETRY_DELAY_BASE = 1000
 
-  /** 发送聊天消息 */
+  function getRetryDelay(retryCount: number): number {
+    return Math.min(RETRY_DELAY_BASE * Math.pow(2, retryCount), 10000)
+  }
+
+  /** 根据 comfortMode 获取对应的 Store 引用 */
+  function resolveStore(convId: string, comfortMode: boolean) {
+    return comfortMode
+      ? { store: useComfortStore(), id: convId }
+      : { store: useChatStore() as any, id: convId }
+  }
+
+  /** 发送聊天消息（支持自动重连，循环重试避免栈增长） */
   async function sendChat(
     message: string,
     conversationId: string,
@@ -128,108 +143,134 @@ export function useSseStream() {
     webSearchEnabled: boolean = false,
     deepThinkingEnabled: boolean = true,
   ) {
-    // 中止该对话的已有流
     const existing = controllers.get(conversationId)
     if (existing) existing.abort()
 
-    const controller = new AbortController()
-    controllers.set(conversationId, controller)
+    const convStore = useConversationStore()
+    const convExists = convStore.conversations.some(c => c.id === conversationId)
+    if (!convExists) {
+      console.warn(`[SSE] 对话 ${conversationId} 已不存在`)
+      return
+    }
 
+    // startStreaming 只在首次调用时执行，不在重试循环内重复
     if (comfortMode) {
       useComfortStore().startStreaming()
     } else {
       useChatStore().startStreaming(conversationId)
     }
 
-    // Token RAF 批处理：积攒一帧内的 token 批量提交，避免每 token 触发渲染
-    let tokenBuffer = ''
-    let rafId: number | null = null
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      activeRequests.set(conversationId, true)
 
-    function flushTokens() {
-      if (!tokenBuffer) { rafId = null; return }
-      const content = tokenBuffer
-      tokenBuffer = ''
-      if (comfortMode) {
-        useComfortStore().appendStreamingContent(content)
-      } else {
-        useChatStore().appendStreamingContent(conversationId, content)
-      }
-      rafId = null
-    }
-
-    try {
-      const response = await fetch('/api/v1/chat/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          conversation_id: conversationId,
-          model_provider: modelProvider,
-          model_name: modelName,
-          attachments: fileIds || [],
-          knowledge_doc_ids: knowledgeDocIds || [],
-          comfort_mode: comfortMode,
-          reasoning_effort: reasoningEffort,
-          web_search_enabled: webSearchEnabled,
-          deep_thinking_enabled: deepThinkingEnabled,
-        }),
-        signal: controller.signal,
-      })
-
-      if (!response.body) {
-        if (comfortMode) {
-          useComfortStore().setStreamError('无法获取响应流')
-        } else {
-          useChatStore().setStreamError(conversationId, '无法获取响应流')
-        }
+      if (!convStore.conversations.some(c => c.id === conversationId)) {
+        console.warn(`[SSE] 对话 ${conversationId} 已不存在，取消重试`)
+        activeRequests.delete(conversationId)
         return
       }
 
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
+      const controller = new AbortController()
+      controllers.set(conversationId, controller)
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+      let tokenBuffer = ''
+      let rafId: number | null = null
 
-        buffer += decoder.decode(value, { stream: true })
-        const events = buffer.split('\n\n')
-        buffer = events.pop() || ''
-
-        for (const eventBlock of events) {
-          if (!eventBlock.trim()) continue
-          const parsed = parseSseEvent(eventBlock)
-          if (!parsed) continue
-
-          // token 事件走 RAF 批处理缓冲区
-          if (parsed.type === 'token') {
-            tokenBuffer += parsed.data.content
-            if (!rafId) rafId = requestAnimationFrame(flushTokens)
-            continue
-          }
-
-          // 非 token 事件：先刷空 token 缓冲区再处理
-          if (rafId !== null) {
-            cancelAnimationFrame(rafId)
-            flushTokens()
-          }
-          handleEvent(conversationId, parsed, comfortMode)
-        }
+      function flushTokens() {
+        if (!tokenBuffer) { rafId = null; return }
+        const content = tokenBuffer
+        tokenBuffer = ''
+        const s = resolveStore(conversationId, comfortMode)
+        s.store.appendStreamingContent(s.id, content)
+        rafId = null
       }
 
-      // 流结束后刷空残留 token
-      if (rafId !== null) flushTokens()
-    } catch (e: any) {
-      if (e.name !== 'AbortError') {
+      try {
+        const response = await fetch('/api/v1/chat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            conversation_id: conversationId,
+            model_provider: modelProvider,
+            model_name: modelName,
+            attachments: fileIds || [],
+            knowledge_doc_ids: knowledgeDocIds || [],
+            comfort_mode: comfortMode,
+            reasoning_effort: reasoningEffort,
+            web_search_enabled: webSearchEnabled,
+            deep_thinking_enabled: deepThinkingEnabled,
+          }),
+          signal: controller.signal,
+        })
+
+        if (!response.body) throw new Error('无法获取响应流')
+
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const events = buffer.split('\n\n')
+          buffer = events.pop() || ''
+
+          for (const eventBlock of events) {
+            if (!eventBlock.trim()) continue
+            const parsed = parseSseEvent(eventBlock)
+            if (!parsed) continue
+
+            if (parsed.type === 'token') {
+              tokenBuffer += parsed.data.content
+              if (!rafId) rafId = requestAnimationFrame(flushTokens)
+              continue
+            }
+
+            if (rafId !== null) {
+              cancelAnimationFrame(rafId)
+              flushTokens()
+            }
+            handleEvent(conversationId, parsed, comfortMode)
+          }
+        }
+
+        if (rafId !== null) flushTokens()
+        activeRequests.delete(conversationId)
+        return
+      } catch (e: any) {
+        controllers.delete(conversationId)
+
+        if (e.name === 'AbortError') {
+          activeRequests.delete(conversationId)
+          return
+        }
+
+        if (attempt >= MAX_RETRIES) {
+          console.error('[SSE] 重试失败')
+          const errMsg = '网络连接失败，请稍后重试'
+          if (comfortMode) {
+            useComfortStore().setStreamError(errMsg)
+          } else {
+            useChatStore().setStreamError(conversationId, errMsg)
+          }
+          activeRequests.delete(conversationId)
+          return
+        }
+
+        const delay = getRetryDelay(attempt)
+        console.warn(`[SSE] 连接中断，${delay}ms 后第 ${attempt + 1} 次重试...`, e.message)
+
+        const errorMsg = `连接中断，正在重试 (${attempt + 1}/${MAX_RETRIES})...`
         if (comfortMode) {
-          useComfortStore().setStreamError(e.message || '网络错误')
+          useComfortStore().setStreamError(errorMsg)
         } else {
-          useChatStore().setStreamError(conversationId, e.message || '网络错误')
+          useChatStore().setStreamError(conversationId, errorMsg)
         }
+
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
-    } finally {
-      controllers.delete(conversationId)
     }
   }
 
@@ -237,6 +278,7 @@ export function useSseStream() {
   function abort(conversationId: string) {
     controllers.get(conversationId)?.abort()
     controllers.delete(conversationId)
+    activeRequests.delete(conversationId)
   }
 
   return { sendChat, abort }
