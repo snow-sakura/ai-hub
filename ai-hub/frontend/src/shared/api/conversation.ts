@@ -33,7 +33,19 @@ export function deleteConversation(id: string): Promise<ApiResponse<boolean>> {
   return request.delete(`/conversations/${id}`)
 }
 
-/** 获取会话消息 */
-export function getMessages(convId: string): Promise<ApiResponse<MessageData[]>> {
-  return request.get(`/conversations/${convId}/messages`)
+/** 分页消息响应 */
+export interface PaginatedMessages {
+  items: MessageData[]
+  total: number
+}
+
+/** 获取会话消息（分页） */
+export function getMessages(
+  convId: string,
+  page: number = 1,
+  pageSize: number = 50,
+): Promise<ApiResponse<PaginatedMessages>> {
+  return request.get(`/conversations/${convId}/messages`, {
+    params: { page, page_size: pageSize },
+  })
 }

@@ -101,12 +101,23 @@ class ConversationRepo:
       role=role, content=content, metadata=metadata or {},
     )
 
-  async def list_messages(self, conversation_id: str) -> list[dict[str, Any]]:
-    """获取会话的所有消息"""
+  async def list_messages(
+    self, conversation_id: str, limit: int = 50, offset: int = 0,
+  ) -> list[dict[str, Any]]:
+    """分页获取会话消息，按时间倒序（最新在前）"""
     cursor = await self.db.execute(
       "SELECT id, conversation_id, role, content, metadata, created_at "
-      "FROM messages WHERE conversation_id = ? ORDER BY created_at ASC",
-      (conversation_id,),
+      "FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+      (conversation_id, limit, offset),
     )
     rows = await cursor.fetchall()
     return [dict(row) for row in rows]
+
+  async def count_messages(self, conversation_id: str) -> int:
+    """统计会话消息总数"""
+    cursor = await self.db.execute(
+      "SELECT COUNT(*) FROM messages WHERE conversation_id = ?",
+      (conversation_id,),
+    )
+    row = await cursor.fetchone()
+    return row[0] if row else 0

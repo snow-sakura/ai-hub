@@ -70,12 +70,16 @@ async def delete_conversation(conv_id: str) -> ApiResponse[bool]:
 
 
 @router.get("/{conv_id}/messages")
-async def get_messages(conv_id: str) -> ApiResponse[list[dict[str, Any]]]:
-  """获取会话的历史消息"""
+async def get_messages(
+  conv_id: str,
+  page: int = Query(1, ge=1, description="页码"),
+  page_size: int = Query(50, ge=1, le=200, description="每页条数"),
+) -> ApiResponse[dict[str, Any]]:
+  """分页获取会话的历史消息"""
   db = await get_db()
   service = ConversationService(db)
   try:
-    data = await service.get_messages(conv_id)
+    data = await service.get_messages(conv_id, page=page, page_size=page_size)
     return ApiResponse(data=data)
   finally:
     await db.close()

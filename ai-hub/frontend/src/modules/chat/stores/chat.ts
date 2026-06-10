@@ -147,15 +147,28 @@ export const useChatStore = defineStore('chat', () => {
     state.isStreaming = false
   }
 
-  /** 从历史数据加载消息 */
+  /** 从历史数据加载消息（替换模式） */
   function loadMessages(data: Array<{ role: string; content: string; metadata: string; created_at: string }>) {
     messages.value = data.map((msg, i) => ({
-      id: `hist_${i}_${Date.now()}`,
+      id: `hist_${Date.now()}_${i}`,
       role: msg.role as ChatMessage['role'],
       content: msg.content,
       timestamp: new Date(msg.created_at).getTime(),
       metadata: msg.metadata ? JSON.parse(msg.metadata) : {},
     }))
+  }
+
+  /** 追加更早的历史消息到列表头部 */
+  function prependMessages(data: Array<{ role: string; content: string; metadata: string; created_at: string }>) {
+    const oldLen = messages.value.length
+    const newMsgs = data.map((msg, i) => ({
+      id: `hist_${Date.now()}_${oldLen + i}`,
+      role: msg.role as ChatMessage['role'],
+      content: msg.content,
+      timestamp: new Date(msg.created_at).getTime(),
+      metadata: msg.metadata ? JSON.parse(msg.metadata) : {},
+    }))
+    messages.value = [...newMsgs, ...messages.value]
   }
 
   /** 清空消息 */
@@ -184,6 +197,7 @@ export const useChatStore = defineStore('chat', () => {
     finalizeStreamingMessage,
     setStreamError,
     loadMessages,
+    prependMessages,
     clearMessages,
     clearStreamState,
   }

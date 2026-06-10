@@ -1,5 +1,11 @@
 <template>
-  <div class="message-list" ref="listRef">
+  <div class="message-list" ref="listRef" @scroll="onScroll">
+    <!-- 加载更多历史消息 -->
+    <div v-if="convStore.hasMoreMessages" class="load-more" :class="{ 'load-more--loading': loadingMore }">
+      <span v-if="loadingMore" class="load-more-spinner">⋯</span>
+      <span v-else class="load-more-text">↑ 加载更多历史消息</span>
+    </div>
+
     <transition-group name="slide-up">
       <ChatMessage
         v-for="msg in chatStore.messages"
@@ -37,15 +43,34 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { useChatStore } from '@/modules/chat/stores/chat'
+import { useConversationStore } from '@/shared/stores/conversation'
 import ChatMessage from '@/modules/chat/components/ChatMessage.vue'
 import ReasoningBlock from '@/modules/chat/components/ReasoningBlock.vue'
 import StreamingCursor from '@/modules/chat/components/StreamingCursor.vue'
 
 const chatStore = useChatStore()
+const convStore = useConversationStore()
 const listRef = ref<HTMLElement>()
+const loadingMore = ref(false)
 
 /** 当前活跃对话的流式状态 */
 const streamState = computed(() => chatStore.activeStreamState)
+
+/** 滚动到顶部时加载更多历史消息 */
+async function onScroll() {
+  if (loadingMore.value || !convStore.hasMoreMessages || !listRef.value) return
+  if (listRef.value.scrollTop <= 60) {
+    loadingMore.value = true
+    const prevHeight = listRef.value.scrollHeight
+    await convStore.loadMoreMessages()
+    await nextTick()
+    // 保持滚动位置：新内容在顶部，用户看到的区域不变
+    if (listRef.value) {
+      listRef.value.scrollTop = listRef.value.scrollHeight - prevHeight
+    }
+    loadingMore.value = false
+  }
+}
 
 /** 自动滚动到底部 */
 function scrollToBottom() {
@@ -124,5 +149,39 @@ watch(() => streamState.value.currentThinkingSteps.length, scrollToBottom)
   max-width: 360px;
   text-align: center;
   line-height: 1.8;
+}
+
+/* 加载更多 */
+.load-more {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.load-more-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.load-more:hover .load-more-text {
+  color: var(--accent);
+}
+
+.load-more--loading {
+  cursor: default;
+}
+
+.load-more-spinner {
+  font-size: 18px;
+  color: var(--text-muted);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 </style>

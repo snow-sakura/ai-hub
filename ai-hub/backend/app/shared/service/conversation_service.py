@@ -62,16 +62,21 @@ class ConversationService:
       raise ConversationNotFoundError(conv_id)
     return True
 
-  async def get_messages(self, conv_id: str) -> list[dict[str, Any]]:
-    """获取会话消息历史"""
-    # 直接查询消息，让数据库处理空结果集
-    msgs = await self.repo.list_messages(conv_id)
-    if not msgs:
-      # 如果无消息，检查会话是否存在
+  async def get_messages(
+    self, conv_id: str, page: int = 1, page_size: int = 50,
+  ) -> dict[str, Any]:
+    """分页获取会话消息（返回 items + total）"""
+    offset = (page - 1) * page_size
+    items = await self.repo.list_messages(conv_id, limit=page_size, offset=offset)
+    total = await self.repo.count_messages(conv_id)
+
+    # 检查会话是否存在（仅第一页且无消息时）
+    if page == 1 and not items:
       conv = await self.repo.get_conversation(conv_id)
       if not conv:
         raise ConversationNotFoundError(conv_id)
-    return msgs
+
+    return {"items": items, "total": total}
 
   async def save_message(self, conv_id: str, role: str, content: str,
                          metadata: dict[str, Any] | None = None) -> dict[str, Any]:

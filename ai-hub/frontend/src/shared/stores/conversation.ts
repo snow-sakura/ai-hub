@@ -2,12 +2,21 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Conversation } from '@/shared/types/conversation'
 import { getConversations, createConversation, renameConversation, deleteConversation, getMessages } from '@/shared/api/conversation'
+import type { PaginatedMessages } from '@/shared/api/conversation'
 import { useChatStore } from '@/modules/chat/stores/chat'
 
 export const useConversationStore = defineStore('conversation', () => {
   const conversations = ref<Conversation[]>([])
   const activeConversationId = ref<string | null>(null)
   const isLoading = ref(false)
+
+  /** 消息分页状态 */
+  const messagePage = ref(1)
+  const messageTotal = ref(0)
+  const PAGE_SIZE = 50
+
+  /** 是否还有更多历史消息可加载 */
+  const hasMoreMessages = ref(false)
 
   /** 加载会话列表 */
   async function fetchConversations(type?: 'chat' | 'comfort') {
@@ -54,6 +63,8 @@ export const useConversationStore = defineStore('conversation', () => {
   /** 切换会话 */
   async function selectConversation(id: string) {
     activeConversationId.value = id
+    // 重置分页状态
+    messagePage.value = 1
     const conv = conversations.value.find(c => c.id === id)
     // 哄哄类型会话不加载到 chatStore（防止混合）
     if (conv?.type === 'comfort') return
@@ -65,12 +76,16 @@ export const useConversationStore = defineStore('conversation', () => {
     }
     chatStore.clearMessages()
     try {
-      const res = await getMessages(id)
-      chatStore.loadMessages((res.data || []) as any)
+      const res = await getMessages(id, 1, PAGE_SIZE)
+      const data = res.data as unknown as PaginatedMessages
+      // 后端按 created_at DESC 返回，反转后 oldest first 展示
+      chatStore.loadMessages((data.items || []).reverse() as any)
+      messageTotal.value = data.total || 0
+      hasMoreMessages.value = data.items.length < data.total
+
       // 如果标题仍是默认的"新会话"，用首条用户消息自动生成
-      
       if (conv && conv.title === '新会话') {
-        const msgs = res.data || []
+        const msgs = data.items || []
         const firstUserMsg = msgs.find((m: any) => m.role === 'user')
         if (firstUserMsg && firstUserMsg.content) {
           const text = firstUserMsg.content.trim()
@@ -80,6 +95,24 @@ export const useConversationStore = defineStore('conversation', () => {
       }
     } catch (e) {
       console.error('获取消息失败:', e)
+    }
+  }
+
+  /** 加载更早的历史消息（追加到对话顶部） */
+  async function loadMoreMessages() {
+    if (!activeConversationId.value || !hasMoreMessages.value) return
+    const nextPage = messagePage.value + 1
+    try {
+      const res = await getMessages(activeConversationId.value, nextPage, PAGE_SIZE)
+      const data = res.data as unknown as PaginatedMessages
+      const chatStore = useChatStore()
+      // 后端 DESC 返回，反转后 prepend（更早的消息在数组前）
+      chatStore.prependMessages((data.items || []).reverse() as any)
+      messagePage.value = nextPage
+      messageTotal.value = data.total || 0
+      hasMoreMessages.value = chatStore.messages.length < data.total
+    } catch (e) {
+      console.error('加载更多消息失败:', e)
     }
   }
 
@@ -120,9 +153,13 @@ export const useConversationStore = defineStore('conversation', () => {
     conversations,
     activeConversationId,
     isLoading,
+    messagePage,
+    messageTotal,
+    hasMoreMessages,
     fetchConversations,
     create,
     selectConversation,
+    loadMoreMessages,
     rename,
     remove,
   }
