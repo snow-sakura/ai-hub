@@ -107,6 +107,7 @@ class ChatService:
       # 先思考后输出：思考期间缓存 token，思考结束（reasoning_end）后一次性释放
       thinking_active = deep_thinking_enabled and not comfort_mode
       token_buffer: list[str] = []
+      MAX_TOKEN_BUFFER = 65536  # 缓存上限，超限 token 直接透传
 
       async for event in graph.astream_events(input_state, config=config, version="v2"):
         kind = event.get("event", "")
@@ -121,7 +122,10 @@ class ChatService:
             token = chunk.content
             full_response += token
             if thinking_active:
-              token_buffer.append(token)
+              if len(token_buffer) < MAX_TOKEN_BUFFER:
+                token_buffer.append(token)
+              else:
+                yield format_token_event(token)
             else:
               yield format_token_event(token)
 
@@ -162,10 +166,11 @@ class ChatService:
                 inner.get("content", ""),
               )
             elif event_type == "reasoning_end" and thinking_active:
-              # 思考结束：刷新之前缓存的 content token
+              # 思考结束：拼接 token 批量发送，减少 SSE 事件数
               thinking_active = False
-              for t in token_buffer:
-                yield format_token_event(t)
+              batch_size = 20
+              for i in range(0, len(token_buffer), batch_size):
+                yield format_token_event("".join(token_buffer[i:i + batch_size]))
               token_buffer = []
               yield format_sse_event("reasoning_end", {})
 

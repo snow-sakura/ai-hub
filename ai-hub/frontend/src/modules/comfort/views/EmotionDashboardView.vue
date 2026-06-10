@@ -11,6 +11,12 @@
     </header>
 
     <div class="dash-content">
+      <!-- 加载错误 -->
+      <n-result v-if="fetchError" status="error" title="加载失败" :description="fetchError" />
+
+      <!-- 加载中 -->
+      <n-spin v-else-if="isLoading" style="margin: 48px auto" />
+
       <!-- 情绪分布 -->
       <div class="dash-card">
         <h3 class="card-title">情绪分布</h3>
@@ -97,6 +103,8 @@ const startDate = ref<number>(Date.now() - 7 * 86400000)
 const endDate = ref<number>(Date.now())
 
 const stats = ref<EmotionStat[]>([])
+const fetchError = ref<string | null>(null)
+const isLoading = ref(false)
 
 const emotionNames: Record<string, string> = {
   anger: '愤怒', sadness: '悲伤', anxiety: '焦虑',
@@ -112,11 +120,16 @@ async function fetchStats() {
   if (!startDate.value || !endDate.value) return
   const start = new Date(startDate.value).toISOString().split('T')[0]
   const end = new Date(endDate.value).toISOString().split('T')[0]
+  isLoading.value = true
+  fetchError.value = null
   try {
     const res = await getEmotionStats(start, end)
     stats.value = res.data || []
   } catch (e) {
+    fetchError.value = '获取统计数据失败，请稍后重试'
     console.error('获取情绪统计失败:', e)
+  } finally {
+    isLoading.value = false
   }
 }
 

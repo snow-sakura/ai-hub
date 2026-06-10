@@ -17,7 +17,7 @@
       />
       <!-- 流式内容 -->
       <div class="streaming-content">{{ streamState.streamingContent }}</div>
-      <StreamingCursor />
+      <StreamingCursor v-if="streamState.streamingContent" />
     </div>
 
     <!-- 错误提示 -->

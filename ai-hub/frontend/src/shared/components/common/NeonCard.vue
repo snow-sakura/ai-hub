@@ -3,7 +3,6 @@
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
   >
-    <div class="card-glow-bg" />
     <div class="card-icon" :class="{ 'icon-bounce': hovered }">{{ icon }}</div>
     <h3 class="card-title">{{ title }}</h3>
     <p class="card-desc">{{ description }}</p>
@@ -34,23 +33,6 @@ const hovered = ref(false)
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-}
-
-.card-glow-bg {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(198, 123, 92, 0.03),
-    transparent 40%
-  );
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-}
-
-.neon-card:hover .card-glow-bg {
-  opacity: 1;
 }
 
 .neon-card:hover {

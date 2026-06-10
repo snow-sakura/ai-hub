@@ -20,8 +20,17 @@
       </div>
     </header>
 
+    <!-- 初始化错误 -->
+    <div v-if="initError" class="setup-area">
+      <n-result status="error" title="加载失败" :description="initError">
+        <template #footer>
+          <n-button @click="reloadPage">刷新页面</n-button>
+        </template>
+      </n-result>
+    </div>
+
     <!-- 未开始：场景设置 -->
-    <div v-if="!comfortStore.conversationId" class="setup-area">
+    <div v-else-if="!comfortStore.conversationId" class="setup-area">
       <div class="setup-hero">
         <span class="hero-emoji">💕</span>
         <h3 class="hero-title">学习如何安慰别人</h3>
@@ -88,6 +97,7 @@ const comfortStore = useComfortStore()
 const settingsStore = useSettingsStore()
 const { sendChat, abort } = useSseStream()
 
+const initError = ref<string | null>(null)
 const inputText = ref('')
 const canSend = computed(() => inputText.value.trim() && !comfortStore.isStreaming)
 
@@ -97,8 +107,15 @@ const inputPlaceholder = computed(() => {
 })
 
 onMounted(async () => {
-  await settingsStore.fetchModels()
-  await comfortStore.fetchScenes()
+  try {
+    await Promise.all([
+      settingsStore.fetchModels(),
+      comfortStore.fetchScenes(),
+    ])
+  } catch (e) {
+    initError.value = '数据加载失败，请检查网络连接后刷新页面'
+    console.error('[ComfortView] 初始化失败:', e)
+  }
 })
 
 onUnmounted(() => {
@@ -107,6 +124,10 @@ onUnmounted(() => {
 
 function goHome() {
   router.push('/')
+}
+
+function reloadPage() {
+  window.location.reload()
 }
 
 function goDashboard() {

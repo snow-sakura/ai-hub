@@ -28,6 +28,11 @@ const router = createRouter({
       name: 'emotion-dashboard',
       component: () => import('@/modules/comfort/views/EmotionDashboardView.vue'),
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/shared/views/HomeView.vue'),
+    },
   ],
 })
 
