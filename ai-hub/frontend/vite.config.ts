@@ -14,7 +14,12 @@ export default defineConfig({
   plugins: [
     vue(),
     AutoImport({
-      imports: ['vue', 'vue-router', 'pinia'],
+      imports: [
+        'vue',
+        'vue-router',
+        'pinia',
+        { '@vueuse/core': ['useDebounceFn'] },
+      ],
       dts: 'src/auto-imports.d.ts',
     }),
     Components({
@@ -45,7 +50,7 @@ export default defineConfig({
             }
 
             // Markdown 相关库
-            if (id.includes('markdown-it') || id.includes('highlight.js') || id.includes('dompurify')) {
+            if (id.includes('markdown-it') || id.includes('highlight.js') || id.includes('dompurify') || id.includes('md-editor-v3')) {
               return 'vendor-md'
             }
 

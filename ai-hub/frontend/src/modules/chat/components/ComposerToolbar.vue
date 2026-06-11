@@ -4,7 +4,7 @@
       <!-- 📎 上传附件入口 -->
       <n-upload
         :show-file-list="false"
-        :custom-request="(options) => $emit('fileUpload', options)"
+        :custom-request="handleCustomRequest"
         accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp,.svg"
         :multiple="true"
       >
@@ -77,13 +77,17 @@ defineProps<{
   isStreaming: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   send: []
   fileUpload: [options: any]
   knowledgeOpen: []
   'update:deepThinkingEnabled': [value: boolean]
   'update:webSearchEnabled': [value: boolean]
 }>()
+
+function handleCustomRequest(options: any) {
+  emit('fileUpload', options)
+}
 </script>
 
 <style scoped>

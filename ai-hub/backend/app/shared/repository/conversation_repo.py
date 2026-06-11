@@ -5,15 +5,14 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-import aiosqlite
-
+from app.shared.core.database import MySQLConnection
 from app.shared.domain.entities import Conversation, Message
 
 
 class ConversationRepo:
   """会话 Repository"""
 
-  def __init__(self, db: aiosqlite.Connection):
+  def __init__(self, db: MySQLConnection):
     self.db = db
 
   async def create_conversation(
@@ -35,19 +34,21 @@ class ConversationRepo:
     return Conversation(id=conv_id, title=title)
 
   async def list_conversations(
-    self, conv_type: str | None = None
+    self, conv_type: str | None = None, page: int = 1, page_size: int = 20
   ) -> list[dict[str, Any]]:
-    """获取会话列表，可按 type 过滤"""
+    """获取会话列表，可按 type 过滤，支持分页"""
+    offset = (page - 1) * page_size
     if conv_type:
       cursor = await self.db.execute(
         "SELECT id, title, type, metadata, created_at, updated_at "
-        "FROM conversations WHERE type = ? ORDER BY updated_at DESC",
-        (conv_type,),
+        "FROM conversations WHERE type = ? ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+        (conv_type, page_size, offset),
       )
     else:
       cursor = await self.db.execute(
         "SELECT id, title, type, metadata, created_at, updated_at "
-        "FROM conversations ORDER BY updated_at DESC"
+        "FROM conversations ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+        (page_size, offset),
       )
     rows = await cursor.fetchall()
     return [dict(row) for row in rows]
@@ -116,8 +117,8 @@ class ConversationRepo:
   async def count_messages(self, conversation_id: str) -> int:
     """统计会话消息总数"""
     cursor = await self.db.execute(
-      "SELECT COUNT(*) FROM messages WHERE conversation_id = ?",
+      "SELECT COUNT(*) as cnt FROM messages WHERE conversation_id = ?",
       (conversation_id,),
     )
     row = await cursor.fetchone()
-    return row[0] if row else 0
+    return row["cnt"] if row else 0

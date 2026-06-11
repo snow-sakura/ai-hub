@@ -76,6 +76,17 @@ const prevVirtualHeight = ref(0)
 /** 当前活跃对话的流式状态 */
 const streamState = computed(() => chatStore.activeStreamState)
 
+// RAF 节流：流式内容更新时限制滚动频率，避免频繁重排
+let scrollRafId: number | null = null
+
+function throttledScrollToBottom() {
+  if (scrollRafId !== null) return
+  scrollRafId = requestAnimationFrame(() => {
+    scrollRafId = null
+    virtualizer.value.scrollToIndex(chatStore.messages.length, { align: 'end', behavior: 'auto' })
+  })
+}
+
 /** 虚拟滚动实例 */
 // 使用 getter 访问 chatStore.messages.length，Vue 响应式自动追踪变化
 const virtualizer = useVirtualizer({
@@ -125,12 +136,17 @@ watch(() => chatStore.messages.length, () => {
   }
 })
 
-// 监听流式内容变化，自动滚动
+// 监听流式内容变化，自动滚动（RAF 节流）
 watch(() => streamState.value.streamingContent, () => {
-  virtualizer.value.scrollToIndex(chatStore.messages.length, { align: 'end', behavior: 'auto' })
+  throttledScrollToBottom()
 })
 watch(() => streamState.value.currentThinkingSteps.length, () => {
-  virtualizer.value.scrollToIndex(chatStore.messages.length, { align: 'end', behavior: 'auto' })
+  throttledScrollToBottom()
+})
+
+// 组件卸载时清理 RAF
+onUnmounted(() => {
+  if (scrollRafId !== null) cancelAnimationFrame(scrollRafId)
 })
 </script>
 

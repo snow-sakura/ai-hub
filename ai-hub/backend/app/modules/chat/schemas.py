@@ -1,12 +1,12 @@
 """聊天相关 Schema"""
 
 from typing import Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ChatRequest(BaseModel):
   """聊天请求"""
-  message: str
+  message: str = Field(..., min_length=1, max_length=10000, description="用户消息")
   conversation_id: str
   model_provider: str = "deepseek"
   model_name: str = ""

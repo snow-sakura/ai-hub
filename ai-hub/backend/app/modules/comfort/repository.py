@@ -5,8 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-import aiosqlite
-
+from app.shared.core.database import MySQLConnection
 from app.modules.comfort.domain import (
   ComfortScene,
   ComfortCharacter,
@@ -18,7 +17,7 @@ from app.modules.comfort.domain import (
 class ComfortRepo:
   """哄哄模拟器 Repository"""
 
-  def __init__(self, db: aiosqlite.Connection):
+  def __init__(self, db: MySQLConnection):
     self.db = db
 
   # ─── 场景 ─────────────────────────────────────────
@@ -202,10 +201,10 @@ class ComfortRepo:
       "INSERT INTO emotion_statistics "
       "(id, user_date, emotion_label, avg_intensity, count, comfort_score, created_at) "
       "VALUES (?, ?, ?, ?, ?, ?, ?) "
-      "ON CONFLICT(user_date, emotion_label) DO UPDATE SET "
-      "  avg_intensity = (avg_intensity * count + excluded.avg_intensity) / (count + 1), "
+      "ON DUPLICATE KEY UPDATE "
+      "  avg_intensity = (avg_intensity * count + VALUES(avg_intensity)) / (count + 1), "
       "  count = count + 1, "
-      "  comfort_score = COALESCE(excluded.comfort_score, comfort_score)",
+      "  comfort_score = COALESCE(VALUES(comfort_score), comfort_score)",
       (str(uuid.uuid4()), user_date, emotion_label, intensity, 1, comfort_score,
        datetime.now().isoformat()),
     )

@@ -1,104 +1,179 @@
-"""SQLite 数据库连接管理模块（共享表：conversations, messages, knowledge_docs）"""
+"""MySQL 数据库连接管理模块（主数据存储）
 
-import aiosqlite
-from pathlib import Path
+共享表：conversations, messages, knowledge_docs
+LangGraph checkpoint 仍使用 SQLite，见 managed_graph.py
+"""
+
+import aiomysql
 from contextlib import asynccontextmanager
 from app.config import get_settings
 
 
-DB_PATH = Path(get_settings().sqlite_db_path)
+class _CursorProxy:
+    """代理 aiomysql 游标，提供与 aiosqlite 游标一致的接口"""
 
-CREATE_TABLES_SQL = """
-CREATE TABLE IF NOT EXISTS conversations (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL DEFAULT '新会话',
-  type TEXT NOT NULL DEFAULT 'chat',
-  metadata TEXT DEFAULT '{}',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    def __init__(self, cursor):
+        self._cursor = cursor
 
-CREATE TABLE IF NOT EXISTS messages (
-  id TEXT PRIMARY KEY,
-  conversation_id TEXT NOT NULL,
-  role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'tool', 'system')),
-  content TEXT NOT NULL DEFAULT '',
-  metadata TEXT DEFAULT '{}',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
-);
+    async def fetchone(self):
+        return await self._cursor.fetchone()
 
-CREATE TABLE IF NOT EXISTS knowledge_docs (
-  id TEXT PRIMARY KEY,
-  filename TEXT NOT NULL,
-  file_type TEXT NOT NULL,
-  file_size INTEGER NOT NULL,
-  chunk_count INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    async def fetchall(self):
+        return await self._cursor.fetchall()
 
-CREATE INDEX IF NOT EXISTS idx_messages_conversation
-  ON messages(conversation_id, created_at);
-"""
+    @property
+    def rowcount(self):
+        return self._cursor.rowcount
 
 
-async def get_db() -> aiosqlite.Connection:
-  """获取数据库连接（不推荐，建议使用 get_db_context）"""
-  DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-  db = await aiosqlite.connect(str(DB_PATH))
-  db.row_factory = aiosqlite.Row
-  await db.execute("PRAGMA journal_mode=WAL")
-  await db.execute("PRAGMA foreign_keys=ON")
-  await db.execute("PRAGMA busy_timeout=5000")
-  return db
+class MySQLConnection:
+    """包装 aiomysql 连接，提供与 aiosqlite.Connection 兼容的接口
+
+    使现有 repository/service 代码无需大规模改写即可迁移到 MySQL。
+    """
+
+    def __init__(self, conn):
+        self._conn = conn
+        self._proxy = None
+
+    async def execute(self, sql, params=None):
+        # 兼容 SQLite 的 ? 占位符 → 转为 MySQL 的 %s
+        if params is not None and "?" in sql:
+            sql = sql.replace("?", "%s")
+        cursor = await self._conn.cursor(aiomysql.DictCursor)
+        await cursor.execute(sql, params or ())
+        self._proxy = _CursorProxy(cursor)
+        return self._proxy
+
+    async def executescript(self, script):
+        """模拟 executescript — 按 ; 分割逐条执行"""
+        statements = [s.strip() for s in script.split(";") if s.strip()]
+        for stmt in statements:
+            if stmt:
+                await self.execute(stmt)
+
+    async def commit(self):
+        await self._conn.commit()
+
+    async def close(self):
+        if self._proxy and self._proxy._cursor:
+            await self._proxy._cursor.close()
+        if self._conn and not self._conn.closed:
+            self._conn.close()
+
+    @property
+    def row_factory(self):
+        return None
+
+    @row_factory.setter
+    def row_factory(self, value):
+        """DictCursor 已返回类 dict 对象，无需额外 row_factory"""
+        pass
+
+
+class MySQLDatabase:
+    """MySQL 连接池管理器（单例）"""
+
+    _instance = None
+    _pool = None
+
+    @classmethod
+    async def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+            await cls._instance._create_pool()
+        return cls._instance
+
+    async def _create_pool(self):
+        settings = get_settings()
+        self._pool = await aiomysql.create_pool(
+            host=settings.mysql_host,
+            port=settings.mysql_port,
+            user=settings.mysql_user,
+            password=settings.mysql_password,
+            db=settings.mysql_database,
+            charset="utf8mb4",
+            maxsize=10,
+            minsize=1,
+            autocommit=False,
+        )
+
+    async def get_connection(self):
+        if self._pool is None:
+            await self._create_pool()
+        raw = await self._pool.acquire()
+        return MySQLConnection(raw)
+
+    async def close(self):
+        if self._pool:
+            self._pool.close()
+            await self._pool.wait_closed()
+            self._pool = None
+            MySQLDatabase._instance = None
+
+
+# ─── 便捷函数（保持与旧代码一致的接口） ──────────────────────────
+
+
+async def get_db() -> MySQLConnection:
+    """获取 MySQL 数据库连接（用完记得 close 归还连接池）"""
+    mgr = await MySQLDatabase.get_instance()
+    return await mgr.get_connection()
 
 
 @asynccontextmanager
 async def get_db_context():
-  """获取数据库连接的上下文管理器（推荐）
-
-  用法：
-    async with get_db_context() as db:
-      await db.execute(...)
-  """
-  DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-  db = await aiosqlite.connect(str(DB_PATH))
-  db.row_factory = aiosqlite.Row
-  await db.execute("PRAGMA journal_mode=WAL")
-  await db.execute("PRAGMA foreign_keys=ON")
-  try:
-    yield db
-  finally:
-    await db.close()
+    """获取数据库连接的上下文管理器"""
+    db = await get_db()
+    try:
+        yield db
+    finally:
+        await db.close()
 
 
-MIGRATIONS_SQL = """
--- v1 -> v2: conversations 新增 type/metadata 列
-ALTER TABLE conversations ADD COLUMN type TEXT NOT NULL DEFAULT 'chat';
-ALTER TABLE conversations ADD COLUMN metadata TEXT DEFAULT '{}';
+# ─── 共享表 DDL（MySQL 语法） ────────────────────────────────
+
+CREATE_TABLES_SQL = """
+CREATE TABLE IF NOT EXISTS conversations (
+  id VARCHAR(36) PRIMARY KEY,
+  title VARCHAR(500) NOT NULL DEFAULT '新会话',
+  type VARCHAR(50) NOT NULL DEFAULT 'chat',
+  INDEX idx_conversations_type (type),
+  metadata JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS messages (
+  id VARCHAR(36) PRIMARY KEY,
+  conversation_id VARCHAR(36) NOT NULL,
+  role VARCHAR(20) NOT NULL,
+  content TEXT NOT NULL,
+  metadata JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_messages_conversation (conversation_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS knowledge_docs (
+  id VARCHAR(36) PRIMARY KEY,
+  filename VARCHAR(500) NOT NULL,
+  file_type VARCHAR(50) NOT NULL,
+  file_size INT NOT NULL,
+  chunk_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 """
 
 
-async def _run_migrations(db: aiosqlite.Connection) -> None:
-  """执行增量迁移，兼容已有数据库的 schema 变更"""
-  for sql in MIGRATIONS_SQL.split(";"):
-    sql = sql.strip()
-    if not sql:
-      continue
-    try:
-      await db.execute(sql)
-    except aiosqlite.OperationalError as e:
-      # 忽略"重复列"等可接受的错误
-      if "duplicate column" not in str(e).lower():
-        raise
-
-
 async def init_db() -> None:
-  """初始化数据库共享表结构"""
-  db = await get_db()
-  try:
-    await db.executescript(CREATE_TABLES_SQL)
-    await _run_migrations(db)
-    await db.commit()
-  finally:
-    await db.close()
+    """初始化数据库共享表结构"""
+    db = await get_db()
+    try:
+        await db.execute("SET SQL_NOTES = 0")
+        await db.execute("SET FOREIGN_KEY_CHECKS = 0")
+        await db.executescript(CREATE_TABLES_SQL)
+        await db.execute("SET FOREIGN_KEY_CHECKS = 1")
+        await db.execute("SET SQL_NOTES = 1")
+        await db.commit()
+    finally:
+        await db.close()

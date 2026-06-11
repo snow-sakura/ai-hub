@@ -4,8 +4,7 @@ import uuid
 import json
 from typing import Any
 
-import aiosqlite
-
+from app.shared.core.database import MySQLConnection
 from app.shared.domain.exceptions import (
   ComfortSceneNotFoundError,
   ComfortCharacterNotFoundError,
@@ -19,7 +18,7 @@ from app.shared.service.conversation_service import ConversationService
 class ComfortService:
   """哄哄模拟器业务逻辑"""
 
-  def __init__(self, db: aiosqlite.Connection):
+  def __init__(self, db: MySQLConnection):
     self.repo = ComfortRepo(db)
 
   # ─── 场景 ─────────────────────────────────────────

@@ -18,8 +18,8 @@ export function useResponsive() {
 
   let mediaQuery: MediaQueryList | null = null
 
-  function onChange(e: MediaQueryListEvent | MediaQueryList) {
-    width.value = e.matches ? BREAKPOINTS.tablet : window.innerWidth
+  function onChange(_e: MediaQueryListEvent | MediaQueryList) {
+    width.value = window.innerWidth
   }
 
   onMounted(() => {

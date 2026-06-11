@@ -3,8 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-import aiosqlite
-
+from app.shared.core.database import MySQLConnection
 from app.shared.domain.exceptions import ConversationNotFoundError
 from app.shared.repository.conversation_repo import ConversationRepo
 
@@ -12,7 +11,7 @@ from app.shared.repository.conversation_repo import ConversationRepo
 class ConversationService:
   """会话业务逻辑"""
 
-  def __init__(self, db: aiosqlite.Connection):
+  def __init__(self, db: MySQLConnection):
     self.repo = ConversationRepo(db)
 
   async def create(

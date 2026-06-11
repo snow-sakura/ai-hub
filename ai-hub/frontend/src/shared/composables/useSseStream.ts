@@ -117,13 +117,6 @@ export function useSseStream() {
     return Math.min(RETRY_DELAY_BASE * Math.pow(2, retryCount), 10000)
   }
 
-  /** 根据 comfortMode 获取对应的 Store 引用 */
-  function resolveStore(convId: string, comfortMode: boolean) {
-    return comfortMode
-      ? { store: useComfortStore(), id: convId }
-      : { store: useChatStore() as any, id: convId }
-  }
-
   /** 发送聊天消息（支持自动重连，循环重试避免栈增长） */
   async function sendChat(
     message: string,
@@ -137,6 +130,10 @@ export function useSseStream() {
     webSearchEnabled: boolean = false,
     deepThinkingEnabled: boolean = true,
   ) {
+    // 预先获取 store 引用（Pinia store 是单例，只需获取一次）
+    const chatStore = useChatStore()
+    const comfortStore = useComfortStore()
+
     const existing = controllers.get(conversationId)
     if (existing) existing.abort()
 
@@ -152,9 +149,9 @@ export function useSseStream() {
 
     // startStreaming 只在首次调用时执行，不在重试循环内重复
     if (comfortMode) {
-      useComfortStore().startStreaming()
+      comfortStore.startStreaming()
     } else {
-      useChatStore().startStreaming(conversationId)
+      chatStore.startStreaming(conversationId)
     }
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -168,12 +165,10 @@ export function useSseStream() {
         if (!tokenBuffer) { rafId = null; return }
         const content = tokenBuffer
         tokenBuffer = ''
-        const s = resolveStore(conversationId, comfortMode)
-        // 舒适模式 appendStreamingContent 只接收 content，不需 convId
         if (comfortMode) {
-          s.store.appendStreamingContent(content)
+          comfortStore.appendStreamingContent(content)
         } else {
-          s.store.appendStreamingContent(s.id, content)
+          chatStore.appendStreamingContent(conversationId, content)
         }
         rafId = null
       }
@@ -181,9 +176,9 @@ export function useSseStream() {
       // 重试时恢复 isStreaming，确保流式光标正常显示
       if (attempt > 0) {
         if (comfortMode) {
-          useComfortStore().startStreaming()
+          comfortStore.startStreaming()
         } else {
-          useChatStore().startStreaming(conversationId)
+          chatStore.startStreaming(conversationId)
         }
       }
 
@@ -259,8 +254,11 @@ export function useSseStream() {
         if (attempt >= MAX_RETRIES) {
           console.error('[SSE] 重试失败')
           const errMsg = '网络连接失败，请稍后重试'
-          const s = resolveStore(conversationId, comfortMode)
-          s.store.setStreamError(s.id, errMsg)
+          if (comfortMode) {
+            comfortStore.setStreamError(errMsg)
+          } else {
+            chatStore.setStreamError(conversationId, errMsg)
+          }
           return
         }
 
@@ -268,8 +266,11 @@ export function useSseStream() {
         console.warn(`[SSE] 连接中断，${delay}ms 后第 ${attempt + 1} 次重试...`, e.message)
 
         const errorMsg = `连接中断，正在重试 (${attempt + 1}/${MAX_RETRIES})...`
-        const s = resolveStore(conversationId, comfortMode)
-        s.store.setStreamError(s.id, errorMsg)
+        if (comfortMode) {
+          comfortStore.setStreamError(errorMsg)
+        } else {
+          chatStore.setStreamError(conversationId, errorMsg)
+        }
 
         await new Promise(resolve => setTimeout(resolve, delay))
       }
@@ -282,5 +283,13 @@ export function useSseStream() {
     controllers.delete(conversationId)
   }
 
-  return { sendChat, abort }
+  /** 清理所有进行中的流式请求（组件卸载时调用，防止内存泄漏） */
+  function cleanupAll() {
+    for (const [id, controller] of controllers) {
+      controller.abort()
+    }
+    controllers.clear()
+  }
+
+  return { sendChat, abort, cleanupAll }
 }

@@ -98,3 +98,36 @@ class ComfortMemoryNotFoundError(AppException):
       code="COMFORT_MEMORY_NOT_FOUND",
       status_code=status.HTTP_404_NOT_FOUND,
     )
+
+
+class TestingProjectNotFoundError(AppException):
+  """测试项目未找到异常"""
+
+  def __init__(self, project_id: str):
+    super().__init__(
+      message=f"测试项目 {project_id} 不存在",
+      code="TESTING_PROJECT_NOT_FOUND",
+      status_code=status.HTTP_404_NOT_FOUND,
+    )
+
+
+class TestingCaseNotFoundError(AppException):
+  """测试用例未找到异常"""
+
+  def __init__(self, case_id: str):
+    super().__init__(
+      message=f"测试用例 {case_id} 不存在",
+      code="TESTING_CASE_NOT_FOUND",
+      status_code=status.HTTP_404_NOT_FOUND,
+    )
+
+
+class GenerationTaskNotFoundError(AppException):
+  """生成任务未找到异常"""
+
+  def __init__(self, task_id: str):
+    super().__init__(
+      message=f"生成任务 {task_id} 不存在",
+      code="GENERATION_TASK_NOT_FOUND",
+      status_code=status.HTTP_404_NOT_FOUND,
+    )

@@ -17,6 +17,11 @@
 | 7 | `agent_utils.py`（新） | 提取 `merge_tool_call_chunks` 消除 28 行重复 |
 | 8 | `agent_node.py` / `comfort_agent_node.py` | 使用共享 `merge_tool_call_chunks` |
 | 9 | `managed_graph.py` | 修复 `str.replace` 路径脆弱（改 `os.path.splitext`） |
+| 10 | `vite.config.ts` | AutoImport 新增 `{ '@vueuse/core': ['useDebounceFn'] }`，修复页面因缺失自动导入崩溃 |
+| 11 | `ai_testing/repository.py` | 修复 MySQL 保留字 `key` 缺少反引号导致的 1064 语法错误 |
+| 12 | `ai_testing/database.py` | 移除 `TINYINT(1)` 弃用语法；DDL 包裹 `SET SQL_NOTES=0/1` 抑制告警 |
+| 13 | `shared/core/database.py` | DDL 包裹 `SET SQL_NOTES=0/1` 抑制告警 |
+| 14 | `comfort/database.py` | DDL 包裹 `SET SQL_NOTES=0/1` 抑制告警 |
 
 ---
 
@@ -168,8 +173,7 @@
 
 | # | 文件 | 改动 | 影响 |
 |---|------|------|------|
-| 8 | `vite.config.ts` | AutoImport `@vueuse/core` 改为具名导入 | 减少无用依赖 |
-| 9 | `vite.config.ts` | `chunkSizeWarningLimit` 降至 500KB | 及早发现大 chunk |
+| 8 | `vite.config.ts` | `chunkSizeWarningLimit` 降至 500KB | 及早发现大 chunk |
 
 ---
 
@@ -177,7 +181,7 @@
 
 | 阶段 | 预计工时 | 交付物 |
 |------|---------|--------|
-| 基础提交（当前未提交改动） | — | 9 项修复 |
+| 基础提交（当前未提交改动） | — | 14 项修复 |
 | Phase 1 | 1 天 | 死代码清理、错误处理、数据库加固 |
 | Phase 2 | 2 天 | 组件提取和拆分、状态裁剪 |
 | Phase 3 | 3 天 | SSE 批处理、分页、Markdown 流式优化、节点异步化 |

@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useChatStore } from '@/modules/chat/stores/chat'
 import { useConversationStore } from '@/shared/stores/conversation'
 import { useSettingsStore } from '@/shared/stores/settings'
@@ -74,6 +74,7 @@ import KnowledgePopover from '@/modules/chat/components/KnowledgePopover.vue'
 import ComposerToolbar from '@/modules/chat/components/ComposerToolbar.vue'
 import AttachmentChips from '@/modules/chat/components/AttachmentChips.vue'
 import { uploadChatAttachment } from '@/modules/chat/api/chat'
+import { useMessage } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import type { KnowledgeDoc } from '@/modules/knowledge/types/knowledge'
 import type { UploadAttachment } from '@/modules/chat/types/chat'
@@ -84,7 +85,8 @@ const chatStore = useChatStore()
 const convStore = useConversationStore()
 const settingsStore = useSettingsStore()
 const knowledgeStore = useKnowledgeStore()
-const { sendChat, abort } = useSseStream()
+const message = useMessage()
+const { sendChat, abort, cleanupAll } = useSseStream()
 
 /** 当前对话的流状态 */
 const streamState = computed(() => chatStore.activeStreamState)
@@ -175,7 +177,10 @@ async function send() {
     // 直接用首条消息前 10 字作为标题创建对话，避免"新会话"再 rename 的时序问题
     const title = text.length > 10 ? text.slice(0, 10) + '…' : text
     const conv = await convStore.create(title)
-    if (!conv) return
+    if (!conv || !convStore.activeConversationId) {
+      message.error('创建对话失败，请重试')
+      return
+    }
   }
 
   const fileAttachments = attachments.value.map(a => ({ name: a.name, type: a.type }))
@@ -221,6 +226,9 @@ function handleKeydown(e: KeyboardEvent) {
     send()
   }
 }
+
+/** 组件销毁时清理所有进行中的 SSE 流，防止 controllers 内存泄漏 */
+onUnmounted(() => cleanupAll())
 </script>
 
 <style scoped>

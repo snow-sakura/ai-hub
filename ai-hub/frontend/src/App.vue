@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :theme-overrides="themeOverrides">
+  <n-config-provider :theme-overrides="themeOverrides" :locale="zhCN">
     <n-global-style />
     <n-message-provider>
       <n-dialog-provider>
@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import ErrorBoundary from '@/shared/components/common/ErrorBoundary.vue'
-import type { GlobalThemeOverrides } from 'naive-ui'
+import { zhCN, type GlobalThemeOverrides } from 'naive-ui'
 
 /** 拍立得暖色调主题覆盖 */
 const themeOverrides: GlobalThemeOverrides = {
@@ -43,8 +43,8 @@ const themeOverrides: GlobalThemeOverrides = {
     borderColor: 'rgba(180, 150, 120, 0.15)',
     textColorBase: '#3D2E1F',
     textColor1: '#3D2E1F',
-    textColor2: '#8B7355',
-    textColor3: '#B5A590',
+    textColor2: '#5C4A38',
+    textColor3: '#7A6855',
   },
   Card: {
     color: '#FFFDF9',
@@ -67,9 +67,21 @@ const themeOverrides: GlobalThemeOverrides = {
     borderPressedPrimary: '1px solid #B56A4B',
     textColorPrimary: '#FFFFFF',
   },
+  DataTable: {
+    tdTextColor: '#3D2E1F',
+    thTextColor: '#3D2E1F',
+  },
   Collapse: {
     titleTextColor: '#5C4630',
     dividerColor: 'rgba(180, 150, 120, 0.1)',
+  },
+  Popover: {
+    color: '#FFFDF9',
+    textColor: '#1A1A2E',
+  },
+  Tooltip: {
+    color: '#FFFDF9',
+    textColor: '#1A1A2E',
   },
   Progress: {
     fillColor: '#C67B5C',

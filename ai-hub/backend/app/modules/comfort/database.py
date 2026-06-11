@@ -1,74 +1,92 @@
-"""哄哄模拟器专用表 DDL（comfort_scenes, comfort_characters, comfort_memories, emotion_statistics）"""
+"""哄哄模拟器专用表 DDL（MySQL 版）"""
 
-import aiosqlite
-from app.shared.core.database import DB_PATH, get_db
+from app.shared.core.database import get_db
 
 
-COMFORT_TABLES_SQL = """
-CREATE TABLE IF NOT EXISTS comfort_scenes (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  description TEXT NOT NULL,
-  icon TEXT NOT NULL DEFAULT '🎭',
-  initial_prompt TEXT NOT NULL,
-  difficulty_default INTEGER NOT NULL DEFAULT 3,
-  tags TEXT DEFAULT '[]',
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  is_builtin INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+# ── 建表语句 ─────────────────────────────────────────────────────
 
-CREATE TABLE IF NOT EXISTS comfort_characters (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  age INTEGER,
-  identity TEXT NOT NULL DEFAULT '',
-  personality_tags TEXT DEFAULT '[]',
-  speaking_style TEXT NOT NULL DEFAULT '',
-  avatar_emoji TEXT NOT NULL DEFAULT '😊',
-  backstory TEXT DEFAULT '',
-  scene_id TEXT,
-  is_builtin INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (scene_id) REFERENCES comfort_scenes(id) ON DELETE SET NULL
-);
+COMFORT_TABLE_DDL: list[str] = [
+    # 场景表
+    """CREATE TABLE IF NOT EXISTS comfort_scenes (
+      id VARCHAR(36) PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      description TEXT NOT NULL,
+      icon VARCHAR(10) NOT NULL DEFAULT '🎭',
+      initial_prompt TEXT NOT NULL,
+      difficulty_default INT NOT NULL DEFAULT 3,
+      tags TEXT,
+      sort_order INT NOT NULL DEFAULT 0,
+      is_builtin TINYINT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
 
-CREATE INDEX IF NOT EXISTS idx_characters_scene
-  ON comfort_characters(scene_id);
+    # 角色表
+    """CREATE TABLE IF NOT EXISTS comfort_characters (
+      id VARCHAR(36) PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      age INT,
+      identity VARCHAR(255) NOT NULL DEFAULT '',
+      personality_tags TEXT,
+      speaking_style TEXT NOT NULL,
+      avatar_emoji VARCHAR(10) NOT NULL DEFAULT '😊',
+      backstory TEXT,
+      scene_id VARCHAR(36),
+      is_builtin TINYINT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
 
-CREATE TABLE IF NOT EXISTS comfort_memories (
-  id TEXT PRIMARY KEY,
-  conversation_id TEXT NOT NULL,
-  content TEXT NOT NULL,
-  memory_type TEXT NOT NULL DEFAULT 'fact',
-  importance REAL NOT NULL DEFAULT 0.5,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
-);
+    # 记忆表
+    """CREATE TABLE IF NOT EXISTS comfort_memories (
+      id VARCHAR(36) PRIMARY KEY,
+      conversation_id VARCHAR(36) NOT NULL,
+      content TEXT NOT NULL,
+      memory_type VARCHAR(20) NOT NULL DEFAULT 'fact',
+      importance FLOAT NOT NULL DEFAULT 0.5,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
 
-CREATE INDEX IF NOT EXISTS idx_memories_conversation
-  ON comfort_memories(conversation_id, created_at);
+    # 情绪统计数据表
+    """CREATE TABLE IF NOT EXISTS emotion_statistics (
+      id VARCHAR(36) PRIMARY KEY,
+      user_date VARCHAR(10) NOT NULL,
+      emotion_label VARCHAR(50) NOT NULL,
+      avg_intensity FLOAT NOT NULL,
+      count INT NOT NULL DEFAULT 1,
+      comfort_score FLOAT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_emotion_daily (user_date, emotion_label)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""",
+]
 
-CREATE TABLE IF NOT EXISTS emotion_statistics (
-  id TEXT PRIMARY KEY,
-  user_date TEXT NOT NULL,
-  emotion_label TEXT NOT NULL,
-  avg_intensity REAL NOT NULL,
-  count INTEGER NOT NULL DEFAULT 1,
-  comfort_score REAL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_emotion_daily
-  ON emotion_statistics(user_date, emotion_label);
-"""
+# ── 索引（独立执行，容错已存在）────────────────────────────────────
+
+COMFORT_INDEXES: list[str] = [
+    "CREATE INDEX idx_characters_scene ON comfort_characters(scene_id)",
+    "CREATE INDEX idx_memories_conversation ON comfort_memories(conversation_id, created_at)",
+]
 
 
 async def init_comfort_tables() -> None:
-  """初始化哄哄模拟器专用表"""
-  db = await get_db()
-  try:
-    await db.executescript(COMFORT_TABLES_SQL)
-    await db.commit()
-  finally:
-    await db.close()
+    """初始化哄哄模拟器专用表"""
+    db = await get_db()
+    try:
+        await db.execute("SET SQL_NOTES = 0")
+        await db.execute("SET FOREIGN_KEY_CHECKS = 0")
+        for stmt in COMFORT_TABLE_DDL:
+            await db.execute(stmt)
+        for stmt in COMFORT_INDEXES:
+            try:
+                await db.execute(stmt)
+            except Exception:
+                pass  # 索引已存在时忽略
+        await db.execute("SET FOREIGN_KEY_CHECKS = 1")
+        await db.execute("SET SQL_NOTES = 1")
+        for stmt in COMFORT_INDEXES:
+            try:
+                await db.execute(stmt)
+            except Exception:
+                pass  # 索引已存在时忽略
+        await db.commit()
+    finally:
+        await db.close()

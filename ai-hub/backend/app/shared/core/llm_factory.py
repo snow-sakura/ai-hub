@@ -104,21 +104,23 @@ class LLMFactory:
 
   @staticmethod
   def create(provider: str, model_name: str = "",
-             reasoning_effort: str = "high") -> BaseChatModel:
+             reasoning_effort: str = "high",
+             api_key: str | None = None) -> BaseChatModel:
     """根据 provider 创建 LLM 实例
 
     Args:
       provider: 模型提供商
       model_name: 模型名称
       reasoning_effort: DeepSeek thinking 深度（high/max/disabled），其他 provider 忽略
+      api_key: 自定义 API Key（非空时覆盖全局 settings 中的 key，仅对 key-based provider 生效）
     """
     settings = get_settings()
 
     # 统一校验 API Key（Ollama 不需要）
     if provider in _PROVIDER_REQUIRED_FIELDS:
       field, env_name = _PROVIDER_REQUIRED_FIELDS[provider]
-      api_key = getattr(settings, field, "")
-      if not api_key:
+      effective_key = api_key or getattr(settings, field, "")
+      if not effective_key:
         raise ValueError(
           f"【{provider}】的 API Key 未配置。"
           f"请在 {ENV_FILE} 中设置 {env_name}=your-key，"
@@ -128,7 +130,7 @@ class LLMFactory:
     if provider == "openai":
       return ChatOpenAI(
         model=model_name or "gpt-4o-mini",
-        api_key=settings.openai_api_key,
+        api_key=api_key or settings.openai_api_key,
         base_url=settings.openai_base_url,
         streaming=True,
         temperature=0.7,
@@ -148,8 +150,8 @@ class LLMFactory:
       else:
         extra_body["thinking"] = {"type": "enabled"}
       return ChatOpenAI(
-        model=model_name or "deepseek-chat",
-        api_key=settings.deepseek_api_key,
+        model=model_name or "deepseek-v4-flash",
+        api_key=api_key or settings.deepseek_api_key,
         base_url=settings.deepseek_base_url,
         streaming=True,
         reasoning_effort=effort,
@@ -161,7 +163,7 @@ class LLMFactory:
     elif provider == "qwen":
       return ChatOpenAI(
         model=model_name or "qwen-plus",
-        api_key=settings.qwen_api_key,
+        api_key=api_key or settings.qwen_api_key,
         base_url=settings.qwen_base_url,
         streaming=True,
         temperature=0.7,
@@ -172,7 +174,7 @@ class LLMFactory:
     elif provider == "zhipu":
       return ChatOpenAI(
         model=model_name or "glm-4-flash",
-        api_key=settings.zhipu_api_key,
+        api_key=api_key or settings.zhipu_api_key,
         base_url=settings.zhipu_base_url,
         streaming=True,
         temperature=0.7,
@@ -190,15 +192,16 @@ class LLMFactory:
       )
     else:
       # 默认 fallback 到国产 DeepSeek
-      if not settings.deepseek_api_key:
+      effective_key = api_key or settings.deepseek_api_key
+      if not effective_key:
         raise ValueError(
           "未指定模型 provider，且默认 DeepSeek 的 API Key 未配置。"
           f"请在 {ENV_FILE} 中设置 DEEPSEEK_API_KEY=your-key，"
           "或设置其他已配置的 provider"
         )
       return ChatOpenAI(
-        model=model_name or "deepseek-chat",
-        api_key=settings.deepseek_api_key,
+        model=model_name or "deepseek-v4-flash",
+        api_key=api_key or settings.deepseek_api_key,
         base_url=settings.deepseek_base_url,
         streaming=True,
         temperature=0.7,

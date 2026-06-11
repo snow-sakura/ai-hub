@@ -88,6 +88,15 @@ const cards: AppCard[] = [
     route: '/comfort',
     badge: 'NEW',
   },
+  {
+    id: 'ai-testing',
+    icon: '📋',
+    title: 'AI 测试助手',
+    description: '输入需求文档，AI 自动分析→编写→评审→修订，生成高质量测试用例',
+    tags: ['AI生成', '用例管理', '自动评审'],
+    route: '/ai-testing',
+    badge: 'NEW',
+  },
 ]
 </script>
 

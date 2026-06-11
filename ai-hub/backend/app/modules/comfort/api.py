@@ -3,7 +3,6 @@
 from typing import Any, Optional
 
 from fastapi import APIRouter, Query
-import aiosqlite
 
 from app.shared.api.schemas.common import ApiResponse
 from app.modules.comfort.schemas import (

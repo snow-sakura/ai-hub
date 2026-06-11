@@ -42,7 +42,14 @@ class Settings(BaseSettings):
   app_port: int = 8000
   app_debug: bool = True
 
-  # Database
+  # MySQL Database (主数据存储)
+  mysql_host: str = "127.0.0.1"
+  mysql_port: int = 3306
+  mysql_user: str = "snow"
+  mysql_password: str = "Wxh123456!"
+  mysql_database: str = "ai_hub"
+
+  # SQLite (仅用于 LangGraph checkpoint，不存业务数据)
   sqlite_db_path: str = "./data/sqlite/app.db"
 
   # ChromaDB

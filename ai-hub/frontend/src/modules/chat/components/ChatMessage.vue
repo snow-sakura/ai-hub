@@ -15,7 +15,7 @@
           :key="tc.toolCallId"
           class="tool-chip"
         >
-          <span class="tool-chip-icon">{{ tc.status === 'done' ? '✅' : tc.status === 'error' ? '⚠️' : '🔄' }}</span>
+          <span :class="['tool-chip-icon', `status-${tc.status}`]">{{ tc.status === 'done' ? '✓' : tc.status === 'error' ? '!' : '⟳' }}</span>
           <span class="tool-chip-name">{{ tc.toolName }}</span>
           <span v-if="tc.summary" class="tool-chip-summary">{{ tc.summary.slice(0, 40) }}</span>
         </div>
@@ -98,9 +98,13 @@ defineProps<{
 }
 
 .tool-chip-icon {
-  font-size: 11px;
+  font-size: 12px;
   flex-shrink: 0;
+  font-weight: 600;
 }
+.status-done { color: #52c41a; }
+.status-error { color: #ff4d4f; }
+.status-running { color: var(--accent); }
 
 .tool-chip-name {
   font-weight: 500;

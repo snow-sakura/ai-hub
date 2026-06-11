@@ -8,6 +8,7 @@ from app.modules.knowledge.api import router as knowledge_router
 from app.shared.api.v1.models import router as models_router
 from app.shared.api.v1.tools import router as tools_router
 from app.modules.comfort.api import router as comfort_router
+from app.modules.ai_testing.api import router as testing_router
 
 api_router = APIRouter()
 
@@ -17,3 +18,4 @@ api_router.include_router(knowledge_router, prefix="/knowledge", tags=["知识�
 api_router.include_router(models_router, prefix="/models", tags=["模型"])
 api_router.include_router(tools_router, prefix="/tools", tags=["工具"])
 api_router.include_router(comfort_router, prefix="/comfort", tags=["哄哄模拟器"])
+api_router.include_router(testing_router, prefix="/testing", tags=["AI测试"])

@@ -78,7 +78,9 @@ def agent_node(state: AgentState) -> dict:
   final_tool_calls = merge_tool_call_chunks(tool_call_chunks_acc)
 
   # 标记思考阶段结束，让 service 层刷新缓存的 content token
-  dispatch_custom_event("reasoning_end", {})
+  # 仅在实际有 reasoning_content 或 deep_thinking_enabled 时发送
+  if reasoning_content or deep_thinking_enabled:
+    dispatch_custom_event("reasoning_end", {})
 
   if final_tool_calls:
     total_tools = len(final_tool_calls)

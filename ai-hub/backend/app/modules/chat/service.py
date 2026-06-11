@@ -8,12 +8,14 @@ from typing import AsyncGenerator
 
 from langchain_core.messages import HumanMessage, AIMessage
 
-from app.modules.chat.graph import get_agent_graph
 from app.modules.comfort.graph import get_comfort_graph
 from app.shared.core.database import get_db
 from app.shared.service.conversation_service import ConversationService
 from app.config import get_settings
+from app.shared.core.logging import get_logger
 from app.shared.utils.file_parser import parse_file
+
+logger = get_logger("chat.service")
 from app.shared.utils.sse_helper import (
   format_sse_event,
   format_token_event,
@@ -175,6 +177,14 @@ class ChatService:
               token_buffer = []
               yield format_sse_event("reasoning_end", {})
 
+      # 思考结束信号丢失时的兜底：刷新剩余缓存 token
+      if thinking_active and token_buffer:
+        batch_size = 20
+        for i in range(0, len(token_buffer), batch_size):
+          yield format_token_event("".join(token_buffer[i:i + batch_size]))
+        token_buffer = []
+        thinking_active = False
+
       if full_response:
         await conv_service.save_message(
           conversation_id, "assistant", full_response,
@@ -192,7 +202,8 @@ class ChatService:
 
     except Exception as e:
       error_detail = traceback.format_exc()
-      yield format_error_event("CHAT_ERROR", f"{str(e)}\n{error_detail[-500:]}")
+      logger.error("[stream_chat] 聊天流错误: %s\n%s", str(e), error_detail)
+      yield format_error_event("CHAT_ERROR", "聊天处理出错，请稍后重试")
     finally:
       # 确保数据库连接总是被关闭
       if db is not None:
