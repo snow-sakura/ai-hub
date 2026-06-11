@@ -40,6 +40,12 @@ defineProps<{
   padding: 0 24px;
 }
 
+@media (max-width: 768px) {
+  .comfort-message {
+    padding: 0 16px;
+  }
+}
+
 .role-assistant {
   justify-content: flex-start;
 }

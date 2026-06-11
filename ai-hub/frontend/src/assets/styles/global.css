@@ -21,6 +21,11 @@
   --shadow-lg: 0 8px 28px rgba(60, 40, 20, 0.08);
   --user-bubble-bg: #EDE4D6;
   --user-bubble-border: rgba(180, 150, 120, 0.15);
+
+  /* 响应式断点（仅作为 JS 引用参考，CSS 中使用 @media） */
+  --bp-mobile: 480px;
+  --bp-tablet: 768px;
+  --bp-desktop: 1024px;
 }
 
 * {
@@ -173,4 +178,21 @@ body {
 ::selection {
   background: rgba(198, 123, 92, 0.15);
   color: #3D2E1F;
+}
+
+/* Naive UI 抽屉背景色适配暖色调 */
+.n-drawer .n-drawer-content {
+  background: var(--bg-sidebar) !important;
+}
+
+/* 键盘焦点指示器 */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 卡片类元素默认无焦点轮廓（鼠标点击不显示） */
+:focus:not(:focus-visible) {
+  outline: none;
 }

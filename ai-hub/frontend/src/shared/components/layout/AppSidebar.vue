@@ -40,7 +40,7 @@ function goHome() {
 <style scoped>
 .sidebar {
   width: 260px;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg-sidebar);

@@ -2,7 +2,7 @@ import { useChatStore } from '@/modules/chat/stores/chat'
 import { useComfortStore } from '@/modules/comfort/stores/comfort'
 import { useConversationStore } from '@/shared/stores/conversation'
 
-/** 解析 SSE 事件块 */
+/** 解析 SSE 事件块（兼容多行 data） */
 function parseSseEvent(block: string): { type: string; data: Record<string, any> } | null {
   const lines = block.split('\n')
   let type = ''
@@ -12,7 +12,8 @@ function parseSseEvent(block: string): { type: string; data: Record<string, any>
     if (line.startsWith('event: ')) {
       type = line.slice(7).trim()
     } else if (line.startsWith('data: ')) {
-      dataStr = line.slice(6)
+      // 多行 data = 拼接换行（SSE 规范）
+      dataStr = dataStr ? dataStr + '\n' + line.slice(6) : line.slice(6)
     }
   }
 
@@ -139,11 +140,14 @@ export function useSseStream() {
     const existing = controllers.get(conversationId)
     if (existing) existing.abort()
 
-    const convStore = useConversationStore()
-    const convExists = convStore.conversations.some(c => c.id === conversationId)
-    if (!convExists) {
-      console.warn(`[SSE] 对话 ${conversationId} 已不存在`)
-      return
+    // 哄哄对话由 comfortStore 管理，不在 convStore 中，跳过检查
+    if (!comfortMode) {
+      const convStore = useConversationStore()
+      const convExists = convStore.conversations.some(c => c.id === conversationId)
+      if (!convExists) {
+        console.warn(`[SSE] 对话 ${conversationId} 已不存在`)
+        return
+      }
     }
 
     // startStreaming 只在首次调用时执行，不在重试循环内重复
@@ -165,8 +169,22 @@ export function useSseStream() {
         const content = tokenBuffer
         tokenBuffer = ''
         const s = resolveStore(conversationId, comfortMode)
-        s.store.appendStreamingContent(s.id, content)
+        // 舒适模式 appendStreamingContent 只接收 content，不需 convId
+        if (comfortMode) {
+          s.store.appendStreamingContent(content)
+        } else {
+          s.store.appendStreamingContent(s.id, content)
+        }
         rafId = null
+      }
+
+      // 重试时恢复 isStreaming，确保流式光标正常显示
+      if (attempt > 0) {
+        if (comfortMode) {
+          useComfortStore().startStreaming()
+        } else {
+          useChatStore().startStreaming(conversationId)
+        }
       }
 
       try {
@@ -227,6 +245,13 @@ export function useSseStream() {
       } catch (e: any) {
         controllers.delete(conversationId)
 
+        // 取消 RAF 防止写入已清理的状态
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId)
+          rafId = null
+          tokenBuffer = ''
+        }
+
         if (e.name === 'AbortError') {
           return
         }
@@ -234,11 +259,8 @@ export function useSseStream() {
         if (attempt >= MAX_RETRIES) {
           console.error('[SSE] 重试失败')
           const errMsg = '网络连接失败，请稍后重试'
-          if (comfortMode) {
-            useComfortStore().setStreamError(errMsg)
-          } else {
-            useChatStore().setStreamError(conversationId, errMsg)
-          }
+          const s = resolveStore(conversationId, comfortMode)
+          s.store.setStreamError(s.id, errMsg)
           return
         }
 
@@ -246,11 +268,8 @@ export function useSseStream() {
         console.warn(`[SSE] 连接中断，${delay}ms 后第 ${attempt + 1} 次重试...`, e.message)
 
         const errorMsg = `连接中断，正在重试 (${attempt + 1}/${MAX_RETRIES})...`
-        if (comfortMode) {
-          useComfortStore().setStreamError(errorMsg)
-        } else {
-          useChatStore().setStreamError(conversationId, errorMsg)
-        }
+        const s = resolveStore(conversationId, comfortMode)
+        s.store.setStreamError(s.id, errorMsg)
 
         await new Promise(resolve => setTimeout(resolve, delay))
       }

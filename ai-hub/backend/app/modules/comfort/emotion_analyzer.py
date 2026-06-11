@@ -64,7 +64,7 @@ class EmotionAnalyzer:
 
       messages.append(HumanMessage(content=f"请分析以下消息的情绪:\n\n{user_message}"))
 
-      response = llm.invoke(messages)
+      response = await llm.ainvoke(messages)
       content = response.content.strip()
 
       # 提取 JSON

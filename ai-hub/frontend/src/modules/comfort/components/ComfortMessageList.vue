@@ -1,36 +1,33 @@
 <template>
-  <div class="comfort-message-list" ref="listRef">
-    <!-- 空状态：角色专属问候 -->
-    <div v-if="isEmpty" class="comfort-empty">
-      <div class="empty-card">
-        <CharacterAvatar
-          :emoji="comfortStore.selectedCharacter?.avatar_emoji || '🎭'"
-          :name="comfortStore.selectedCharacter?.name"
-          size="lg"
+  <div ref="listRef" class="comfort-message-list">
+    <!-- 虚拟列表（消息数 > 0 时渲染） -->
+    <div
+      v-if="comfortStore.messages.length > 0"
+      :style="{
+        height: `${virtualizer.getTotalSize()}px`,
+        position: 'relative',
+        width: '100%',
+      }"
+    >
+      <div
+        v-for="vRow in virtualizer.getVirtualItems()"
+        :key="String(vRow.key)"
+        :data-index="vRow.index"
+        :ref="(el: any) => { if (el) virtualizer.measureElement(el) }"
+        :style="{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          transform: `translateY(${vRow.start}px)`,
+        }"
+      >
+        <ComfortMessage
+          :message="comfortStore.messages[vRow.index]"
+          :character="comfortStore.selectedCharacter"
         />
-        <h3 class="empty-name">{{ comfortStore.selectedCharacter?.name || '对方' }}</h3>
-        <span class="empty-identity">
-          {{ comfortStore.selectedCharacter?.identity || '' }}
-        </span>
-        <p class="empty-backstory">
-          {{ comfortStore.selectedCharacter?.backstory || '' }}
-        </p>
-        <div class="empty-hint">
-          <span class="hint-icon">💬</span>
-          <span>说点什么来安慰 TA 吧</span>
-        </div>
       </div>
     </div>
-
-    <!-- 历史消息 -->
-    <transition-group name="slide-up">
-      <ComfortMessage
-        v-for="msg in comfortStore.messages"
-        :key="msg.id"
-        :message="msg"
-        :character="comfortStore.selectedCharacter"
-      />
-    </transition-group>
 
     <!-- 流式消息（仅渲染内容，无 thinking/tool） -->
     <div v-if="comfortStore.isStreaming" class="streaming-area">
@@ -69,14 +66,38 @@
     <div v-if="comfortStore.streamError" class="error-banner">
       <n-alert type="error" :title="comfortStore.streamError" />
     </div>
+
+    <!-- 空状态：角色专属问候 -->
+    <div v-if="isEmpty" class="comfort-empty">
+      <div class="empty-card">
+        <CharacterAvatar
+          :emoji="comfortStore.selectedCharacter?.avatar_emoji || '🎭'"
+          :name="comfortStore.selectedCharacter?.name"
+          size="lg"
+        />
+        <h3 class="empty-name">{{ comfortStore.selectedCharacter?.name || '对方' }}</h3>
+        <span class="empty-identity">
+          {{ comfortStore.selectedCharacter?.identity || '' }}
+        </span>
+        <p class="empty-backstory">
+          {{ comfortStore.selectedCharacter?.backstory || '' }}
+        </p>
+        <div class="empty-hint">
+          <span class="hint-icon">💬</span>
+          <span>说点什么来安慰 TA 吧</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useComfortStore } from '@/modules/comfort/stores/comfort'
 import ComfortMessage from '@/modules/comfort/components/ComfortMessage.vue'
 import CharacterAvatar from '@/modules/comfort/components/CharacterAvatar.vue'
+
 const comfortStore = useComfortStore()
 const listRef = ref<HTMLElement>()
 
@@ -84,17 +105,31 @@ const isEmpty = computed(() =>
   comfortStore.messages.length === 0 && !comfortStore.isStreaming
 )
 
+/** 虚拟滚动实例 */
+const virtualizer = useVirtualizer({
+  get count() { return comfortStore.messages.length },
+  getScrollElement: () => listRef.value || null,
+  estimateSize: () => 100,
+  getItemKey: (index: number) => comfortStore.messages[index]?.id || index,
+  overscan: 5,
+  measureElement: (el: Element | null) => el?.getBoundingClientRect().height || 100,
+  followOnAppend: true,
+})
+
 /** 自动滚动到底部 */
 function scrollToBottom() {
-  nextTick(() => {
-    if (listRef.value) {
-      listRef.value.scrollTop = listRef.value.scrollHeight
-    }
-  })
+  const count = comfortStore.messages.length
+  if (count > 0) {
+    virtualizer.value.scrollToIndex(count - 1, { align: 'end', behavior: 'auto' })
+  }
 }
 
-watch(() => comfortStore.messages.length, scrollToBottom)
-watch(() => comfortStore.streamingContent, scrollToBottom)
+watch(() => comfortStore.messages.length, () => {
+  nextTick(scrollToBottom)
+})
+watch(() => comfortStore.streamingContent, () => {
+  virtualizer.value.scrollToIndex(comfortStore.messages.length, { align: 'end', behavior: 'auto' })
+})
 </script>
 
 <style scoped>
@@ -102,16 +137,14 @@ watch(() => comfortStore.streamingContent, scrollToBottom)
   flex: 1;
   overflow-y: auto;
   padding: 24px 0 16px;
-  display: flex;
-  flex-direction: column;
 }
 
 /* 空状态：角色专属问候 */
 .comfort-empty {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: calc(100vh - 200px);
   padding: 32px 24px;
 }
 
@@ -178,7 +211,6 @@ watch(() => comfortStore.streamingContent, scrollToBottom)
   padding: 0;
 }
 
-/* 复用 ComfortMessage 的 char-message / char-bubble 样式 */
 .char-message {
   display: flex;
   align-items: flex-start;
@@ -277,15 +309,5 @@ watch(() => comfortStore.streamingContent, scrollToBottom)
   margin: 12px auto;
   width: 100%;
   padding: 0 24px;
-}
-
-/* 过渡动画 */
-.slide-up-enter-active {
-  transition: all 0.3s ease-out;
-}
-
-.slide-up-enter-from {
-  opacity: 0;
-  transform: translateY(12px);
 }
 </style>

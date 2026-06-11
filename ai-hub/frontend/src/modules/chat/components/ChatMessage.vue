@@ -50,6 +50,12 @@ defineProps<{
   padding: 0 48px;
 }
 
+@media (max-width: 768px) {
+  .chat-message {
+    padding: 0 16px;
+  }
+}
+
 .role-assistant {
   justify-content: flex-start;
 }

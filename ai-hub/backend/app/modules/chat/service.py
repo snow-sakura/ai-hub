@@ -2,6 +2,7 @@
 
 import uuid
 import json
+import traceback
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -190,7 +191,6 @@ class ChatService:
       yield format_done_event(message_id)
 
     except Exception as e:
-      import traceback
       error_detail = traceback.format_exc()
       yield format_error_event("CHAT_ERROR", f"{str(e)}\n{error_detail[-500:]}")
     finally:

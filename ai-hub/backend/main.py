@@ -9,6 +9,7 @@ from app.config import get_settings
 from app.shared.core.database import init_db
 from app.modules.comfort.database import init_comfort_tables
 from app.modules.comfort.scene_seed import seed_builtin_data
+from app.modules.ai_testing.database import init_testing_tables
 from app.api.v1.router import api_router
 
 
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
   await init_db()
   await init_comfort_tables()
   await seed_builtin_data()
+  await init_testing_tables()
   try:
     yield
   finally:

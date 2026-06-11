@@ -2,14 +2,14 @@
 
 from langchain_core.messages import SystemMessage, AIMessage
 from app.shared.agent.state import AgentState
-from app.modules.comfort.prompts import COMFORT_SYSTEM_PROMPT, COMFORT_MEMORY_PROMPT, COMFORT_TIPS_PROMPT
+from app.modules.comfort.prompts import COMFORT_SYSTEM_PROMPT, COMFORT_MEMORY_PROMPT, COMFORT_TIPS_PROMPT, LANGUAGE_CONSTRAINT
 from app.shared.core.llm_factory import LLMFactory
 from app.shared.agent.tools.web_search import web_search
 from app.shared.agent.tools.image_search import image_search
 from app.shared.agent.agent_utils import merge_tool_call_chunks
 
 
-def comfort_agent_node(state: AgentState) -> dict:
+async def comfort_agent_node(state: AgentState) -> dict:
   """哄哄模拟器 Agent：注入角色人设 prompt 进行角色扮演推理"""
   provider = state.get("model_provider", "deepseek")
   model_name = state.get("model_name", "")
@@ -55,17 +55,17 @@ def comfort_agent_node(state: AgentState) -> dict:
     backstory=backstory,
     scene_prompt=scene_prompt,
     rag_context=rag_text,
-  ) + "\n" + memory_text + "\n" + COMFORT_TIPS_PROMPT)
+  ) + "\n" + memory_text + "\n" + COMFORT_TIPS_PROMPT + "\n" + LANGUAGE_CONSTRAINT)
 
   messages = [system_msg] + state["messages"]
 
   # comfort 模式下不发送 thinking 事件，避免原始推理内容泄露到前端
 
-  # 单次 stream() 获取所有输出 + tool_call_chunks，无需额外 invoke
+  # 使用 astream 确保 on_chat_model_stream 事件能被 astream_events 捕获
   content_buffer = ""
   tool_call_chunks_acc = []
   reasoning_content = ""  # DeepSeek thinking mode 推理内容
-  for chunk in llm_with_tools.stream(messages):
+  async for chunk in llm_with_tools.astream(messages):
     if chunk.content:
       content_buffer += chunk.content
     if hasattr(chunk, "tool_call_chunks") and chunk.tool_call_chunks:

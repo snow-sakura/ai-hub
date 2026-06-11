@@ -152,16 +152,17 @@ function removeSelectedDoc(id: string) {
   if (idx >= 0) selectedKnowledgeDocIds.value.splice(idx, 1)
 }
 
-/** 工具图标映射 */
+/** 工具图标映射（模块级常量，避免每次渲染重建） */
+const TOOL_ICON_MAP: Record<string, string> = {
+  search: '🔍',
+  'file-text': '📄',
+  globe: '🌐',
+  terminal: '💻',
+  image: '🖼️',
+}
+
 function toolIcon(icon: string): string {
-  const map: Record<string, string> = {
-    search: '🔍',
-    'file-text': '📄',
-    globe: '🌐',
-    terminal: '💻',
-    image: '🖼️',
-  }
-  return map[icon] || '🔧'
+  return TOOL_ICON_MAP[icon] || '🔧'
 }
 
 /** 发送消息 */
@@ -171,11 +172,10 @@ async function send() {
   const text = inputText.value.trim()
 
   if (!convStore.activeConversationId) {
-    const conv = await convStore.create()
-    if (!conv) return
-    // 用首条消息前 10 字作为对话标题
+    // 直接用首条消息前 10 字作为标题创建对话，避免"新会话"再 rename 的时序问题
     const title = text.length > 10 ? text.slice(0, 10) + '…' : text
-    await convStore.rename(conv.id, title)
+    const conv = await convStore.create(title)
+    if (!conv) return
   }
 
   const fileAttachments = attachments.value.map(a => ({ name: a.name, type: a.type }))
@@ -230,6 +230,12 @@ function handleKeydown(e: KeyboardEvent) {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+@media (max-width: 768px) {
+  .chat-input-area {
+    padding: 0 12px 16px;
+  }
 }
 
 .composer {

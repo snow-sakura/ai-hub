@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/vue-virtual": "^3.13.28",
     "@vueuse/core": "^11.3.0",
     "axios": "^1.7.9",
     "dompurify": "^3.2.4",

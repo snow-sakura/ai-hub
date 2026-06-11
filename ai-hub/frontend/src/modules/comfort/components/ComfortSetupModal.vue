@@ -12,7 +12,12 @@
           :key="scene.id"
           class="scene-card"
           :class="{ selected: selectedScene?.id === scene.id }"
+          tabindex="0"
+          role="button"
+          :aria-label="`选择场景：${scene.name}`"
           @click="onSelectScene(scene)"
+          @keydown.enter="onSelectScene(scene)"
+          @keydown.space.prevent="onSelectScene(scene)"
         >
           <span class="scene-icon">{{ scene.icon }}</span>
           <div class="scene-info">
@@ -38,7 +43,12 @@
           :key="char.id"
           class="character-card"
           :class="{ selected: selectedCharacter?.id === char.id }"
+          tabindex="0"
+          role="button"
+          :aria-label="`选择角色：${char.name}`"
           @click="onSelectCharacter(char)"
+          @keydown.enter="onSelectCharacter(char)"
+          @keydown.space.prevent="onSelectCharacter(char)"
         >
           <span class="char-avatar">{{ char.avatar_emoji }}</span>
           <div class="char-info">

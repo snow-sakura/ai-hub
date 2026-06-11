@@ -1,27 +1,45 @@
 <template>
-  <div class="message-list" ref="listRef" @scroll="onScroll">
+  <div ref="listRef" class="message-list" @scroll="onScroll">
     <!-- 加载更多历史消息 -->
-    <div v-if="convStore.hasMoreMessages" class="load-more" :class="{ 'load-more--loading': loadingMore }">
-      <span v-if="loadingMore" class="load-more-spinner">⋯</span>
-      <span v-else class="load-more-text">↑ 加载更多历史消息</span>
+    <div v-if="convStore.hasMoreMessages && !isLoadingMore" class="load-more" @click="loadMore">
+      <span class="load-more-text">↑ 加载更多历史消息</span>
+    </div>
+    <div v-if="isLoadingMore" class="load-more load-more--loading">
+      <span class="load-more-spinner">⋯</span>
     </div>
 
-    <transition-group name="slide-up">
-      <ChatMessage
-        v-for="msg in chatStore.messages"
-        :key="msg.id"
-        :message="msg"
-      />
-    </transition-group>
+    <!-- 虚拟列表（消息数 > 0 时渲染） -->
+    <div
+      v-if="chatStore.messages.length > 0"
+      :style="{
+        height: `${virtualizer.getTotalSize()}px`,
+        position: 'relative',
+        width: '100%',
+      }"
+    >
+      <div
+        v-for="vRow in virtualizer.getVirtualItems()"
+        :key="String(vRow.key)"
+        :data-index="vRow.index"
+        :ref="(el: any) => { if (el) virtualizer.measureElement(el) }"
+        :style="{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          transform: `translateY(${vRow.start}px)`,
+        }"
+      >
+        <ChatMessage :message="chatStore.messages[vRow.index]" />
+      </div>
+    </div>
 
     <!-- 流式消息 -->
     <div v-if="streamState.isStreaming" class="streaming-message">
-      <!-- DeepSeek 推理过程（推理结束前实时流式，结束后可折叠） -->
       <ReasoningBlock
         :content="streamState.reasoning"
         :is-streaming="!streamState.reasoningComplete"
       />
-      <!-- 流式内容 -->
       <div class="streaming-content">{{ streamState.streamingContent }}</div>
       <StreamingCursor v-if="streamState.streamingContent" />
     </div>
@@ -42,6 +60,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useChatStore } from '@/modules/chat/stores/chat'
 import { useConversationStore } from '@/shared/stores/conversation'
 import ChatMessage from '@/modules/chat/components/ChatMessage.vue'
@@ -51,42 +70,68 @@ import StreamingCursor from '@/modules/chat/components/StreamingCursor.vue'
 const chatStore = useChatStore()
 const convStore = useConversationStore()
 const listRef = ref<HTMLElement>()
-const loadingMore = ref(false)
+const isLoadingMore = ref(false)
+const prevVirtualHeight = ref(0)
 
 /** 当前活跃对话的流式状态 */
 const streamState = computed(() => chatStore.activeStreamState)
 
-/** 滚动到顶部时加载更多历史消息 */
+/** 虚拟滚动实例 */
+// 使用 getter 访问 chatStore.messages.length，Vue 响应式自动追踪变化
+const virtualizer = useVirtualizer({
+  get count() { return chatStore.messages.length },
+  getScrollElement: () => listRef.value || null,
+  estimateSize: () => 80,
+  getItemKey: (index: number) => chatStore.messages[index]?.id || index,
+  overscan: 5,
+  measureElement: (el: Element | null) => el?.getBoundingClientRect().height || 80,
+  followOnAppend: true,
+})
+
+/** 加载更多历史消息 */
+async function loadMore() {
+  if (isLoadingMore.value || !convStore.hasMoreMessages || !listRef.value) return
+  isLoadingMore.value = true
+  prevVirtualHeight.value = virtualizer.value.getTotalSize()
+  await convStore.loadMoreMessages()
+  await nextTick()
+  // 保持滚动位置：新内容在顶部，用户看到的区域不变
+  if (listRef.value) {
+    listRef.value.scrollTop += virtualizer.value.getTotalSize() - prevVirtualHeight.value
+  }
+  isLoadingMore.value = false
+}
+
+/** 滚动到顶部时自动加载更多 */
 async function onScroll() {
-  if (loadingMore.value || !convStore.hasMoreMessages || !listRef.value) return
+  if (isLoadingMore.value || !convStore.hasMoreMessages || !listRef.value) return
   if (listRef.value.scrollTop <= 60) {
-    loadingMore.value = true
-    const prevHeight = listRef.value.scrollHeight
-    await convStore.loadMoreMessages()
-    await nextTick()
-    // 保持滚动位置：新内容在顶部，用户看到的区域不变
-    if (listRef.value) {
-      listRef.value.scrollTop = listRef.value.scrollHeight - prevHeight
-    }
-    loadingMore.value = false
+    await loadMore()
   }
 }
 
 /** 自动滚动到底部 */
 function scrollToBottom() {
-  nextTick(() => {
-    if (listRef.value) {
-      listRef.value.scrollTop = listRef.value.scrollHeight
-    }
-  })
+  const count = chatStore.messages.length
+  if (count > 0) {
+    virtualizer.value.scrollToIndex(count - 1, { align: 'end', behavior: 'auto' })
+  }
 }
 
-// 监听消息数量变化，自动滚动
-watch(() => chatStore.messages.length, scrollToBottom)
+// 监听消息数量变化，自动滚动（排除加载更多场景）
+watch(() => chatStore.messages.length, () => {
+  if (!isLoadingMore.value) {
+    nextTick(scrollToBottom)
+  }
+})
 
 // 监听流式内容变化，自动滚动
-watch(() => streamState.value.streamingContent, scrollToBottom)
-watch(() => streamState.value.currentThinkingSteps.length, scrollToBottom)
+watch(() => streamState.value.streamingContent, () => {
+  virtualizer.value.scrollToIndex(chatStore.messages.length, { align: 'end', behavior: 'auto' })
+})
+watch(() => streamState.value.currentThinkingSteps.length, () => {
+  virtualizer.value.scrollToIndex(chatStore.messages.length, { align: 'end', behavior: 'auto' })
+})
 </script>
 
 <style scoped>
@@ -94,8 +139,12 @@ watch(() => streamState.value.currentThinkingSteps.length, scrollToBottom)
   flex: 1;
   overflow-y: auto;
   padding: 48px 24px 24px;
-  display: flex;
-  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .message-list {
+    padding: 24px 12px 16px;
+  }
 }
 
 .streaming-message {
@@ -106,6 +155,12 @@ watch(() => streamState.value.currentThinkingSteps.length, scrollToBottom)
   max-width: 768px;
   width: 100%;
   margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .streaming-message {
+    padding: 0 16px;
+  }
 }
 
 .streaming-content {
@@ -123,12 +178,18 @@ watch(() => streamState.value.currentThinkingSteps.length, scrollToBottom)
   padding: 8px 48px;
 }
 
+@media (max-width: 768px) {
+  .error-banner {
+    padding: 8px 16px;
+  }
+}
+
 .empty-state {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: calc(100vh - 200px);
   color: var(--text-muted);
   gap: 12px;
 }

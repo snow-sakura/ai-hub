@@ -55,6 +55,7 @@
         class="send-btn"
         :disabled="!canSend"
         :type="canSend ? 'primary' : 'default'"
+        aria-label="发送消息"
         @click="$emit('send')"
       >
         <template #icon>
@@ -92,8 +93,21 @@ defineEmits<{
   margin-top: 8px;
 }
 
+@media (max-width: 480px) {
+  .composer-actions {
+    flex-wrap: wrap;
+    gap: 6px 4px;
+  }
+}
+
 .spacer {
   flex: 1;
+}
+
+@media (max-width: 480px) {
+  .spacer {
+    display: none;
+  }
 }
 
 .tool-group {
@@ -120,6 +134,16 @@ defineEmits<{
   font-size: 12px;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .tool-btn-text {
+    display: none;
+  }
+
+  .tool-btn {
+    padding: 0 8px;
+  }
 }
 
 .toggle-btn {
@@ -157,10 +181,26 @@ defineEmits<{
   white-space: nowrap;
 }
 
+@media (max-width: 480px) {
+  .toggle-label {
+    display: none;
+  }
+
+  .toggle-btn {
+    padding: 4px 7px;
+  }
+}
+
 .right-group {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+@media (max-width: 480px) {
+  .right-group {
+    margin-left: auto;
+  }
 }
 
 .send-btn {

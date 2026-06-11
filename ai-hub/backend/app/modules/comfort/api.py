@@ -19,11 +19,6 @@ from app.modules.comfort.service import ComfortService
 router = APIRouter()
 
 
-async def _get_service() -> ComfortService:
-  db = await get_db()
-  return ComfortService(db)
-
-
 # ─── 场景 ─────────────────────────────────────────
 
 @router.get("/scenes")

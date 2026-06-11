@@ -14,7 +14,7 @@ export default defineConfig({
   plugins: [
     vue(),
     AutoImport({
-      imports: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
+      imports: ['vue', 'vue-router', 'pinia'],
       dts: 'src/auto-imports.d.ts',
     }),
     Components({
@@ -62,6 +62,11 @@ export default defineConfig({
             // VueUse 工具库
             if (id.includes('@vueuse')) {
               return 'vendor-utils'
+            }
+
+            // TanStack Virtual（虚拟滚动）
+            if (id.includes('@tanstack')) {
+              return 'vendor-virtual'
             }
           }
           // 业务代码使用默认分包策略

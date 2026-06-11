@@ -197,32 +197,18 @@ class ComfortRepo:
     intensity: float,
     comfort_score: float | None = None,
   ) -> None:
-    """插入或更新情绪统计（按日期+情绪类型聚合）"""
-    stat_id = str(uuid.uuid4())
-    existing = await self.db.execute(
-      "SELECT id, avg_intensity, count FROM emotion_statistics "
-      "WHERE user_date = ? AND emotion_label = ?",
-      (user_date, emotion_label),
+    """插入或更新情绪统计（按日期+情绪类型聚合，原子操作避免竞态）"""
+    await self.db.execute(
+      "INSERT INTO emotion_statistics "
+      "(id, user_date, emotion_label, avg_intensity, count, comfort_score, created_at) "
+      "VALUES (?, ?, ?, ?, ?, ?, ?) "
+      "ON CONFLICT(user_date, emotion_label) DO UPDATE SET "
+      "  avg_intensity = (avg_intensity * count + excluded.avg_intensity) / (count + 1), "
+      "  count = count + 1, "
+      "  comfort_score = COALESCE(excluded.comfort_score, comfort_score)",
+      (str(uuid.uuid4()), user_date, emotion_label, intensity, 1, comfort_score,
+       datetime.now().isoformat()),
     )
-    row = await existing.fetchone()
-    if row:
-      old_avg = row["avg_intensity"]
-      old_count = row["count"]
-      new_count = old_count + 1
-      new_avg = (old_avg * old_count + intensity) / new_count
-      await self.db.execute(
-        "UPDATE emotion_statistics SET avg_intensity = ?, count = ?, "
-        "comfort_score = COALESCE(?, comfort_score) WHERE id = ?",
-        (new_avg, new_count, comfort_score, row["id"]),
-      )
-    else:
-      await self.db.execute(
-        "INSERT INTO emotion_statistics "
-        "(id, user_date, emotion_label, avg_intensity, count, comfort_score, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (stat_id, user_date, emotion_label, intensity, 1, comfort_score,
-         datetime.now().isoformat()),
-      )
     await self.db.commit()
 
   async def get_emotion_stats(

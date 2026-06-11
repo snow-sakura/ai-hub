@@ -1,6 +1,7 @@
 """知识库 API 端点"""
 
 from io import BytesIO
+from typing import Any
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from starlette.datastructures import UploadFile as StarletteUploadFile
 
