@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP用例录制 · AI-HUB 智能工作台</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--danger:#D4745C;--info:#5B8DEF;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;--font-mono:ui-monospace,'SF Mono','Fira Code','Consolas',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px;cursor:pointer}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+.main{margin-left:240px;flex:1}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s;height:32px}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:24px;font-weight:700;color:var(--text)}.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.15s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-light);box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:var(--border)}.btn-secondary:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid rgba(180,150,120,0.15)}.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}.btn-xs{height:24px;padding:0 8px;font-size:11px}
+.btn-rec{background:#D4745C;color:#fff}.btn-rec:hover{background:#C06048}
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:16px 20px}
+.recorder-layout{display:flex;gap:14px;align-items:flex-start}
+.recorder-main{flex:1;min-width:0}
+.recorder-side{width:320px;flex-shrink:0}
+.recording-indicator{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(212,116,92,0.08);border-radius:8px;margin-bottom:14px}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:#D4745C;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.device-selector{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.device-option{display:flex;align-items:center;gap:6px;padding:8px 14px;border:var(--border);border-radius:8px;cursor:pointer;font-size:13px;transition:all 0.15s;background:var(--card-bg)}
+.device-option:hover{border-color:var(--primary);background:var(--primary-bg)}
+.device-option.active{border-color:var(--primary);background:var(--primary-bg);color:var(--primary);font-weight:600}
+.phone-frame{width:280px;height:520px;border:3px solid #3D2E1F;border-radius:24px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;background:rgba(180,150,120,0.03);position:relative;overflow:hidden}
+.phone-frame .screen-content{text-align:center}
+.phone-notch{width:100px;height:20px;background:#3D2E1F;border-radius:0 0 12px 12px;position:absolute;top:0;left:50%;transform:translateX(-50%)}
+.phone-home-indicator{width:100px;height:4px;background:rgba(60,40,20,0.15);border-radius:2px;position:absolute;bottom:6px;left:50%;transform:translateX(-50%)}
+.steps-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto}
+.step-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;transition:all 0.15s}
+.step-item:hover{background:rgba(180,150,120,0.06)}
+.step-idx{width:18px;height:18px;border-radius:50%;background:var(--primary-bg);color:var(--primary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-action-tag{font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;flex-shrink:0}
+.step-tap{background:rgba(91,141,239,0.12);color:var(--info)}
+.step-input{background:rgba(198,123,92,0.12);color:var(--primary)}
+.step-swipe{background:rgba(212,165,116,0.12);color:#B8860B}
+.step-assert{background:rgba(123,168,125,0.12);color:var(--success)}
+.step-target{color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:10px;padding:12px 20px;box-shadow:0 8px 30px rgba(30,20,10,0.12);display:flex;align-items:center;gap:10px;font-size:13px;animation:slideIn 0.25s ease;max-width:360px}
+.toast-success{border-left:4px solid var(--success)}.toast-info{border-left:4px solid var(--info)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:900px){.recorder-layout{flex-direction:column}.recorder-side{width:100%}}
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}.sidebar-logo span,.menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}.sidebar-logo{padding:14px 0;justify-content:center}.menu-item{justify-content:center;padding:9px 0}.main{margin-left:60px}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">📱</div><span>APP 自动化</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">APP 自动化</div>
+    <a class="menu-item" href="53-APP自动化模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="24-APP仪表盘.html"><span class="icon">📊</span><span>数据看板</span></a>
+    <a class="menu-item" href="25-APP用例管理.html"><span class="icon">📋</span><span>测试用例</span></a>
+    <a class="menu-item" href="26-APP元素管理.html"><span class="icon">🔧</span><span>元素管理</span></a>
+    <a class="menu-item active" href="27-APP录制器.html"><span class="icon">⏺️</span><span>用例录制</span></a>
+    <a class="menu-item" href="28-APP测试套件.html"><span class="icon">📦</span><span>测试套件</span></a>
+    <a class="menu-item" href="29-APP执行记录.html"><span class="icon">▶️</span><span>执行记录</span></a>
+    <a class="menu-item" href="30-APP测试报告.html"><span class="icon">📈</span><span>测试报告</span></a>
+    <a class="menu-item" href="33-APP设备管理.html"><span class="icon">📱</span><span>设备管理</span></a>
+    <a class="menu-item" href="31-APP定时任务.html"><span class="icon">⏰</span><span>定时任务</span></a>
+    <a class="menu-item" href="34-APP通知.html"><span class="icon">🔔</span><span>通知配置</span></a>
+    <a class="menu-item" href="32-APP环境管理.html"><span class="icon">🌐</span><span>测试环境</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">APP 自动化 / <span>用例录制</span></div>
+    <div class="topbar-right"><button class="topbar-btn" onclick="showToast('页面已刷新','info')" title="刷新">⟳</button><button class="topbar-btn" onclick="showToast('暂无新通知','info')" title="通知">🔔</button><div class="avatar-sm">张</div></div>
+  </header>
+  <div class="content">
+    <div class="page-header fade-in">
+      <div><h1 class="page-title">🎥 APP 用例录制</h1><p class="page-sub">连接移动设备或模拟器，录制操作并自动生成测试用例</p></div>
+      <div class="header-actions"><button class="btn btn-secondary" onclick="showToast('已导入脚本','success')">📥 导入脚本</button></div>
+    </div>
+    <div class="recorder-layout fade-in">
+      <div class="recorder-main">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <span>📱 移动设备录制</span>
+            <div>
+              <select style="height:28px;border:var(--border);border-radius:4px;padding:0 8px;font-size:12px;outline:none;background:var(--card-bg)"><option>Appium</option><option>XCUITest</option><option>ESpresso</option></select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="device-selector">
+              <div class="device-option active">📱 iPhone 15 · iOS 17</div>
+              <div class="device-option">🤖 Pixel 7 · Android 14</div>
+              <div class="device-option">📲 Galaxy S23 · Android 13</div>
+            </div>
+            <div class="recording-indicator">
+              <span class="rec-dot"></span>
+              <span id="recStatus" style="font-size:13px;color:var(--danger);font-weight:500">录制已暂停</span>
+              <span style="font-size:12px;color:var(--text-muted);margin-left:auto">00:00</span>
+            </div>
+            <div class="phone-frame">
+              <div class="phone-notch"></div>
+              <div class="screen-content">
+                <div style="font-size:48px;margin-bottom:12px">📱</div>
+                <p>点击「开始录制」后在设备上操作</p>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:4px">所有操作将被自动记录为测试步骤</p>
+              </div>
+              <div class="phone-home-indicator"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+              <button class="btn btn-rec" id="recBtn" onclick="toggleRecording()" style="font-weight:600">🔴 开始录制</button>
+              <button class="btn btn-secondary" onclick="showToast('已暂停','info')">⏸️ 暂停</button>
+              <button class="btn btn-ghost" onclick="if(confirm('确认停止?'))showToast('录制已停止','info')">⏹️ 停止</button>
+              <button class="btn btn-ghost" onclick="showToast('已截图','info')">📸 截图</button>
+              <button class="btn btn-primary" style="margin-left:auto" onclick="showToast('用例已保存','success')">💾 保存为用例</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="recorder-side">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">📋 录制步骤</div>
+          <div class="card-body">
+            <div class="steps-list">
+              <div class="step-item"><span class="step-idx">1</span><span class="step-action-tag step-tap">点击</span><span class="step-target">登录按钮 (content-desc="btn_login")</span></div>
+              <div class="step-item"><span class="step-idx">2</span><span class="step-action-tag step-input">输入</span><span class="step-target">用户名输入框 → admin</span></div>
+              <div class="step-item"><span class="step-idx">3</span><span class="step-action-tag step-input">输入</span><span class="step-target">密码输入框 → ******</span></div>
+              <div class="step-item"><span class="step-idx">4</span><span class="step-action-tag step-tap">点击</span><span class="step-target">登录按钮 (content-desc="btn_login")</span></div>
+              <div class="step-item"><span class="step-idx">5</span><span class="step-action-tag step-swipe">滑动</span><span class="step-target">首页列表 → 向上滑</span></div>
+              <div class="step-item"><span class="step-idx">6</span><span class="step-action-tag step-assert">断言</span><span class="step-target">页面包含「欢迎回来」文本</span></div>
+            </div>
+            <div style="margin-top:10px;padding-top:10px;border-top:var(--border);display:flex;gap:6px">
+              <button class="btn btn-ghost btn-xs" onclick="showToast('上移','info')">↑</button>
+              <button class="btn btn-ghost btn-xs" onclick="showToast('下移','info')">↓</button>
+              <button class="btn btn-ghost btn-xs" onclick="showToast('已删除','info')">🗑️</button>
+              <button class="btn btn-ghost btn-xs" onclick="showToast('AI 优化中...','info')" style="margin-left:auto">🤖 AI 优化</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var isRecording = false;
+function toggleRecording() {
+  isRecording = !isRecording;
+  var btn = document.getElementById('recBtn');
+  var status = document.getElementById('recStatus');
+  if (isRecording) {
+    btn.textContent = '⏹️ 停止录制';
+    btn.className = 'btn btn-ghost';
+    status.textContent = '录制中...';
+    status.style.color = 'var(--danger)';
+    showToast('录制已开始，请在设备上操作', 'info');
+  } else {
+    btn.textContent = '🔴 开始录制';
+    btn.className = 'btn btn-rec';
+    status.textContent = '录制已暂停';
+    showToast('录制已停止', 'info');
+  }
+}
+function showToast(msg,type){type=type||'success';var t=document.createElement('div');t.className='toast toast-'+type;t.innerHTML=(type==='success'?'✅ ':'ℹ️ ')+msg;document.body.appendChild(t);setTimeout(function(){t.remove()},2500);}
+</script>
+</body>
+</html>

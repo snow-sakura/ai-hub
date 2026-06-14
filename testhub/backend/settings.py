@@ -6,10 +6,6 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-def parse_csv(value):
-    return [item.strip() for item in value.split(',') if item.strip()]
-
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-your-secret-key-here')
 
 DEBUG = config('DEBUG', default=True, cast=bool)
@@ -19,7 +15,7 @@ if DEBUG:
     ALLOWED_HOSTS = ['*']
 else:
     ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1',
-                           cast=parse_csv)
+                           cast=lambda v: [s.strip() for s in v.split(',')])
 
 DJANGO_APPS = [
     'simpleui',
@@ -42,17 +38,6 @@ THIRD_PARTY_APPS = [
     'channels',
 ]
 
-ANALYTICS_ENABLED = config('ANALYTICS_ENABLED', default=False, cast=bool)
-ANALYTICS_MAX_BATCH_SIZE = config('ANALYTICS_MAX_BATCH_SIZE', default=20, cast=int)
-REGISTRATION_STATS_ENABLED = config('REGISTRATION_STATS_ENABLED', default=False, cast=bool)
-REGISTRATION_STATS_VISIBLE_USERNAMES = config(
-    'REGISTRATION_STATS_VISIBLE_USERNAMES',
-    default='',
-    cast=parse_csv,
-)
-APP_USE_HTTPS = config('APP_USE_HTTPS', default=not DEBUG, cast=bool)
-TRUST_PROXY_SSL_HEADER = config('TRUST_PROXY_SSL_HEADER', default=APP_USE_HTTPS, cast=bool)
-
 LOCAL_APPS = [
     'apps.users',
     'apps.projects',
@@ -70,9 +55,6 @@ LOCAL_APPS = [
     'apps.core',
     'apps.data_factory',
 ]
-
-if ANALYTICS_ENABLED or REGISTRATION_STATS_ENABLED:
-    LOCAL_APPS.append('apps.analytics')
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -93,7 +75,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -221,20 +203,20 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CSRF / Session Settings - 支持通过 .env 控制 HTTP/HTTPS
-CSRF_USE_SESSIONS = config('CSRF_USE_SESSIONS', default=False, cast=bool)
-CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=APP_USE_HTTPS, cast=bool)
-SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=APP_USE_HTTPS, cast=bool)
-CSRF_COOKIE_HTTPONLY = config('CSRF_COOKIE_HTTPONLY', default=not DEBUG, cast=bool)
-CSRF_COOKIE_SAMESITE = config('CSRF_COOKIE_SAMESITE', default='Lax')
-SESSION_COOKIE_SAMESITE = config('SESSION_COOKIE_SAMESITE', default='Lax')
-
-if TRUST_PROXY_SSL_HEADER:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# CSRF Settings - 根据DEBUG模式设置
+if DEBUG:
+    CSRF_COOKIE_SECURE = False
+    CSRF_USE_SESSIONS = False
+    CSRF_COOKIE_HTTPONLY = False
+    CSRF_COOKIE_SAMESITE = 'Lax'
+else:
+    CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_SAMESITE = 'Strict'
 
 # CORS Settings
 cors_origins_str = config('CORS_ALLOWED_ORIGINS', default='')
-parsed_cors_origins = parse_csv(cors_origins_str)
+parsed_cors_origins = [s.strip() for s in cors_origins_str.split(',') if s.strip()]
 
 if DEBUG:
     # 开发环境默认允许本地地址，同时合并环境变量里的配置
@@ -286,11 +268,10 @@ else:
     CORS_EXPOSE_HEADERS = ['Content-Type', 'Cache-Control']
 
 # CSRF Settings
-CSRF_TRUSTED_ORIGINS = config(
-    'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000',
-    cast=parse_csv,
-)
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
 # Spectacular Settings
 SPECTACULAR_SETTINGS = {
@@ -300,12 +281,9 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
-# Redis URL (used across celery, channels, and SMS verification)
-REDIS_URL = config('REDIS_URL', default='redis://:1234@127.0.0.1:6379/0')
-
 # Celery Configuration
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_BROKER_URL = config('REDIS_URL', default='redis://:1234@127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://:1234@127.0.0.1:6379/0')
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # Channels Configuration
@@ -313,16 +291,10 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [REDIS_URL],
+            'hosts': [config('REDIS_URL', default='redis://:1234@127.0.0.1:6379/0')],
         },
     },
 }
-
-# SMS Configuration (阿里云短信)
-SMS_ACCESS_KEY_ID = config('SMS_ACCESS_KEY_ID', default='')
-SMS_ACCESS_KEY_SECRET = config('SMS_ACCESS_KEY_SECRET', default='')
-SMS_SIGN_NAME = config('SMS_SIGN_NAME', default='杭州智穹云启科技')
-SMS_REGISTER_TEMPLATE_CODE = config('SMS_REGISTER_TEMPLATE_CODE', default='SMS_133001115')
 
 # Cache Configuration
 CACHES = {
@@ -409,11 +381,6 @@ LOGGING = {
             'handlers': ['file', 'error_file', 'console'],
             'level': 'INFO',
             'propagate': True,
-        },
-        'apps.analytics': {
-            'handlers': ['file', 'error_file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
         },
     },
     'root': {

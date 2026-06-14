@@ -108,6 +108,8 @@ class ProjectVersion:
   name: str
   description: str = ""
   status: str = "active"
+  due_date: str = ""
+  pass_rate: float = 0.0
   created_at: str = ""
   updated_at: str = ""
 
@@ -131,3 +133,52 @@ class TestingConfig:
   category: str = "model"
   description: str = ""
   updated_at: str = ""
+
+
+@dataclass
+class Review:
+  """用例评审实体"""
+  id: str
+  project_id: str | None = None
+  title: str = ""
+  description: str = ""
+  priority: str = "P1"
+  status: str = "pending"
+  progress: int = 0
+  due_date: str = ""
+  creator: str = ""
+  created_at: str = ""
+  updated_at: str = ""
+
+
+@dataclass
+class ReviewCase:
+  """评审-用例关联实体"""
+  id: str
+  review_id: str
+  case_id: str
+  case_title: str = ""
+  comment: str = ""
+  status: str = "pending"
+  created_at: str = ""
+
+
+@dataclass
+class AITesterSession:
+  """AI 评测师会话实体"""
+  id: str
+  name: str = ""
+  model: str = ""
+  message_count: int = 0
+  created_at: str = ""
+  updated_at: str = ""
+
+
+@dataclass
+class AITesterMessage:
+  """AI 评测师消息实体"""
+  id: str
+  session_id: str
+  role: str = ""
+  content: str = ""
+  created_at: str = ""

@@ -2,7 +2,7 @@
 
 from typing import AsyncGenerator
 
-from app.shared.core.database import MySQLConnection, get_db
+from app.common.core.database import MySQLConnection, get_db
 
 
 async def get_db_dep() -> AsyncGenerator[MySQLConnection, None]:

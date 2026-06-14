@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI元素管理 - AI-HUB</title>
+<style>
+  :root {
+    --primary:#C67B5C;--primary-light:#D49472;--primary-dark:#A86545;
+    --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;
+    --sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;
+    --text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);
+    --radius:8px;--radius-lg:12px;
+    --font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+    --shadow:0 1px 3px rgba(60,45,30,0.06);
+    --shadow-md:0 4px 12px rgba(60,45,30,0.08);
+    --sidebar-width:220px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.6;}
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.25);border-radius:10px;}
+
+  .sidebar{width:var(--sidebar-width);background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+  .sidebar-logo{padding:20px 18px 14px;border-bottom:var(--border);display:flex;align-items:center;gap:10px;}
+  .sidebar-logo svg{flex-shrink:0;}
+  .sidebar-logo span{font-size:16px;font-weight:600;color:var(--text);letter-spacing:0.5px;}
+  .sidebar-logo small{display:block;font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:1px;}
+  .sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+  .nav-section-title{font-size:11px;color:var(--text-muted);padding:8px 12px 4px;letter-spacing:0.8px;font-weight:500;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);color:var(--text-secondary);text-decoration:none;font-size:13px;cursor:pointer;transition:all 0.15s;margin-bottom:1px;}
+  .nav-item:hover{background:rgba(200,170,140,0.15);color:var(--text);}
+  .nav-item.active{background:var(--primary);color:#fff;font-weight:500;}
+  .nav-item svg{flex-shrink:0;opacity:0.7;}
+  .nav-item.active svg{opacity:1;}
+
+  .main{margin-left:var(--sidebar-width);flex:1;min-height:100vh;}
+  .header{height:56px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+  .header-left .breadcrumb{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+  .header-left .breadcrumb span{color:var(--text-secondary);}
+  .header-right{display:flex;align-items:center;gap:16px;}
+  .time{font-size:12px;color:var(--text-muted);}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;}
+
+  .content{padding:24px 28px;display:flex;gap:20px;}
+  .page-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .page-toolbar h2{font-size:18px;font-weight:600;}
+  .page-toolbar-actions{display:flex;gap:10px;align-items:center;}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;text-decoration:none;font-family:var(--font);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+  .btn-outline:hover{border-color:var(--primary-light);color:var(--text);}
+  .btn-capture{background:#8B7EBD;color:#fff;}
+  .btn-capture:hover{background:#7A6DAC;}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+  .btn-danger{background:transparent;border:1px solid rgba(198,123,92,0.3);color:var(--primary);}
+  .btn-danger:hover{background:rgba(198,123,92,0.06);}
+  .search-box{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:var(--border);border-radius:var(--radius);padding:0 12px;}
+  .search-box input{border:none;background:transparent;padding:8px 0;font-size:13px;outline:none;color:var(--text);width:200px;font-family:var(--font);}
+  .search-box input::placeholder{color:var(--text-muted);}
+
+  /* ===== 左侧树 ===== */
+  .tree-panel{width:240px;flex-shrink:0;background:var(--card-bg);border:var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 110px);}
+  .tree-panel .panel-header{padding:12px 14px;border-bottom:var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .tree-panel .panel-body{padding:6px;overflow-y:auto;flex:1;}
+  .tree-item{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:var(--radius);font-size:13px;cursor:pointer;color:var(--text-secondary);transition:all 0.1s;}
+  .tree-item:hover{background:rgba(200,170,140,0.1);color:var(--text);}
+  .tree-item.active{background:rgba(198,123,92,0.1);color:var(--primary);font-weight:500;}
+  .tree-item .tree-toggle{width:16px;height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.15s;flex-shrink:0;}
+  .tree-item .tree-toggle.open{transform:rotate(90deg);}
+  .tree-children{padding-left:20px;}
+  .tree-item .tree-count{font-size:11px;color:var(--text-muted);margin-left:auto;}
+
+  /* ===== 右侧内容 ===== */
+  .right-panel{flex:1;min-width:0;}
+  .table-wrap{background:var(--card-bg);border:var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:10px 14px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);background:var(--bg);font-size:12px;}
+  td{padding:10px 14px;border-bottom:var(--border);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:nth-child(even) td{background:rgba(246,240,231,0.3);}
+  .loc-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:500;}
+  .loc-xpath{background:rgba(198,123,92,0.08);color:var(--primary);}
+  .loc-css{background:rgba(139,126,189,0.08);color:#8B7EBD;}
+  .loc-id{background:rgba(123,166,124,0.08);color:#7BA67C;}
+  .loc-name{background:rgba(212,165,116,0.1);color:var(--accent);}
+  .loc-linktext{background:rgba(100,150,180,0.08);color:#4a8ba8;}
+  .op-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--text-muted);transition:all 0.1s;font-family:var(--font);}
+  .op-btn:hover{background:rgba(200,170,140,0.12);color:var(--text);}
+  .op-btn.edit:hover{color:var(--primary);}
+  .op-btn.del:hover{color:#c0392b;}
+
+  /* ===== 弹窗 ===== */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(60,45,30,0.35);z-index:200;align-items:center;justify-content:center;animation:fadeIn 0.15s;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--card-bg);border-radius:var(--radius-lg);width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 12px 40px rgba(60,45,30,0.2);animation:slideUp 0.2s;}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border);}
+  .modal-header h3{font-size:15px;font-weight:600;}
+  .modal-close{width:28px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+  .modal-close:hover{background:rgba(200,170,140,0.12);color:var(--text);}
+  .modal-body{padding:20px;}
+  .form-group{margin-bottom:16px;}
+  .form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;}
+  .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;border:var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text);outline:none;font-family:var(--font);transition:border-color 0.15s;}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary-light);}
+  .form-group textarea{resize:vertical;min-height:60px;}
+  .modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:var(--border);}
+  .btn-cancel{background:transparent;border:var(--border);color:var(--text-secondary);}
+  .btn-cancel:hover{background:rgba(200,170,140,0.06);}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+  @media(max-width:1024px){.content{flex-direction:column;}.tree-panel{width:100%;max-height:200px;}}
+  @media(max-width:768px){
+    .sidebar{width:56px;}
+    .sidebar-logo span,.sidebar-logo small,.nav-item span,.nav-section-title{display:none;}
+    .sidebar-logo{padding:14px;justify-content:center;}
+    .nav-item{justify-content:center;padding:10px;}
+    .main{margin-left:56px;}
+    .page-toolbar{flex-direction:column;align-items:flex-start;gap:10px;}
+    table{font-size:12px;}
+    th,td{padding:8px 10px;}
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="6" fill="#C67B5C"/><path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><span>AI-HUB</span><small>测试平台</small></div></div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">导航</div>
+    <a class="nav-item" href="../00-首页仪表盘/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h3l1.5-6 3 12L11 4h3"/></svg><span>首页仪表盘</span></a>
+    <a class="nav-item" href="../01-AI智能测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg><span>AI智能测试</span></a>
+    <a class="nav-item" href="../02-API接口测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4L1 8l3 4M12 4l3 4-3 4M9 1L7 15"/></svg><span>API接口测试</span></a>
+    <a class="nav-item active" href="数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>UI自动化测试</span></a>
+    <a class="nav-item" href="../04-APP自动化测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 12h6"/></svg><span>APP自动化测试</span></a>
+    <a class="nav-item" href="../05-测试管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h2l1-3 2 6 2-5 1 2h2"/></svg><span>测试管理</span></a>
+    <a class="nav-item" href="../06-配置中心/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v1M8 14v1M1 8h1M14 8h1M3.05 3.05l.7.7M12.25 12.25l.7.7M3.05 12.95l.7-.7M12.25 3.75l.7-.7"/></svg><span>配置中心</span></a>
+    <a class="nav-item" href="../07-AI聊天室/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H5l-4 3V3z"/></svg><span>AI聊天室</span></a>
+    <a class="nav-item" href="../08-知识库/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 3v10M2 3a3 3 0 013-3h9v10H5a3 3 0 00-3 3M14 3v10"/></svg><span>知识库</span></a>
+    <a class="nav-item" href="../09-系统管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M6 6h4M6 9h4"/></svg><span>系统管理</span></a>
+  </nav>
+</aside>
+
+<div class="main">
+  <header class="header">
+    <div class="header-left"><div class="breadcrumb">AI-HUB / <span>UI自动化测试</span> / <span>元素管理</span></div></div>
+    <div class="header-right"><span class="time" id="currentTime"></span><div class="avatar">管</div></div>
+  </header>
+
+  <div class="content">
+    <!-- 左侧项目+页面树 -->
+    <div class="tree-panel">
+      <div class="panel-header"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 3h5l1 1.5H12v7H2V3z"/></svg>项目与页面结构</div>
+      <div class="panel-body">
+        <div class="tree-item active"><div class="tree-toggle open" onclick="toggleBranch(this)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 3h5l1 1.5H12v7H2V3z"/></svg>官网首页 <span class="tree-count">42</span></div>
+        <div class="tree-children">
+          <div class="tree-item active"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>导航栏 <span class="tree-count">12</span></div>
+          <div class="tree-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>Banner区域 <span class="tree-count">8</span></div>
+          <div class="tree-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>产品展示 <span class="tree-count">14</span></div>
+          <div class="tree-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>页脚 <span class="tree-count">8</span></div>
+        </div>
+        <div class="tree-item"><div class="tree-toggle" onclick="toggleBranch(this)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 3h5l1 1.5H12v7H2V3z"/></svg>用户中心 <span class="tree-count">68</span></div>
+        <div class="tree-children" style="display:none">
+          <div class="tree-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>登录页面 <span class="tree-count">15</span></div>
+          <div class="tree-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>注册页面 <span class="tree-count">20</span></div>
+          <div class="tree-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>个人信息 <span class="tree-count">33</span></div>
+        </div>
+        <div class="tree-item"><div class="tree-toggle" onclick="toggleBranch(this)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 3h5l1 1.5H12v7H2V3z"/></svg>商品管理后台 <span class="tree-count">95</span></div>
+        <div class="tree-item"><div class="tree-toggle" onclick="toggleBranch(this)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 3h5l1 1.5H12v7H2V3z"/></svg>购物车流程 <span class="tree-count">38</span></div>
+        <div class="tree-item"><div class="tree-toggle" onclick="toggleBranch(this)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 3h5l1 1.5H12v7H2V3z"/></svg>订单系统 <span class="tree-count">56</span></div>
+        <div class="tree-item"><div class="tree-toggle" onclick="toggleBranch(this)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 3h5l1 1.5H12v7H2V3z"/></svg>搜索功能 <span class="tree-count">69</span></div>
+      </div>
+    </div>
+
+    <!-- 右侧元素列表 -->
+    <div class="right-panel">
+      <div class="page-toolbar">
+        <h2>元素列表</h2>
+        <div class="page-toolbar-actions">
+          <div class="search-box"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--text-muted)" stroke-width="1.4" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5L13 13"/></svg><input type="text" placeholder="搜索元素名称或定位值..." id="searchInput" oninput="filterElements()"></div>
+          <button class="btn btn-capture" onclick="alert('捕获元素功能（模拟）：启动元素捕获器...')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5"/><path d="M7 4v6M4 7h6"/></svg>捕获元素</button>
+          <button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>新建元素</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="elementTable">
+          <thead><tr><th>元素名称</th><th>定位方式</th><th>定位值</th><th>所属页面</th><th>描述</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>logo链接</td><td><span class="loc-badge loc-xpath">XPath</span></td><td style="font-family:monospace;font-size:12px;">//div[@class='header']/a[1]</td><td>导航栏</td><td>网站Logo链接</td><td><button class="op-btn edit" onclick="openModal(true)">编辑</button><button class="op-btn del" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+            <tr><td>搜索输入框</td><td><span class="loc-badge loc-css">CSS</span></td><td style="font-family:monospace;font-size:12px;">#search-input</td><td>导航栏</td><td>全局搜索输入框</td><td><button class="op-btn edit" onclick="openModal(true)">编辑</button><button class="op-btn del" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+            <tr><td>登录按钮</td><td><span class="loc-badge loc-id">ID</span></td><td style="font-family:monospace;font-size:12px;">loginBtn</td><td>导航栏</td><td>登录触发按钮</td><td><button class="op-btn edit" onclick="openModal(true)">编辑</button><button class="op-btn del" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+            <tr><td>用户名输入框</td><td><span class="loc-badge loc-name">Name</span></td><td style="font-family:monospace;font-size:12px;">username</td><td>登录页面</td><td>用户名输入框</td><td><button class="op-btn edit" onclick="openModal(true)">编辑</button><button class="op-btn del" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+            <tr><td>密码输入框</td><td><span class="loc-badge loc-xpath">XPath</span></td><td style="font-family:monospace;font-size:12px;">//input[@type='password']</td><td>登录页面</td><td>密码输入框</td><td><button class="op-btn edit" onclick="openModal(true)">编辑</button><button class="op-btn del" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+            <tr><td>提交登录按钮</td><td><span class="loc-badge loc-css">CSS</span></td><td style="font-family:monospace;font-size:12px;">button[type='submit']</td><td>登录页面</td><td>登录表单提交按钮</td><td><button class="op-btn edit" onclick="openModal(true)">编辑</button><button class="op-btn del" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+            <tr><td>注册链接</td><td><span class="loc-badge loc-linktext">LinkText</span></td><td style="font-family:monospace;font-size:12px;">立即注册</td><td>登录页面</td><td>跳转注册页面链接</td><td><button class="op-btn edit" onclick="openModal(true)">编辑</button><button class="op-btn del" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+            <tr><td>购物车图标</td><td><span class="loc-badge loc-id">ID</span></td><td style="font-family:monospace;font-size:12px;">cartIcon</td><td>导航栏</td><td>购物车入口图标</td><td><button class="op-btn edit" onclick="openModal(true)">编辑</button><button class="op-btn del" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新建/编辑元素弹窗 -->
+<div class="modal-overlay" id="elementModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">新建元素</h3>
+      <button class="modal-close" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>元素名称</label><input type="text" placeholder="输入元素名称" id="elemName"></div>
+      <div class="form-group"><label>所属项目</label><select id="elemProject"><option>官网首页</option><option>用户中心</option><option>商品管理后台</option></select></div>
+      <div class="form-group"><label>所属页面</label><select id="elemPage"><option>导航栏</option><option>Banner区域</option><option>产品展示</option><option>登录页面</option></select></div>
+      <div class="form-group"><label>定位方式</label><select id="elemLocType" onchange="toggleLocExample()"><option value="xpath">XPath</option><option value="css">CSS Selector</option><option value="id">ID</option><option value="name">Name</option><option value="linktext">LinkText</option></select></div>
+      <div class="form-group"><label>定位值</label><input type="text" placeholder="输入定位表达式" id="elemLocValue"><div style="font-size:11px;color:var(--text-muted);margin-top:3px;" id="locExample">示例: //div[@class='header']/a[1]</div></div>
+      <div class="form-group"><label>描述</label><textarea placeholder="描述该元素的作用"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="alert('元素已保存（模拟）');closeModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateTime(){const n=new Date();document.getElementById('currentTime').textContent=n.toLocaleString('zh-CN',{hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+  updateTime();setInterval(updateTime,10000);
+
+  function toggleBranch(el){const c=el.closest('.tree-item').nextElementSibling;if(c&&c.classList.contains('tree-children')){c.style.display=c.style.display==='none'?'':'none';el.classList.toggle('open');}}
+  function openModal(edit){document.getElementById('modalTitle').textContent=edit?'编辑元素':'新建元素';document.getElementById('elementModal').classList.add('show');}
+  function closeModal(){document.getElementById('elementModal').classList.remove('show');}
+  document.getElementById('elementModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+  function toggleLocExample(){
+    const v=document.getElementById('elemLocType').value;
+    const m={'xpath':'示例: //div[@class=\\'header\\']/a[1]','css':'示例: #search-input','id':'示例: loginBtn','name':'示例: username','linktext':'示例: 立即注册'};
+    document.getElementById('locExample').textContent=m[v]||'';
+  }
+
+  function filterElements(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    const rows=document.querySelectorAll('#elementTable tbody tr');
+    rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'';});
+  }
+</script>
+</body>
+</html>

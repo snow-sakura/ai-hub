@@ -1,14 +1,25 @@
 <template>
-  <n-config-provider :theme-overrides="themeOverrides" :locale="zhCN">
+  <n-config-provider :theme-overrides="themeOverrides" :locale="naiveLocale">
     <n-global-style />
     <n-message-provider>
       <n-dialog-provider>
         <ErrorBoundary>
-          <router-view v-slot="{ Component }">
-            <transition name="page" mode="out-in">
-              <component :is="Component" />
-            </transition>
-          </router-view>
+          <!-- 使用 AppLayout 的页面 -->
+          <AppLayout v-if="useAppLayout">
+            <router-view v-slot="{ Component }">
+              <transition name="page" mode="out-in">
+                <component :is="Component" />
+              </transition>
+            </router-view>
+          </AppLayout>
+          <!-- 独立布局的页面（聊天室、哄哄模拟器等） -->
+          <template v-else>
+            <router-view v-slot="{ Component }">
+              <transition name="page" mode="out-in">
+                <component :is="Component" />
+              </transition>
+            </router-view>
+          </template>
         </ErrorBoundary>
       </n-dialog-provider>
     </n-message-provider>
@@ -16,8 +27,35 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useI18n } from '@/locales'
 import ErrorBoundary from '@/shared/components/common/ErrorBoundary.vue'
-import { zhCN, type GlobalThemeOverrides } from 'naive-ui'
+import AppLayout from '@/shared/components/layout/AppLayout.vue'
+import { zhCN, enUS, type GlobalThemeOverrides, type NLocale } from 'naive-ui'
+
+const route = useRoute()
+const { locale } = useI18n()
+
+/** Naive UI 语言跟随 i18n 切换 */
+const naiveLocale = computed<NLocale>(() => {
+  return locale.value === 'en-US' ? enUS : zhCN
+})
+
+/** 需要全局 AppLayout 包装的路由前缀（独立布局的页面不使用） */
+const layoutExcludePrefixes = [
+  '/chat',
+  '/comfort',
+  '/emotion-dashboard',
+  // 以下模块自带 ModuleLayout 侧边栏，不需要 AppLayout 再套一层
+  '/ai-testing',
+  '/system',
+]
+const layoutExcludeExact = ['/', '/login', '/register']
+const useAppLayout = computed(() => {
+  if (layoutExcludeExact.includes(route.path)) return false
+  return !layoutExcludePrefixes.some(p => route.path.startsWith(p))
+})
 
 /** 拍立得暖色调主题覆盖 */
 const themeOverrides: GlobalThemeOverrides = {
@@ -94,5 +132,6 @@ body {
   margin: 0;
   padding: 0;
   background: #FBF7F0;
+  font-family: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 </style>

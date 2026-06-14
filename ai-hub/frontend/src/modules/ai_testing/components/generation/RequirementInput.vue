@@ -41,7 +41,7 @@
       <div class="pane">
         <div class="pane-label">上传需求文档</div>
         <div class="upload-area">
-          <DocumentUpload :disabled="disabled" @parsed="onDocumentParsed" />
+          <DocumentUpload :disabled="disabled" @parsed="onDocumentParsed" @error="onUploadError" />
         </div>
         <div v-if="parsedText" style="margin-top: 8px;">
           <n-input
@@ -61,6 +61,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useMessage } from 'naive-ui'
 import DocumentUpload from './DocumentUpload.vue'
 
 withDefaults(defineProps<{
@@ -69,6 +70,7 @@ withDefaults(defineProps<{
   disabled: false,
 })
 
+const message = useMessage()
 const title = ref('')
 const text = ref('')
 const parsedText = ref('')
@@ -79,6 +81,10 @@ function onDocumentParsed(result: { text: string; file_name: string }) {
   if (!title.value) {
     title.value = result.file_name.replace(/\.[^.]+$/, '')
   }
+}
+
+function onUploadError(errMsg: string) {
+  message.error(`文档上传失败: ${errMsg}`)
 }
 
 defineExpose({ title, text })

@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/utils/api'
-import { track } from '@/utils/tracker'
 
 export const useUserStore = defineStore('user', () => {
   const user = ref(null)
@@ -38,8 +37,10 @@ export const useUserStore = defineStore('user', () => {
     // 每2分钟检查一次token是否需要刷新
     refreshTimer = setInterval(async () => {
       if (refreshToken.value && isTokenExpiringSoon.value && accessToken.value) {
+        console.log('自动刷新token...')
         try {
           await refreshAccessToken()
+          console.log('自动刷新token成功')
         } catch (error) {
           console.error('自动刷新token失败:', error)
           // 刷新失败会自动logout，不需要额外处理
@@ -78,50 +79,6 @@ export const useUserStore = defineStore('user', () => {
       // 启动自动刷新
       startAutoRefresh()
 
-      track('login_success', {
-        event_type: 'business',
-        module: 'auth',
-        page_path: '/login',
-        success: true,
-        metadata: {
-          login_type: 'password'
-        }
-      })
-
-      return response.data
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const smsLogin = async (data) => {
-    try {
-      const response = await api.post('/auth/sms-login/', data)
-
-      accessToken.value = response.data.access
-      refreshToken.value = response.data.refresh
-      user.value = response.data.user
-
-      const expiresAt = Date.now() + 30 * 60 * 1000
-      tokenExpiresAt.value = expiresAt
-
-      localStorage.setItem('access_token', accessToken.value)
-      localStorage.setItem('refresh_token', refreshToken.value)
-      localStorage.setItem('token_expires_at', expiresAt.toString())
-      localStorage.setItem('user', JSON.stringify(user.value))
-
-      startAutoRefresh()
-
-      track('login_success', {
-        event_type: 'business',
-        module: 'auth',
-        page_path: '/login',
-        success: true,
-        metadata: {
-          login_type: 'sms'
-        }
-      })
-
       return response.data
     } catch (error) {
       throw error
@@ -130,30 +87,11 @@ export const useUserStore = defineStore('user', () => {
 
   const register = async (userData) => {
     try {
+      // 临时使用测试接口
       const response = await api.post('/auth/test-register/', userData)
 
-      // 注册成功自动登录
-      accessToken.value = response.data.access
-      refreshToken.value = response.data.refresh
-      user.value = response.data.user
-
-      const expiresAt = Date.now() + 30 * 60 * 1000
-      tokenExpiresAt.value = expiresAt
-
-      localStorage.setItem('access_token', accessToken.value)
-      localStorage.setItem('refresh_token', refreshToken.value)
-      localStorage.setItem('token_expires_at', expiresAt.toString())
-      localStorage.setItem('user', JSON.stringify(user.value))
-
-      startAutoRefresh()
-
-      track('register_success', {
-        event_type: 'business',
-        module: 'auth',
-        page_path: '/register',
-        success: true
-      })
-
+      // 注册成功后不自动登录，不保存token和用户信息
+      // 让用户手动登录
       return response.data
     } catch (error) {
       throw error
@@ -260,7 +198,14 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const initAuth = async () => {
-    // 从 localStorage 恢复用户信息
+    console.log('initAuth 开始:', {
+      hasAccessToken: !!accessToken.value,
+      hasRefreshToken: !!refreshToken.value,
+      hasUser: !!user.value,
+      isExpired: isTokenExpired.value
+    })
+
+    // 从localStorage恢复用户信息
     if (!user.value) {
       const savedUser = localStorage.getItem('user')
       if (savedUser) {
@@ -273,10 +218,12 @@ export const useUserStore = defineStore('user', () => {
     }
 
     if (accessToken.value) {
-      // 检查 token 是否过期，过期则刷新
+      // 检查token是否过期
       if (isTokenExpired.value && refreshToken.value) {
+        console.log('Token已过期，尝试刷新...')
         try {
           await refreshAccessToken()
+          console.log('Token刷新成功')
         } catch (error) {
           console.error('Token刷新失败:', error)
           return
@@ -286,14 +233,21 @@ export const useUserStore = defineStore('user', () => {
       // 获取用户信息
       if (!user.value) {
         try {
+          console.log('获取用户信息...')
           await fetchProfile()
+          console.log('用户信息获取成功:', user.value?.username)
         } catch (error) {
           console.error('获取用户信息失败:', error)
           await logout()
         }
+      } else {
+        console.log('用户信息已存在，跳过获取')
       }
 
+      // 启动自动刷新定时器
       startAutoRefresh()
+    } else {
+      console.log('没有access token，跳过认证初始化')
     }
   }
 
@@ -306,7 +260,6 @@ export const useUserStore = defineStore('user', () => {
     isTokenExpiringSoon,
     isTokenExpired,
     login,
-    smsLogin,
     register,
     logout,
     refreshAccessToken,

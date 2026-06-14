@@ -12,9 +12,13 @@ export const useTaskDetailStore = defineStore('testing-task-detail', () => {
   const casesPage = ref(1)
   const casesPageSize = ref(20)
   const isLoading = ref(false)
-  const selectedIds = ref<Set<string>>(new Set())
+  const selectedIds = ref<string[]>([])
   const currentPreviewCase = ref<Record<string, unknown> | null>(null)
   const showPreviewModal = ref(false)
+
+  function isSelected(id: string): boolean {
+    return selectedIds.value.includes(id)
+  }
 
   async function fetchTask(taskId: string) {
     try {
@@ -62,22 +66,24 @@ export const useTaskDetailStore = defineStore('testing-task-detail', () => {
   }
 
   function toggleSelect(id: string) {
-    const next = new Set(selectedIds.value)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
-    selectedIds.value = next
+    const idx = selectedIds.value.indexOf(id)
+    if (idx >= 0) {
+      selectedIds.value = selectedIds.value.filter(i => i !== id)
+    } else {
+      selectedIds.value = [...selectedIds.value, id]
+    }
   }
 
   function toggleSelectAll() {
-    if (selectedIds.value.size === generatedCases.value.length) {
-      selectedIds.value = new Set()
+    if (selectedIds.value.length === generatedCases.value.length) {
+      selectedIds.value = []
     } else {
-      selectedIds.value = new Set(generatedCases.value.map(c => String(c.id)))
+      selectedIds.value = generatedCases.value.map(c => String(c.id))
     }
   }
 
   function clearSelection() {
-    selectedIds.value = new Set()
+    selectedIds.value = []
   }
 
   function previewCase(caseData: Record<string, unknown>) {
@@ -108,7 +114,7 @@ export const useTaskDetailStore = defineStore('testing-task-detail', () => {
     casesTotal.value = 0
     casesPage.value = 1
     casesPageSize.value = 20
-    selectedIds.value = new Set()
+    selectedIds.value = []
     currentPreviewCase.value = null
     showPreviewModal.value = false
   }
@@ -117,7 +123,7 @@ export const useTaskDetailStore = defineStore('testing-task-detail', () => {
     task, results, generatedCases, casesTotal, casesPage, casesPageSize,
     isLoading, selectedIds, currentPreviewCase, showPreviewModal,
     fetchTask, fetchResults, fetchGeneratedCases, batchUpdateCases,
-    toggleSelect, toggleSelectAll, clearSelection,
+    toggleSelect, toggleSelectAll, isSelected, clearSelection,
     previewCase, closePreview, changePage, changePageSize, reset,
   }
 })

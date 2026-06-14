@@ -1,9 +1,9 @@
 <template>
   <div class="kp-wrapper">
     <!-- 文档列表 -->
-    <div v-if="knowledgeStore.documents.length > 0" class="kp-list">
+    <div v-if="docs.length > 0" class="kp-list">
       <div
-        v-for="doc in knowledgeStore.documents"
+        v-for="doc in docs"
         :key="doc.id"
         :class="['kp-item', { 'kp-item--active': selectedIds.includes(doc.id) }]"
         @click="toggleDoc(doc.id)"
@@ -64,6 +64,7 @@ const emit = defineEmits<{
 }>()
 
 const knowledgeStore = useKnowledgeStore()
+const docs = computed(() => knowledgeStore?.documents ?? [])
 const selectedIds = ref<string[]>([])
 
 onMounted(() => {

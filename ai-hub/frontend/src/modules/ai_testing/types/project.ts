@@ -59,3 +59,23 @@ export interface ProjectListData {
   page: number
   page_size: number
 }
+
+/** 仪表盘统计数据 */
+export interface DashboardStats {
+  project_count: number
+  total_cases: number
+  member_count: number
+  active_versions: number
+  case_by_priority: Record<string, number>
+  case_by_type: Record<string, number>
+  case_by_status: Record<string, number>
+  recent_activities: Array<{
+    id: string
+    entity_type: string
+    entity_id: string
+    action: string
+    operator: string
+    detail: string
+    created_at: string
+  }>
+}

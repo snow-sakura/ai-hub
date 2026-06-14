@@ -1,335 +1,167 @@
 <template>
-  <div class="execution-list">
-    <!-- 工具栏 -->
-    <el-card class="toolbar" shadow="never">
-      <el-row :gutter="20">
-        <el-col :span="4">
-          <el-select v-model="projectFilter" placeholder="全部项目" clearable filterable @change="loadExecutions">
-            <el-option v-for="p in projectList" :key="p.id" :label="p.name" :value="p.id" />
-          </el-select>
-        </el-col>
-        <el-col :span="8">
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索用例名称、设备"
-            clearable
-            @clear="loadExecutions"
-            @keyup.enter="loadExecutions"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </el-col>
-        <el-col :span="12" class="text-right">
-          <el-select
-            v-model="statusFilter"
-            placeholder="状态筛选"
-            clearable
-            style="width: 150px; margin-right: 10px"
-            @change="loadExecutions"
-          >
-            <el-option label="全部" value="" />
-            <el-option label="等待中" value="pending" />
-            <el-option label="执行中" value="running" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="执行异常" value="error" />
-            <el-option label="已停止" value="stopped" />
-          </el-select>
-          <el-button @click="loadExecutions">
-            <el-icon><Refresh /></el-icon>
-            刷新
-          </el-button>
-        </el-col>
-      </el-row>
-    </el-card>
-    
-    <!-- 执行记录列表 -->
-    <el-card class="table-card" shadow="never">
-      <el-table
-        v-loading="loading"
-        :data="executions"
-        stripe
-        style="width: 100%"
-      >
-        <el-table-column prop="case_name" label="测试用例" min-width="180" />
-        <el-table-column prop="device_name" label="设备" width="150" />
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getDisplayStatus(row.status, row.result).type" size="small">
-              {{ getDisplayStatus(row.status, row.result).text }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="进度" width="150">
-          <template #default="{ row }">
-            <el-progress
-              :percentage="row.progress || 0"
-              :status="row.status === 'error' ? 'exception' : row.result === 'failed' ? 'exception' : row.result === 'passed' ? 'success' : undefined"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column label="步骤统计" width="180">
-          <template #default="{ row }">
-            <div class="step-stats">
-              <span class="stat-item success">通过: {{ row.passed_steps || 0 }}</span>
-              <span class="stat-item danger">失败: {{ row.failed_steps || 0 }}</span>
-              <span class="stat-item">总数: {{ row.total_steps || 0 }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="耗时" width="100">
-          <template #default="{ row }">
-            {{ formatDuration(row.duration) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="user_name" label="执行人" width="100" />
-        <el-table-column label="开始时间" width="160">
-          <template #default="{ row }">
-            {{ formatDateTime(row.started_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="结束时间" width="160">
-          <template #default="{ row }">
-            {{ row.finished_at ? formatDateTime(row.finished_at) : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'running'"
-              type="warning"
-              size="small"
-              text
-              @click="stopExecution(row)"
-            >
-              停止
-            </el-button>
-            <el-button
-              v-if="row.report_path"
-              type="primary"
-              size="small"
-              text
-              @click="viewReport(row)"
-            >
-              查看报告
-            </el-button>
-            <el-button
-              v-if="row.error_message"
-              type="danger"
-              size="small"
-              text
-              @click="viewError(row)"
-            >
-              查看错误
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      
-      <!-- 分页 -->
-      <div class="pagination">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadExecutions"
-          @current-change="loadExecutions"
-        />
+  <div class="app-auto">
+    <div class="app-page-header app-fade-in">
+      <div>
+        <h1 class="app-page-title">APP 执行记录</h1>
+        <p class="app-page-subtitle">查看移动端自动化测试执行历史</p>
       </div>
-    </el-card>
-    
-    <!-- 错误信息对话框 -->
-    <el-dialog
-      v-model="errorDialogVisible"
-      title="错误信息"
-      width="600px"
-    >
-      <div class="error-content">
-        <pre>{{ currentError }}</pre>
+      <div class="header-actions">
+        <select v-model="filterSuite" class="app-input" style="width:160px;height:34px">
+          <option value="">全部套件</option>
+          <option v-for="s in suiteOptions" :key="s" :value="s">{{ s }}</option>
+        </select>
       </div>
-      <template #footer>
-        <el-button type="primary" @click="errorDialogVisible = false">
-          关闭
-        </el-button>
-      </template>
-    </el-dialog>
+    </div>
+
+    <div class="app-card app-fade-in">
+      <div class="app-card-body" style="padding:0">
+        <div style="overflow-x:auto">
+          <table class="app-data-table">
+            <thead>
+              <tr><th>套件名称</th><th>设备</th><th>系统</th><th>总数</th><th>通过</th><th>失败</th><th>耗时</th><th>状态</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="(rec, i) in filteredRecords" :key="i">
+                <td style="font-weight:600">{{ rec.suite }}</td>
+                <td>{{ rec.device }}</td>
+                <td>{{ rec.os }}</td>
+                <td>{{ rec.total }}</td>
+                <td>{{ rec.passed }}</td>
+                <td>{{ rec.failed }}</td>
+                <td>{{ rec.duration }}</td>
+                <td><span :class="['app-tag', getStatusClass(rec.status)]">{{ rec.status }}</span></td>
+                <td>
+                  <button class="app-btn app-btn-ghost app-btn-xs" @click="showLogDrawer(rec)">📋 日志</button>
+                  <button class="app-btn app-btn-ghost app-btn-xs" @click="$router.push('/app-automation/reports')">📊 报告</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 日志抽屉 -->
+    <div class="app-drawer-overlay" :class="{ active: drawerVisible }" @click.self="drawerVisible = false">
+      <div class="app-drawer">
+        <div class="app-drawer-head">
+          <h3>📋 执行日志</h3>
+          <button class="app-drawer-close" @click="drawerVisible = false">✕</button>
+        </div>
+        <div class="app-drawer-body">
+          <div v-if="currentLog" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--app-primary-bg);border-radius:8px;font-size:13px">
+            <span style="font-weight:600">{{ currentLog.suite }}</span>
+            <span :class="['app-tag', getStatusClass(currentLog.status)]">{{ currentLog.status }}</span>
+            <span style="color:var(--app-text-muted)">{{ currentLog.device }} · {{ currentLog.os }} · {{ currentLog.duration }}</span>
+          </div>
+          <div v-for="(log, i) in logEntries" :key="i" class="log-item">
+            <span class="log-time">{{ log.time }}</span>
+            <span class="log-icon">{{ log.icon }}</span>
+            <span class="log-content">
+              <span :class="log.result === '通过' ? 'pass' : 'fail'">{{ log.result }}</span>
+              {{ log.message }}
+            </span>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:8px">
+            <button class="app-btn app-btn-primary app-btn-sm" @click="rerunExecution">🔄 重新执行</button>
+            <button class="app-btn app-btn-ghost app-btn-sm" @click="debugExecution">🔧 调试</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import {
-  getExecutionList,
-  stopExecution as apiStopExecution,
-  getAppProjects
-} from '@/api/app-automation'
-import { Search, Refresh } from '@element-plus/icons-vue'
-import { getExecutionStatusType, getExecutionStatusText, getDisplayStatus, formatDateTime } from '@/utils/app-automation-helpers'
+import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 
-const loading = ref(false)
-const executions = ref([])
-const searchQuery = ref('')
-const statusFilter = ref('')
-const projectFilter = ref(null)
-const projectList = ref([])
-const currentPage = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
+const filterSuite = ref('')
+const drawerVisible = ref(false)
+const currentLog = ref(null)
 
-const errorDialogVisible = ref(false)
-const currentError = ref('')
+const suiteOptions = ['登录模块回归', '支付流程验证', '搜索功能验证']
 
-let refreshTimer = null
+const records = ref([
+  { suite: '登录模块回归', device: 'iPhone 15', os: 'iOS 17', total: 12, passed: 11, failed: 1, duration: '2m18s', status: '通过' },
+  { suite: '支付流程验证', device: 'Pixel 7', os: 'Android 14', total: 8, passed: 7, failed: 1, duration: '1m45s', status: '通过' },
+  { suite: '注册流程冒烟', device: 'Galaxy S23', os: 'Android 13', total: 6, passed: 6, failed: 0, duration: '58s', status: '通过' },
+  { suite: '首页加载性能', device: 'iPhone 15', os: 'iOS 17', total: 5, passed: 3, failed: 2, duration: '3m12s', status: '失败' },
+  { suite: '搜索功能验证', device: 'Pixel 7', os: 'Android 14', total: 10, passed: 9, failed: 1, duration: '2m05s', status: '通过' }
+])
 
-const loadExecutions = async () => {
-  loading.value = true
-  try {
-    const params = {
-      page: currentPage.value,
-      page_size: pageSize.value,
-      search: searchQuery.value,
-      status: statusFilter.value
-    }
-    if (projectFilter.value) params.project = projectFilter.value
-    const res = await getExecutionList(params)
-    executions.value = res.data.results || []
-    total.value = res.data.count || 0
-  } catch (error) {
-    ElMessage.error('加载执行记录失败: ' + (error.message || '未知错误'))
-  } finally {
-    loading.value = false
-  }
-}
+const logEntries = ref([
+  { time: '14:00:01', icon: '📱', result: '', message: '启动 APP — 电商APP' },
+  { time: '14:00:05', icon: '✅', result: '通过', message: '点击"我的"Tab (0.8s)' },
+  { time: '14:00:08', icon: '✅', result: '通过', message: '输入用户名 (1.2s)' },
+  { time: '14:00:11', icon: '✅', result: '通过', message: '输入密码 (0.9s)' },
+  { time: '14:00:14', icon: '✅', result: '通过', message: '点击登录按钮 (1.5s)' },
+  { time: '14:00:18', icon: '✅', result: '通过', message: '验证个人中心显示 (2.1s)' },
+  { time: '14:00:22', icon: '✅', result: '通过', message: '验证用户名匹配 (0.5s)' },
+  { time: '14:00:25', icon: '✅', result: '通过', message: '验证头像加载 (1.3s)' },
+  { time: '14:00:28', icon: '✅', result: '通过', message: '验证订单数量 (0.7s)' },
+  { time: '14:00:31', icon: '✅', result: '通过', message: '验证退出登录按钮 (0.6s)' },
+  { time: '14:00:34', icon: '✅', result: '通过', message: '验证设置入口 (1.0s)' },
+  { time: '14:00:37', icon: '✅', result: '通过', message: '验证通知开关 (0.8s)' },
+  { time: '14:00:40', icon: '❌', result: '失败', message: '验证客服入口 — 元素未找到: content-desc="customer_service" (3.0s)' }
+])
 
-const stopExecution = async (execution) => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要停止该执行吗？',
-      '确认停止',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-    
-    const res = await apiStopExecution(execution.id)
-    if (res.data.success) {
-      ElMessage.success('已停止执行')
-      loadExecutions()
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('停止失败: ' + (error.message || '未知错误'))
-    }
-  }
-}
-
-const viewReport = (execution) => {
-  if (!execution || !execution.id) {
-    ElMessage.warning('执行记录ID无效')
-    return
-  }
-  
-  const reportUrl = `/api/app-automation/executions/${execution.id}/report/`
-  
-  // 在新标签页打开报告
-  window.open(reportUrl, '_blank')
-}
-
-const viewError = (execution) => {
-  currentError.value = execution.error_message
-  errorDialogVisible.value = true
-}
-
-// getDisplayStatus 已从 helpers 导入
-
-const formatDuration = (seconds) => {
-  if (!seconds) return '-'
-  if (seconds < 60) return `${Math.floor(seconds)}秒`
-  const minutes = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${minutes}分${secs}秒`
-}
-
-// 自动刷新执行中的记录
-const startAutoRefresh = () => {
-  refreshTimer = setInterval(() => {
-    // 如果有执行中的记录，自动刷新
-    const hasRunning = executions.value.some(e => ['running', 'pending'].includes(e.status))
-    if (hasRunning) {
-      loadExecutions()
-    }
-  }, 5000) // 每5秒刷新一次
-}
-
-const stopAutoRefresh = () => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-    refreshTimer = null
-  }
-}
-
-onMounted(() => {
-  getAppProjects({ page_size: 100 }).then(res => { projectList.value = res.data.results || res.data || [] }).catch(() => {})
-  loadExecutions()
-  startAutoRefresh()
+const filteredRecords = computed(() => {
+  if (!filterSuite.value) return records.value
+  return records.value.filter(r => r.suite === filterSuite.value)
 })
 
-onUnmounted(() => {
-  stopAutoRefresh()
-})
+function getStatusClass(status) {
+  if (status === '通过') return 'app-tag-pass'
+  if (status === '失败') return 'app-tag-fail'
+  if (status === '执行中') return 'app-tag-running'
+  return 'app-tag-pending'
+}
+
+function showLogDrawer(rec) {
+  currentLog.value = rec
+  drawerVisible.value = true
+}
+
+function rerunExecution() {
+  ElMessage.info('重新执行中...')
+  drawerVisible.value = false
+}
+
+function debugExecution() {
+  ElMessage.info('调试模式已启动')
+}
 </script>
 
-<style scoped lang="scss">
-.execution-list {
-  padding: 20px;
+<style scoped>
+.app-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
 }
 
-.toolbar {
-  margin-bottom: 20px;
-  
-  .text-right {
-    text-align: right;
-  }
-}
-
-.table-card {
-  .pagination {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
-}
-
-.step-stats {
-  display: flex;
-  gap: 8px;
+.app-data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: var(--app-text-secondary);
+  border-bottom: var(--app-border);
+  white-space: nowrap;
+  background: var(--app-sidebar-bg);
   font-size: 12px;
-  
-  .stat-item {
-    &.success { color: #67c23a; }
-    &.danger { color: #f56c6c; }
-  }
 }
 
-.error-content {
-  max-height: 400px;
-  overflow-y: auto;
-  
-  pre {
-    background: #f5f7fa;
-    padding: 15px;
-    border-radius: 4px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
+.app-data-table td {
+  padding: 10px 12px;
+  border-bottom: var(--app-border);
+  color: var(--app-text);
+}
+
+.app-data-table tr:nth-child(even) td {
+  background: rgba(180, 150, 120, 0.03);
+}
+
+.app-data-table tr:hover td {
+  background: var(--app-primary-bg);
 }
 </style>

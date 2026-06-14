@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库管理 · AI-HUB 智能工作台</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--danger:#D4745C;--info:#5B8DEF;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;--font-mono:ui-monospace,'SF Mono','Fira Code','Consolas',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px;cursor:pointer}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+.main{margin-left:240px;flex:1}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s;height:32px}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:24px;font-weight:700;color:var(--text)}.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.15s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-light);box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:var(--border)}.btn-secondary:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid rgba(180,150,120,0.15)}.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}.btn-xs{height:24px;padding:0 8px;font-size:11px}
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:16px 20px}
+.kb-layout{display:flex;gap:16px;min-height:calc(100vh - 200px)}
+.kb-sidebar{width:200px;flex-shrink:0}
+.kb-sidebar .cat-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-radius:6px;transition:all 0.1s;gap:6px}
+.kb-sidebar .cat-item:hover{background:var(--primary-bg)}.kb-sidebar .cat-item.active{background:var(--primary-bg);color:var(--primary);font-weight:600}
+.kb-sidebar .cat-item .cat-count{font-size:11px;color:var(--text-muted);background:rgba(180,150,120,0.1);padding:1px 6px;border-radius:10px}
+.kb-main{flex:1;min-width:0}
+.kb-toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.kb-toolbar .input{height:34px;border:var(--border);border-radius:6px;padding:0 12px;font-size:13px;color:var(--text);font-family:inherit;background:var(--card-bg);outline:none}
+.kb-toolbar .input:focus{border-color:var(--primary)}
+.kb-toolbar .search-box{flex:1;min-width:160px;position:relative}
+.kb-toolbar .search-box .input{width:100%;padding-left:34px}
+.kb-toolbar .search-box .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px}
+.kb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.doc-card{background:var(--card-bg);border:var(--border);border-radius:12px;padding:16px;transition:all 0.2s;cursor:pointer}
+.doc-card:hover{box-shadow:var(--shadow);border-color:var(--primary-light)}
+.doc-type{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.doc-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.doc-desc{font-size:12px;color:var(--text-muted);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.doc-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);flex-wrap:wrap}
+.doc-meta .doc-tag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:3px;font-size:10px;background:var(--primary-bg);color:var(--primary)}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(30,20,10,0.4);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--card-bg);border-radius:14px;padding:24px;width:520px;max-width:90vw;box-shadow:0 20px 60px rgba(30,20,10,0.15);max-height:80vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-group label{font-size:13px;color:var(--text-secondary);margin-bottom:4px;display:block}
+.form-group .hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+.input{width:100%;height:34px;border:var(--border);border-radius:6px;padding:0 12px;font-size:13px;color:var(--text);font-family:inherit;background:var(--bg);outline:none}
+.input:focus{border-color:var(--primary)}select.input{appearance:auto}
+.textarea{width:100%;height:80px;border:var(--border);border-radius:6px;padding:8px 12px;font-size:13px;color:var(--text);font-family:inherit;background:var(--bg);outline:none;resize:vertical}
+.textarea:focus{border-color:var(--primary)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:10px;padding:12px 20px;box-shadow:0 8px 30px rgba(30,20,10,0.12);display:flex;align-items:center;gap:10px;font-size:13px;animation:slideIn 0.25s ease;max-width:360px}
+.toast-success{border-left:4px solid var(--success)}.toast-info{border-left:4px solid var(--info)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.drawer-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(30,20,10,0.4);z-index:200;display:none;justify-content:flex-end}
+.drawer-overlay.show{display:flex}
+.drawer{width:560px;max-width:90vw;background:var(--card-bg);height:100vh;overflow-y:auto;box-shadow:-8px 0 30px rgba(30,20,10,0.1);animation:slideInRight 0.25s ease}
+@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border)}
+.drawer-header h3{font-size:15px;font-weight:600;color:var(--text)}
+.drawer-close{width:28px;height:28px;border:none;background:none;cursor:pointer;font-size:18px;color:var(--text-muted);display:flex;align-items:center;justify-content:center;border-radius:6px}
+.drawer-close:hover{background:var(--primary-bg);color:var(--text)}
+.drawer-body{padding:20px}
+.drawer-body .doc-preview{background:var(--bg);border:var(--border);border-radius:8px;padding:16px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;font-family:var(--font)}
+@media(max-width:1100px){.kb-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.kb-sidebar{display:none}}
+@media(max-width:768px){
+.sidebar{width:60px}.sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}.sidebar-logo span,.menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}.sidebar-logo{padding:14px 0;justify-content:center}.menu-item{justify-content:center;padding:9px 0}.main{margin-left:60px}.kb-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">📚</div><span>知识管理</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">知识管理</div>
+    <a class="menu-item" href="54-知识管理模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item active" href="43-知识库.html"><span class="icon">📚</span><span>知识库管理</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">知识管理 / <span>知识库管理</span></div>
+    <div class="topbar-right"><button class="topbar-btn" onclick="showToast('页面已刷新','info')" title="刷新">⟳</button><button class="topbar-btn" onclick="showToast('暂无新通知','info')" title="通知">🔔</button><div class="avatar-sm">张</div></div>
+  </header>
+  <div class="content">
+    <div class="page-header fade-in">
+      <div><h1 class="page-title">📚 知识库管理</h1><p class="page-sub">管理项目文档、技术规范、测试资料 · 共 24 篇文档</p></div>
+      <div class="header-actions"><button class="btn btn-secondary" onclick="showToast('知识库已刷新','info')">🔄 同步</button><button class="btn btn-primary" onclick="showUploadModal()">📄 上传文档</button></div>
+    </div>
+    <div class="kb-layout fade-in">
+      <div class="kb-sidebar">
+        <div class="card"><div class="card-body" style="padding:12px">
+          <div class="cat-item active" onclick="filterCat(this,'全部')"><span>📂 全部分类</span><span class="cat-count">24</span></div>
+          <div class="cat-item" onclick="filterCat(this,'测试规范')"><span>📋 测试规范</span><span class="cat-count">6</span></div>
+          <div class="cat-item" onclick="filterCat(this,'技术文档')"><span>📘 技术文档</span><span class="cat-count">5</span></div>
+          <div class="cat-item" onclick="filterCat(this,'产品设计')"><span>🎨 产品设计</span><span class="cat-count">4</span></div>
+          <div class="cat-item" onclick="filterCat(this,'接口文档')"><span>🔌 接口文档</span><span class="cat-count">3</span></div>
+          <div class="cat-item" onclick="filterCat(this,'测试报告')"><span>📊 测试报告</span><span class="cat-count">4</span></div>
+          <div class="cat-item" onclick="filterCat(this,'操作手册')"><span>📖 操作手册</span><span class="cat-count">2</span></div>
+        </div></div>
+      </div>
+      <div class="kb-main">
+        <div class="card"><div class="card-body" style="padding:14px 16px">
+          <div class="kb-toolbar">
+            <div class="search-box"><span class="search-icon">🔍</span><input class="input" placeholder="搜索文档标题或内容..." oninput="searchDocs(this.value)"></div>
+            <select class="input" style="width:120px"><option>最近更新</option><option>按标题</option><option>按分类</option></select>
+            <select class="input" style="width:100px"><option>全部标签</option><option>V1.0</option><option>V2.0</option><option>评审中</option></select>
+          </div>
+        </div></div>
+        <div class="kb-grid" id="docGrid">
+          <div class="doc-card" onclick="showDocDetail('电商APP测试策略','测试规范','2026-06-11','张明远')">
+            <div class="doc-type" style="background:rgba(123,168,125,0.12);color:var(--success)">📋</div>
+            <div class="doc-title">电商APP测试策略 v2.1</div>
+            <div class="doc-desc">涵盖功能测试、性能测试、安全测试的完整测试策略文档</div>
+            <div class="doc-meta"><span class="doc-tag">测试规范</span><span>·</span><span>2026-06-11</span><span>·</span><span>张明远</span></div>
+          </div>
+          <div class="doc-card" onclick="showDocDetail('API接口规范V3','接口文档','2026-06-10','李思琪')">
+            <div class="doc-type" style="background:rgba(91,141,239,0.12);color:var(--info)">🔌</div>
+            <div class="doc-title">API 接口规范 V3.0</div>
+            <div class="doc-desc">RESTful API 设计规范，包括请求响应格式、错误码定义</div>
+            <div class="doc-meta"><span class="doc-tag">接口文档</span><span>·</span><span>2026-06-10</span><span>·</span><span>李思琪</span></div>
+          </div>
+          <div class="doc-card" onclick="showDocDetail('支付模块产品PRD','产品设计','2026-06-09','王浩然')">
+            <div class="doc-type" style="background:rgba(212,165,116,0.12);color:#B8860B">🎨</div>
+            <div class="doc-title">支付模块产品 PRD</div>
+            <div class="doc-desc">支付模块的产品需求文档，包含支付流程、对账方案</div>
+            <div class="doc-meta"><span class="doc-tag">产品设计</span><span>·</span><span>2026-06-09</span><span>·</span><span>王浩然</span></div>
+          </div>
+          <div class="doc-card" onclick="showDocDetail('APP自动化测试指南','操作手册','2026-06-08','赵雪婷')">
+            <div class="doc-type" style="background:rgba(198,123,92,0.12);color:var(--primary)">📖</div>
+            <div class="doc-title">APP 自动化测试操作指南</div>
+            <div class="doc-desc">Appium 框架使用指南，包含环境搭建、脚本编写、设备管理</div>
+            <div class="doc-meta"><span class="doc-tag">操作手册</span><span>·</span><span>2026-06-08</span><span>·</span><span>赵雪婷</span></div>
+          </div>
+          <div class="doc-card" onclick="showDocDetail('Q2测试报告','测试报告','2026-06-07','张明远')">
+            <div class="doc-type" style="background:rgba(123,168,125,0.12);color:var(--success)">📊</div>
+            <div class="doc-title">2026 Q2 季度测试报告</div>
+            <div class="doc-desc">第二季度测试数据汇总，各模块通过率、缺陷分布统计</div>
+            <div class="doc-meta"><span class="doc-tag">测试报告</span><span>·</span><span>2026-06-07</span><span>·</span><span>张明远</span></div>
+          </div>
+          <div class="doc-card" onclick="showDocDetail('UI自动化编码规范','技术文档','2026-06-06','李思琪')">
+            <div class="doc-type" style="background:rgba(91,141,239,0.12);color:var(--info)">📘</div>
+            <div class="doc-title">UI 自动化编码规范</div>
+            <div class="doc-desc">Selenium + Playwright 框架的使用规范，元素定位策略</div>
+            <div class="doc-meta"><span class="doc-tag">技术文档</span><span>·</span><span>2026-06-06</span><span>·</span><span>李思琪</span></div>
+          </div>
+          <div class="doc-card" onclick="showDocDetail('登录模块测试用例','测试规范','2026-06-05','王浩然')">
+            <div class="doc-type" style="background:rgba(123,168,125,0.12);color:var(--success)">📋</div>
+            <div class="doc-title">登录模块测试用例集</div>
+            <div class="doc-desc">涵盖基本功能、安全验证、验证码、体验优化共 16 条用例</div>
+            <div class="doc-meta"><span class="doc-tag">测试规范</span><span>·</span><span>2026-06-05</span><span>·</span><span>王浩然</span></div>
+          </div>
+          <div class="doc-card" onclick="showDocDetail('性能测试方案','测试规范','2026-06-04','赵雪婷')">
+            <div class="doc-type" style="background:rgba(123,168,125,0.12);color:var(--success)">📋</div>
+            <div class="doc-title">性能测试方案 V2.0</div>
+            <div class="doc-desc">JMeter 性能测试方案，包含并发模型、监控指标、阈值定义</div>
+            <div class="doc-meta"><span class="doc-tag">测试规范</span><span>·</span><span>2026-06-04</span><span>·</span><span>赵雪婷</span></div>
+          </div>
+          <div class="doc-card" onclick="showDocDetail('数据字典','技术文档','2026-06-03','系统')">
+            <div class="doc-type" style="background:rgba(91,141,239,0.12);color:var(--info)">📘</div>
+            <div class="doc-title">系统数据字典</div>
+            <div class="doc-desc">数据库表结构、字段说明、枚举值定义</div>
+            <div class="doc-meta"><span class="doc-tag">技术文档</span><span>·</span><span>2026-06-03</span><span>·</span><span>系统</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal-box fade-in">
+    <div class="modal-title">📄 上传文档</div>
+    <div class="form-group"><label>文档标题</label><input class="input" id="docTitle" placeholder="输入文档标题"></div>
+    <div class="form-group"><label>分类</label><select class="input"><option>测试规范</option><option>技术文档</option><option>产品设计</option><option>接口文档</option><option>测试报告</option><option>操作手册</option></select></div>
+    <div class="form-group"><label>文档描述</label><textarea class="textarea" id="docDesc" placeholder="简要描述文档内容"></textarea></div>
+    <div class="form-group"><label>上传文件</label><div style="border:2px dashed rgba(180,150,120,0.2);border-radius:8px;padding:24px;text-align:center;cursor:pointer;color:var(--text-muted);font-size:13px" onclick="showToast('文件选择器已打开','info')">📎 点击或拖拽文件到此处上传<br><span style="font-size:11px">支持 PDF、Word、Markdown、TXT 格式</span></div></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="hideUploadModal()">取消</button><button class="btn btn-primary" onclick="uploadDoc()">上传</button></div>
+  </div>
+</div>
+<div class="drawer-overlay" id="docDrawer" onclick="if(event.target===this)hideDocDetail()">
+  <div class="drawer">
+    <div class="drawer-header"><h3 id="drawerTitle">文档详情</h3><button class="drawer-close" onclick="hideDocDetail()">✕</button></div>
+    <div class="drawer-body">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <span class="tag" style="background:var(--primary-bg);color:var(--primary)" id="drawerCat">📋 测试规范</span>
+        <span class="tag" style="background:rgba(180,150,120,0.1);color:var(--text-muted)" id="drawerAuthor">👤 张明远</span>
+        <span class="tag" style="background:rgba(180,150,120,0.1);color:var(--text-muted)" id="drawerDate">📅 2026-06-11</span>
+      </div>
+      <div style="margin-bottom:16px;display:flex;gap:6px">
+        <button class="btn btn-primary btn-xs">✏️ 编辑</button>
+        <button class="btn btn-ghost btn-xs">📥 下载</button>
+        <button class="btn btn-ghost btn-xs" style="color:var(--danger)">🗑️ 删除</button>
+      </div>
+      <div class="doc-preview" id="drawerContent"># 文档内容预览
+
+本文档详细描述了该模块的相关规范和标准。
+
+## 1. 概述
+本文档旨在为团队提供统一的规范和指导。
+
+## 2. 详细内容
+### 2.1 规范说明
+- 所有接口需遵循 RESTful 设计原则
+- 响应格式统一使用 JSON
+- 错误码遵循标准定义
+
+### 2.2 最佳实践
+1. 使用有意义的命名规范
+2. 保持文档的及时更新
+3. 定期进行评审和修订</div>
+    </div>
+  </div>
+</div>
+<script>
+function showToast(msg,t){t=t||'success';var e=document.createElement('div');e.className='toast toast-'+t;e.innerHTML=(t==='success'?'✅ ':'ℹ️ ')+msg;document.body.appendChild(e);setTimeout(function(){e.remove()},2500);}
+function showUploadModal(){document.getElementById('uploadModal').classList.add('show')}
+function hideUploadModal(){document.getElementById('uploadModal').classList.remove('show')}
+function uploadDoc(){var t=document.getElementById('docTitle').value;if(!t){showToast('请输入文档标题','info');return}hideUploadModal();showToast('文档「'+t+'」上传成功','success');document.getElementById('docTitle').value='';document.getElementById('docDesc').value=''}
+function filterCat(el,cat){document.querySelectorAll('.cat-item').forEach(function(c){c.classList.remove('active')});el.classList.add('active');showToast('筛选：'+cat,'info')}
+function showDocDetail(title,cat,date,author){document.getElementById('drawerTitle').textContent=title;document.getElementById('drawerCat').textContent='📋 '+cat;document.getElementById('drawerAuthor').textContent='👤 '+author;document.getElementById('drawerDate').textContent='📅 '+date;document.getElementById('docDrawer').classList.add('show')}
+function hideDocDetail(){document.getElementById('docDrawer').classList.remove('show')}
+function searchDocs(val){showToast('搜索：'+val,'info')}
+</script>
+</body>
+</html>

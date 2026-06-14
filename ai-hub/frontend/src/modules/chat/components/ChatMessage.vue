@@ -13,8 +13,7 @@
         <div
           v-for="tc in message.toolCalls"
           :key="tc.toolCallId"
-          class="tool-chip"
-        >
+          :class="['tool-chip', `status-${tc.status}`]">
           <span :class="['tool-chip-icon', `status-${tc.status}`]">{{ tc.status === 'done' ? '✓' : tc.status === 'error' ? '!' : '⟳' }}</span>
           <span class="tool-chip-name">{{ tc.toolName }}</span>
           <span v-if="tc.summary" class="tool-chip-summary">{{ tc.summary.slice(0, 40) }}</span>
@@ -89,12 +88,25 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
+  padding: 3px 8px 3px 10px;
   background: var(--bg-secondary);
   border: 1px solid rgba(180, 150, 120, 0.12);
   border-radius: 12px;
   font-size: 11px;
   color: var(--text-muted);
+  border-left: 3px solid transparent;
+}
+
+.tool-chip.status-running {
+  border-left-color: var(--accent);
+}
+
+.tool-chip.status-done {
+  border-left-color: var(--success);
+}
+
+.tool-chip.status-error {
+  border-left-color: var(--danger);
 }
 
 .tool-chip-icon {
@@ -119,6 +131,6 @@ defineProps<{
 }
 
 .chat-message + .chat-message {
-  margin-top: 24px;
+  margin-top: 20px;
 }
 </style>

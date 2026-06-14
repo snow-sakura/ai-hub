@@ -43,6 +43,19 @@
             />
           </n-space>
 
+          <n-space align="center" :size="12">
+            <n-text style="min-width: 80px; font-size: 13px;">AI 模型</n-text>
+            <n-select
+              v-model:value="selectedModel"
+              :options="modelOptions"
+              placeholder="选择模型"
+              style="width: 280px;"
+              size="small"
+              :disabled="isStreaming"
+              filterable
+            />
+          </n-space>
+
           <RequirementInput ref="requirementInputRef" :disabled="isStreaming || isHistoryView" />
 
           <!-- 操作行 -->
@@ -87,7 +100,7 @@
           :is-done="isDone"
           :current-stage="currentStage"
           :streaming-content="streamingContent"
-          :stage-contents="{ ...stageContents }"
+          :stage-contents="stageContents"
           :review-result="reviewResult"
           :progress="progress"
           :error-info="errorInfo"
@@ -121,6 +134,12 @@
     </n-space>
 
     <ConfigGuideModal v-model:show="showSetupGuide" />
+    <SavePreviewModal
+      v-model:show="showSavePreview"
+      :cases="previewCases"
+      :saving="isSaving"
+      @save="handleConfirmSave"
+    />
   </n-layout-content>
 </template>
 
@@ -135,7 +154,10 @@ import RequirementInput from '@/modules/ai_testing/components/generation/Require
 import GenerationProgress from '@/modules/ai_testing/components/generation/GenerationProgress.vue'
 import GenerationResult from '@/modules/ai_testing/components/generation/GenerationResult.vue'
 import ConfigGuideModal from '@/modules/ai_testing/components/generation/ConfigGuideModal.vue'
-import type { ConfigItem, OutputMode } from '@/modules/ai_testing/types/generation'
+import SavePreviewModal from '@/modules/ai_testing/components/generation/SavePreviewModal.vue'
+import type { OutputMode } from '@/modules/ai_testing/types/generation'
+import * as generationApi from '@/modules/ai_testing/api/generation'
+import request from '@/shared/api/request'
 
 const router = useRouter()
 const route = useRoute()
@@ -167,12 +189,41 @@ const isExporting = ref(false)
 const showSetupGuide = ref(false)
 const currentTaskId = ref('')
 const selectedProjectId = ref<string | null>(null)
+const selectedModel = ref('')
 const outputMode = ref<OutputMode>('stream')
 const savedCount = ref<number | null>(null)
+const showSavePreview = ref(false)
+const previewCases = ref<Array<Record<string, unknown>>>([])
 
 const projectOptions = computed(() =>
   projectStore.projects.map(p => ({ label: p.name, value: p.id }))
 )
+
+/** 模型选项（按 provider 分组） */
+const modelOptions = computed(() => {
+  const defaults = store.configDefaults
+  if (!defaults?.models || defaults.models.length === 0) return []
+  const groups: Record<string, Array<{ label: string; value: string }>> = {}
+  for (const m of defaults.models) {
+    const key = m.provider
+    if (!groups[key]) groups[key] = []
+    groups[key].push({ label: m.display_name, value: `${m.provider}:${m.model}` })
+  }
+  // 转为 n-select 分组格式
+  return Object.entries(groups).map(([provider, children]) => ({
+    type: 'group',
+    label: providerLabels[provider] || provider,
+    children,
+  }))
+})
+
+const providerLabels: Record<string, string> = {
+  deepseek: 'DeepSeek',
+  openai: 'OpenAI',
+  qwen: '通义千问',
+  zhipu: '智谱',
+  ollama: 'Ollama',
+}
 
 const canGenerate = computed(() => {
   const text = requirementInputRef.value?.text || ''
@@ -186,16 +237,15 @@ async function handleGenerate() {
   const input = requirementInputRef.value
   if (!input) return
 
-  const configItem = store.configItems.find((c: ConfigItem) => c.key === 'model')
   const task = await store.createTask({
     project_id: selectedProjectId.value,
     requirement_title: input.title,
     input_text: input.text,
-    model: configItem?.value || '',
+    model: selectedModel.value,
     output_mode: outputMode.value,
   })
 
-  if (!task) {
+  if (!task || !task.id) {
     message.error('创建任务失败，请检查配置')
     isLoading.value = false
     return
@@ -205,6 +255,14 @@ async function handleGenerate() {
   isLoading.value = false
 
   if (outputMode.value === 'complete') {
+    // complete 模式：先触发后端后台执行，再轮询等待结果
+    try {
+      await generationApi.executeGenerationTask(task.id)
+    } catch (e) {
+      message.error('启动生成任务失败')
+      isLoading.value = false
+      return
+    }
     await pollCompleteResult(task.id)
   } else {
     start(task.id)
@@ -212,19 +270,21 @@ async function handleGenerate() {
 }
 
 async function pollCompleteResult(taskId: string) {
-  const api = await import('@/modules/ai_testing/api/generation')
   const maxAttempts = 120
+  const maxInterval = 30000
   let attempts = 0
 
   while (attempts < maxAttempts) {
     attempts++
-    await new Promise(r => setTimeout(r, 1000))
+    // 指数退避：1/2/4/8/.../30s max
+    const delay = Math.min(1000 * Math.pow(2, attempts - 1), maxInterval)
+    await new Promise(r => setTimeout(r, delay))
     try {
-      const res = await api.getGenerationTask(taskId)
+      const res = await generationApi.getGenerationTask(taskId)
       const task = res.data
       if (!task) continue
       if (task.status === 'completed') {
-        const resultsRes = await api.getGenerationResults(taskId)
+        const resultsRes = await generationApi.getGenerationResults(taskId)
         const results = resultsRes.data || []
         const stageOrder = ['analyze', 'write', 'review', 'revise']
         let finalContent = ''
@@ -235,18 +295,23 @@ async function pollCompleteResult(taskId: string) {
           if (!sr) continue
           stageIdx++
           if (stage === 'review') {
-            try { reviewRes = JSON.parse(sr.content); reviewResult.value = reviewRes } catch {}
-          } else if (stage === 'final') {
-            finalContent = sr.content
+            try { reviewRes = JSON.parse(sr.content); reviewResult.value = reviewRes } catch (e) { console.warn('解析评审结果失败:', e) }
           } else {
             store.appendStreamContent(sr.content)
             stageContents[stage] = sr.content
             progress.value = { current: stageIdx, total: 4, message: `阶段 ${stage} 完成` }
           }
         }
-        if (finalContent) {
+        // 单独搜索 final 阶段结果（不在 stageOrder 中）
+        const finalResult = results.find((r: { stage: string }) => r.stage === 'final')
+        if (finalResult?.content) {
+          finalContent = finalResult.content
           store.appendStreamContent(finalContent)
           stageContents.revise = finalContent
+        } else if (stageContents.revise) {
+          finalContent = stageContents.revise
+        } else if (stageContents.write) {
+          finalContent = stageContents.write
         }
         isDone.value = true
         doneResult.value = {
@@ -274,36 +339,112 @@ async function pollCompleteResult(taskId: string) {
   store.isStreaming = false
 }
 
-function handleStop() {
+async function handleStop() {
+  // 先调用后端取消 API 停止 LangGraph 执行
+  if (currentTaskId.value) {
+    try {
+      await generationApi.cancelGenerationTask(currentTaskId.value)
+    } catch (e) {
+      console.warn('取消任务 API 调用失败:', e)
+    }
+  }
   stop()
   message.info('已停止生成')
 }
 
 function parseTestCaseFields(content: string): Array<Record<string, unknown>> {
+  // 多种 Markdown 块分隔符，按优先级尝试
+  const separators = [
+    /\n-{3,}\n/, /\n_{3,}\n/, /\n\*{3,}\n/,
+    /\n###\s+(?:用例|测试用例|Case)\s*\d*/i,
+    /\n##\s+(?:用例|测试用例)\s*\d*/i,
+    /\n---\n/,
+  ]
+  let blocks = [content]
+  for (const sep of separators) {
+    const split = content.split(sep)
+    if (split.length > 1) { blocks = split; break }
+  }
+
+  // 多种字段名匹配模式（优先严格匹配，降级到宽松匹配）
+  const strictFieldPatterns: Array<[string, RegExp]> = [
+    ['title', /\*\*标题\*\*\s*[：:]\s*(.+)/],
+    ['priority', /\*\*优先级\*\*\s*[：:]\s*(.+)/],
+    ['type', /\*\*用例类型\*\*\s*[：:]\s*(.+)/],
+    ['preconditions', /\*\*前置条件\*\*\s*[：:]\s*([\s\S]*?)(?=\n\*\*|$)/],
+    ['steps', /\*\*测试步骤\*\*\s*[：:]\s*([\s\S]*?)(?=\n\*\*|$)/],
+    ['expected', /\*\*预期结果\*\*\s*[：:]\s*([\s\S]*?)(?=\n\*\*|$)/],
+    ['tags', /\*\*标签\*\*\s*[：:]\s*(.+)/],
+  ]
+  const looseFieldPatterns: Array<[string, RegExp]> = [
+    ['title', /#+\s*标题\s*[：:]\s*(.+)/],
+    ['title', /标题\s*[：:]\s*(.+)/],
+    ['priority', /优先级\s*[：:]\s*(.+)/],
+    ['type', /(?:用例)?类型\s*[：:]\s*(.+)/],
+    ['preconditions', /前置条件\s*[：:]\s*([\s\S]*?)(?=\n(?:优先级|类型|测试步骤|预期结果|标签|$))/],
+    ['steps', /(?:测试)?步骤\s*[：:]\s*([\s\S]*?)(?=\n(?:前置条件|优先级|预期结果|标签|$))/],
+    ['expected', /预期结果\s*[：:]\s*([\s\S]*?)(?=\n(?:前置条件|步骤|优先级|标签|$))/],
+    ['tags', /标签\s*[：:]\s*(.+)/],
+  ]
+
+  function extractField(block: string, field: string, patterns: Array<[string, RegExp]>): string {
+    for (const [name, re] of patterns) {
+      if (name !== field) continue
+      const m = block.match(re)
+      if (m) return m[1].trim()
+    }
+    return ''
+  }
+
+  function extractFirst(block: string, patterns: Array<[string, RegExp]>): string {
+    for (const [, re] of patterns) {
+      const m = block.match(re)
+      if (m) return m[1].trim()
+    }
+    return ''
+  }
+
   const cases: Array<Record<string, unknown>> = []
-  const blocks = content.split(/\n-{3,}\n/)
   for (const block of blocks) {
     if (!block.trim()) continue
-    const titleMatch = block.match(/\*\*标题\*\*\s*:\s*(.+)/)
-    if (!titleMatch) continue
-    const title = titleMatch[1].trim()
-    const priorityRaw = block.match(/\*\*优先级\*\*\s*:\s*(.+)/)
-    const priority = priorityRaw ? priorityRaw[1].trim().toUpperCase() : 'P2'
+
+    // 先用严格模式提取标题
+    let title = extractField(block, 'title', strictFieldPatterns)
+    if (!title) title = extractField(block, 'title', looseFieldPatterns)
+    // 降级：使用块内第一个加粗文本或首行作为标题
+    if (!title) {
+      const boldMatch = block.match(/\*\*(.+?)\*\*/)
+      if (boldMatch) title = boldMatch[1].trim()
+    }
+    if (!title) {
+      title = block.trim().split('\n')[0].replace(/^[#*\s]+/, '').trim()
+    }
+    if (!title) continue
+
+    // 提取各字段：先严格后宽松
+    const priorityRaw = extractField(block, 'priority', strictFieldPatterns)
+      || extractField(block, 'priority', looseFieldPatterns)
+    const priority = priorityRaw.toUpperCase()
     const pVal = ['P0', 'P1', 'P2', 'P3'].includes(priority) ? priority : 'P2'
-    const typeMatch = block.match(/\*\*用例类型\*\*\s*:\s*(.+)/)
-    let caseType = typeMatch ? typeMatch[1].trim() : 'functional'
+
+    const typeRaw = extractField(block, 'type', strictFieldPatterns)
+      || extractField(block, 'type', looseFieldPatterns)
     const validTypes = ['functional', 'performance', 'security', 'compatibility', 'ui', 'api']
-    if (!validTypes.includes(caseType)) caseType = 'functional'
-    const preMatch = block.match(/\*\*前置条件\*\*\s*:\s*(.*?)(?=\n\*\*|$)/)
-    const stepsMatch = block.match(/\*\*测试步骤\*\*\s*:\s*([\s\S]*?)(?=\n\*\*|$)/)
-    const erMatch = block.match(/\*\*预期结果\*\*\s*:\s*([\s\S]*?)(?=\n\*\*|$)/)
-    const tagsMatch = block.match(/\*\*标签\*\*\s*:\s*(.+)/)
+    const caseType = validTypes.includes(typeRaw) ? typeRaw : 'functional'
+
+    const preconditions = extractField(block, 'preconditions', strictFieldPatterns)
+      || extractField(block, 'preconditions', looseFieldPatterns)
+    const steps = extractField(block, 'steps', strictFieldPatterns)
+      || extractField(block, 'steps', looseFieldPatterns)
+    const expected = extractField(block, 'expected', strictFieldPatterns)
+      || extractField(block, 'expected', looseFieldPatterns)
+    const tagsRaw = extractField(block, 'tags', strictFieldPatterns)
+      || extractField(block, 'tags', looseFieldPatterns)
+    const tags = tagsRaw ? tagsRaw.split(/[,，、]/).map(t => t.trim()).filter(Boolean) : ['ai-generated']
+
     cases.push({
       title, priority: pVal, case_type: caseType,
-      preconditions: preMatch?.[1].trim() || '',
-      steps: stepsMatch?.[1].trim() || '',
-      expected_results: erMatch?.[1].trim() || '',
-      tags: tagsMatch ? tagsMatch[1].split(',').map(t => t.trim()).filter(Boolean) : ['ai-generated'],
+      preconditions, steps, expected_results: expected, tags,
     })
   }
   return cases
@@ -311,40 +452,45 @@ function parseTestCaseFields(content: string): Array<Record<string, unknown>> {
 
 async function handleSaveCases() {
   if (!doneResult.value) return
-  isSaving.value = true
   const finalContent = stageContents.revise || stageContents.write || streamingContent.value
   let parsedCases = parseTestCaseFields(finalContent)
   if (parsedCases.length === 0) {
+    message.warning('未能解析出结构化用例，将保存全部原始内容到一条用例中')
     parsedCases.push({
       title: `AI 生成 - ${(requirementInputRef.value?.title || '').slice(0, 30) || '测试用例'}`,
       preconditions: '', steps: finalContent, expected_results: '',
       priority: 'P1', case_type: 'functional', tags: ['ai-generated'],
     })
   }
-  const count = await store.saveCases(doneResult.value.task_id, selectedProjectId.value, parsedCases)
-  isSaving.value = false
+  // 显示预览对话框让用户确认
+  previewCases.value = parsedCases
+  showSavePreview.value = true
+}
+
+async function handleConfirmSave(cases: Array<Record<string, unknown>>) {
+  if (!doneResult.value || cases.length === 0) return
+  isSaving.value = true
+  showSavePreview.value = false
+  const count = await store.saveCases(doneResult.value.task_id, selectedProjectId.value, cases)
   if (count > 0) {
     savedCount.value = count
     message.success(`已保存 ${count} 条用例到用例库`)
-    try {
-      const { updateTaskStatus } = await import('@/modules/ai_testing/api/generation')
-      await updateTaskStatus(doneResult.value.task_id, 'completed')
-    } catch {}
   } else {
-    message.warning('保存失败')
+    message.warning('保存失败，请检查字段是否完整')
   }
+  isSaving.value = false
 }
 
 async function handleExportExcel() {
   if (!doneResult.value?.task_id) { message.warning('无结果可导出'); return }
   isExporting.value = true
   try {
-    const url = `/api/v1/testing/generate/${doneResult.value.task_id}/export`
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`导出失败: ${response.status}`)
-    const blob = await response.blob()
+    // 使用 Axios（自动注入 Bearer token），以 blob 形式下载
+    const resp = await request.get(`/testing/generate/${doneResult.value.task_id}/export`, {
+      responseType: 'blob',
+    })
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
+    a.href = URL.createObjectURL(resp.data)
     a.download = `ai_generated_cases_${Date.now()}.xlsx`
     a.click()
     URL.revokeObjectURL(a.href)
@@ -356,18 +502,25 @@ async function handleExportExcel() {
 }
 
 async function handleRegenerate(suggestions: string[]) {
-  if (suggestions.length === 0) return
-  const input = requirementInputRef.value
-  if (!input) return
-  message.info(`正在按 ${suggestions.length} 条建议重新生成...`)
-  const configItem = store.configItems.find((c: ConfigItem) => c.key === 'model')
-  const task = await store.createTask({
-    project_id: selectedProjectId.value, requirement_title: input.title,
-    input_text: input.text, model: configItem?.value || '', output_mode: outputMode.value,
-  })
-  if (!task) { message.error('创建任务失败'); return }
-  currentTaskId.value = task.id
-  start(task.id, suggestions)
+  if (suggestions.length === 0 || !currentTaskId.value) return
+  message.info(`正在按 ${suggestions.length} 条建议修订生成...`)
+  try {
+    const res = await generationApi.reviseGenerationTask(currentTaskId.value, suggestions)
+    if (res.code && res.code !== 200) {
+      message.error(res.message || '修订生成失败')
+      return
+    }
+    // 重新加载结果刷新 UI
+    const [resultsRes] = await Promise.all([
+      generationApi.getGenerationResults(currentTaskId.value),
+    ])
+    const results = resultsRes.data || []
+    const taskRes = await generationApi.getGenerationTask(currentTaskId.value)
+    loadFromExisting(taskRes.data || { id: currentTaskId.value }, results)
+    message.success('修订完成')
+  } catch (e) {
+    message.error('修订生成请求失败')
+  }
 }
 
 function handleReset() {
@@ -379,8 +532,7 @@ function handleReset() {
 async function loadExistingTask(taskId: string) {
   isLoading.value = true
   try {
-    const { getGenerationTask, getGenerationResults } = await import('@/modules/ai_testing/api/generation')
-    const [taskRes, resultsRes] = await Promise.all([getGenerationTask(taskId), getGenerationResults(taskId)])
+    const [taskRes, resultsRes] = await Promise.all([generationApi.getGenerationTask(taskId), generationApi.getGenerationResults(taskId)])
     const task = taskRes.data
     const results = resultsRes.data || []
     if (!task) { message.error('任务不存在'); return }
@@ -397,10 +549,66 @@ async function loadExistingTask(taskId: string) {
   } finally { isLoading.value = false }
 }
 
-onMounted(() => {
+onMounted(async () => {
   projectStore.fetchProjects()
+  // 加载配置默认值（含模型列表），设置默认模型
+  await store.fetchConfigDefaults()
+  const models = store.configDefaults?.models
+  if (models && models.length > 0) {
+    selectedModel.value = `${models[0].provider}:${models[0].model}`
+  }
+  // 仍需加载已保存的配置（如 API Key 等）
   store.fetchConfig()
   const taskId = route.query.task_id as string | undefined
-  if (taskId) loadExistingTask(taskId)
+  const shouldRetry = route.query.retry === '1'
+  if (taskId) {
+    loadExistingTask(taskId)
+    // retry=1 表示从任务详情页跳转回来，自动触发重新生成
+    if (shouldRetry && requirementInputRef.value) {
+      handleRetry()
+    }
+  }
 })
+
+/** 查看详情页面跳回的重新生成 */
+async function handleRetry() {
+  if (!currentTaskId.value) return
+  message.info('正在重新生成...')
+  const input = requirementInputRef.value
+  if (!input) return
+  const task = await store.createTask({
+    project_id: selectedProjectId.value,
+    requirement_title: input.title,
+    input_text: input.text,
+    model: selectedModel.value,
+    output_mode: outputMode.value,
+  })
+  if (!task || !task.id) { message.error('创建任务失败'); return }
+  currentTaskId.value = task.id
+  start(task.id)
+}
 </script>
+
+<style scoped>
+@media (max-width: 768px) {
+  :deep(.n-layout-content) {
+    padding: 12px !important;
+  }
+  :deep(.n-space) {
+    max-width: 100% !important;
+  }
+  :deep(.n-page-header) {
+    flex-direction: column;
+    gap: 8px;
+  }
+  :deep(.n-select) {
+    width: 100% !important;
+  }
+  :deep(.n-space-align-center) {
+    flex-wrap: wrap;
+  }
+  :deep(.n-radio-group) {
+    flex-wrap: wrap;
+  }
+}
+</style>

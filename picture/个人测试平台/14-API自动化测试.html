@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API接口测试 - 自动化测试</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);
+  --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;
+  --text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);
+  --success:#7BA87D;--danger:#D4745C;--warning:#D4A574;--radius:8px;
+}
+body{font-family:-apple-system,PingFang SC,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;background:var(--sidebar-bg);height:100vh;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:var(--border)}
+.sidebar-header .logo{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.sidebar-header span{font-weight:600;font-size:15px;color:var(--text)}
+.sidebar-search{margin:10px 16px;padding:7px 12px;background:rgba(255,255,255,0.6);border:var(--border);border-radius:6px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)}
+.sidebar-search:before{content:'🔍'}
+.sidebar-nav{flex:1;padding:8px 0}
+.nav-group-header{padding:8px 20px 8px 16px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border-left:3px solid transparent}
+.nav-group-header:hover{color:var(--primary)}
+.nav-group-header.active{border-left-color:var(--primary);color:var(--primary)}
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.topbar-right .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)}
+.topbar-right .avatar{width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+.content{padding:20px 24px;overflow-y:auto;flex:1}
+/* page header */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-header h1{font-size:18px;font-weight:700}
+.btn-primary{padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-primary:hover{background:var(--primary-light)}
+.btn-sm{padding:5px 12px;border:none;border-radius:5px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+.btn-outline:hover{background:var(--primary-bg)}
+.btn-text{background:transparent;color:var(--text-secondary);border:none}
+.btn-text:hover{color:var(--primary)}
+.btn-danger-text{background:transparent;color:var(--danger);border:none}
+.btn-danger-text:hover{opacity:.8}
+.btn-exec{background:var(--success);color:#fff;border:none}
+.btn-exec:hover{opacity:.9}
+/* Suite cards */
+.suite-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+.suite-card{background:var(--card-bg);border-radius:12px;padding:16px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s}
+.suite-card:hover{box-shadow:0 6px 20px rgba(60,40,20,0.1)}
+.suite-card.active{border:1px solid var(--primary);box-shadow:0 0 0 2px rgba(198,123,92,0.15)}
+.suite-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.suite-name{font-size:15px;font-weight:600}
+.suite-status{padding:2px 10px;border-radius:10px;font-size:11px}
+.status-active{background:rgba(123,168,125,0.12);color:var(--success)}
+.status-paused{background:rgba(212,165,116,0.15);color:#a0845c}
+.suite-meta{display:flex;gap:16px;font-size:12px;color:var(--text-muted);margin-bottom:10px}
+.suite-meta span{display:flex;align-items:center;gap:4px}
+.suite-actions{display:flex;gap:6px;padding-top:10px;border-top:var(--border)}
+/* Section title */
+.section-title{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title .count{font-size:12px;font-weight:400;color:var(--text-muted)}
+/* Table */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{padding:10px 12px;text-align:left;font-weight:500;color:var(--text-muted);font-size:12px;border-bottom:var(--border);background:rgba(246,240,231,0.3)}
+.data-table td{padding:10px 12px;border-bottom:var(--border);color:var(--text-secondary)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--primary-bg)}
+.method-tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;min-width:42px;text-align:center}
+.method-get{background:rgba(123,168,125,0.12);color:var(--success)}
+.method-post{background:rgba(212,165,116,0.15);color:#a0845c}
+.method-put{background:rgba(91,143,212,0.12);color:#5B8FD4}
+.method-delete{background:rgba(212,116,92,0.12);color:var(--danger)}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:10px;font-size:12px}
+.status-pass{background:rgba(123,168,125,0.12);color:var(--success)}
+.status-fail{background:rgba(212,116,92,0.12);color:var(--danger)}
+/* Drawer */
+.drawer-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:100}
+.drawer{position:fixed;top:0;right:-520px;width:520px;height:100vh;background:var(--card-bg);box-shadow:-4px 0 20px rgba(0,0,0,0.08);z-index:101;transition:right .3s;display:flex;flex-direction:column}
+.drawer.open{right:0}
+.drawer-overlay.open{display:block}
+.drawer-header{padding:16px 20px;border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between}
+.drawer-header h2{font-size:16px;font-weight:600}
+.drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)}
+.drawer-body{flex:1;overflow-y:auto;padding:20px}
+.drawer-footer{padding:14px 20px;border-top:var(--border);display:flex;gap:8px;justify-content:flex-end}
+/* Drag handle */
+.drag-handle{cursor:grab;color:var(--text-muted);font-size:14px}
+.drag-handle:active{cursor:grabbing}
+/* detail table in drawer */
+.detail-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
+.detail-table th{padding:8px 10px;text-align:left;font-weight:500;color:var(--text-muted);font-size:12px;border-bottom:var(--border)}
+.detail-table td{padding:8px 10px;border-bottom:var(--border);color:var(--text-secondary)}
+.detail-table .succ{color:var(--success)}.detail-table .fail{color:var(--danger)}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">T</div>
+    <span>TestHub Pro</span>
+  </div>
+  <div class="sidebar-search">搜索功能模块...</div>
+  <div class="sidebar-nav">
+    <div class="nav-group-header"><span>📊</span> 数据看板</div>
+    <div class="nav-group-header"><span>🔗</span> 接口管理</div>
+    <div class="nav-group-header active"><span>🤖</span> 自动化测试</div>
+    <div class="nav-group-header"><span>🌐</span> 环境管理</div>
+    <div class="nav-group-header"><span>⏱</span> 定时任务</div>
+    <div class="nav-group-header"><span>📋</span> 测试报告</div>
+    <div class="nav-group-header"><span>⚙️</span> 配置中心</div>
+  </div>
+</div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">🤖 API自动化测试</div>
+    <div class="topbar-right">
+      <span style="font-size:16px;cursor:pointer">🔔</span>
+      <div class="user">
+        <div class="avatar">张</div>
+        <span>张三</span>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <h1>测试套件管理</h1>
+      <button class="btn-primary">＋ 新建套件</button>
+    </div>
+
+    <!-- Suite Cards -->
+    <div class="suite-grid">
+      <div class="suite-card active" onclick="openDrawer()">
+        <div class="suite-card-top">
+          <span class="suite-name">电商核心接口回归</span>
+          <span class="suite-status status-active">● 运行中</span>
+        </div>
+        <div class="suite-meta">
+          <span>📁 电商平台</span>
+          <span>🔗 56 个接口</span>
+          <span>⏱ 2026-06-12 14:30</span>
+        </div>
+        <div class="suite-actions">
+          <button class="btn-sm btn-outline">✏️ 编辑</button>
+          <button class="btn-sm btn-exec">▶ 执行</button>
+          <button class="btn-sm btn-text">⏸ 暂停</button>
+          <button class="btn-sm btn-danger-text">🗑</button>
+        </div>
+      </div>
+      <div class="suite-card">
+        <div class="suite-card-top">
+          <span class="suite-name">用户模块全量测试</span>
+          <span class="suite-status status-active">● 运行中</span>
+        </div>
+        <div class="suite-meta">
+          <span>📁 用户中心</span>
+          <span>🔗 38 个接口</span>
+          <span>⏱ 2026-06-12 11:00</span>
+        </div>
+        <div class="suite-actions">
+          <button class="btn-sm btn-outline">✏️ 编辑</button>
+          <button class="btn-sm btn-exec">▶ 执行</button>
+          <button class="btn-sm btn-text">⏸ 暂停</button>
+          <button class="btn-sm btn-danger-text">🗑</button>
+        </div>
+      </div>
+      <div class="suite-card">
+        <div class="suite-card-top">
+          <span class="suite-name">支付流程冒烟测试</span>
+          <span class="suite-status status-paused">● 已暂停</span>
+        </div>
+        <div class="suite-meta">
+          <span>📁 支付系统</span>
+          <span>🔗 24 个接口</span>
+          <span>⏱ 2026-06-12 09:45</span>
+        </div>
+        <div class="suite-actions">
+          <button class="btn-sm btn-outline">✏️ 编辑</button>
+          <button class="btn-sm btn-exec">▶ 执行</button>
+          <button class="btn-sm btn-text">▶ 恢复</button>
+          <button class="btn-sm btn-danger-text">🗑</button>
+        </div>
+      </div>
+      <div class="suite-card">
+        <div class="suite-card-top">
+          <span class="suite-name">消息推送服务测试</span>
+          <span class="suite-status status-active">● 运行中</span>
+        </div>
+        <div class="suite-meta">
+          <span>📁 消息服务</span>
+          <span>🔗 18 个接口</span>
+          <span>⏱ 2026-06-11 16:20</span>
+        </div>
+        <div class="suite-actions">
+          <button class="btn-sm btn-outline">✏️ 编辑</button>
+          <button class="btn-sm btn-exec">▶ 执行</button>
+          <button class="btn-sm btn-text">⏸ 暂停</button>
+          <button class="btn-sm btn-danger-text">🗑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Execution History -->
+    <div class="section-title">
+      📋 执行历史
+      <span class="count">共 24 条记录</span>
+    </div>
+    <div style="background:var(--card-bg);border-radius:12px;padding:0;box-shadow:var(--shadow);overflow:hidden">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>执行时间</th>
+            <th>套件名称</th>
+            <th>总接口数</th>
+            <th>通过</th>
+            <th>失败</th>
+            <th>耗时</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-12 14:30:22</td>
+            <td>电商核心接口回归</td>
+            <td>56</td>
+            <td style="color:var(--success);font-weight:500">54</td>
+            <td style="color:var(--danger);font-weight:500">2</td>
+            <td>48s</td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-12 11:00:15</td>
+            <td>用户模块全量测试</td>
+            <td>38</td>
+            <td style="color:var(--success);font-weight:500">38</td>
+            <td style="color:var(--danger);font-weight:500">0</td>
+            <td>32s</td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-12 09:45:30</td>
+            <td>支付流程冒烟测试</td>
+            <td>24</td>
+            <td style="color:var(--success);font-weight:500">22</td>
+            <td style="color:var(--danger);font-weight:500">2</td>
+            <td>18s</td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-11 22:00:00</td>
+            <td>夜间全量定时测试</td>
+            <td>128</td>
+            <td style="color:var(--success);font-weight:500">120</td>
+            <td style="color:var(--danger);font-weight:500">8</td>
+            <td>112s</td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-11 16:20:45</td>
+            <td>消息推送服务测试</td>
+            <td>18</td>
+            <td style="color:var(--success);font-weight:500">18</td>
+            <td style="color:var(--danger);font-weight:500">0</td>
+            <td>22s</td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer overlay -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<!-- Drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <h2>套件详情：电商核心接口回归</h2>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div style="display:flex;gap:12px;margin-bottom:16px;font-size:13px;color:var(--text-secondary)">
+      <span>📁 电商平台</span>
+      <span>🔗 56 个接口</span>
+      <span>📅 创建于 2026-01-15</span>
+    </div>
+    <div class="section-title" style="margin-bottom:8px">接口执行顺序</div>
+    <table class="detail-table">
+      <thead>
+        <tr><th style="width:40px"></th><th style="width:60px">方法</th><th>URL</th><th style="width:60px">断言数</th><th style="width:60px">状态</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="drag-handle">⠿</span></td>
+          <td><span class="method-tag method-get">GET</span></td>
+          <td style="font-size:12px">/v1/users/profile</td>
+          <td>3</td>
+          <td><span class="status-badge status-pass">✅</span></td>
+        </tr>
+        <tr>
+          <td><span class="drag-handle">⠿</span></td>
+          <td><span class="method-tag method-post">POST</span></td>
+          <td style="font-size:12px">/v1/users/login</td>
+          <td>2</td>
+          <td><span class="status-badge status-pass">✅</span></td>
+        </tr>
+        <tr>
+          <td><span class="drag-handle">⠿</span></td>
+          <td><span class="method-tag method-get">GET</span></td>
+          <td style="font-size:12px">/v1/products/list</td>
+          <td>4</td>
+          <td><span class="status-badge status-fail">❌</span></td>
+        </tr>
+        <tr>
+          <td><span class="drag-handle">⠿</span></td>
+          <td><span class="method-tag method-post">POST</span></td>
+          <td style="font-size:12px">/v1/orders/create</td>
+          <td>5</td>
+          <td><span class="status-badge status-pass">✅</span></td>
+        </tr>
+        <tr>
+          <td><span class="drag-handle">⠿</span></td>
+          <td><span class="method-tag method-put">PUT</span></td>
+          <td style="font-size:12px">/v1/orders/{id}/update</td>
+          <td>3</td>
+          <td><span class="status-badge status-pass">✅</span></td>
+        </tr>
+        <tr>
+          <td><span class="drag-handle">⠿</span></td>
+          <td><span class="method-tag method-delete">DELETE</span></td>
+          <td style="font-size:12px">/v1/cart/items/{id}</td>
+          <td>2</td>
+          <td><span class="status-badge status-pass">✅</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn-sm btn-text" onclick="closeDrawer()">关闭</button>
+    <button class="btn-primary" style="font-size:12px;padding:7px 16px">▶ 执行全部</button>
+  </div>
+</div>
+
+<script>
+function openDrawer(){
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+</script>
+</body>
+</html>

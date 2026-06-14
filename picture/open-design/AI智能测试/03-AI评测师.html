@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 评测师 · AI-HUB 智能工作台</title>
+<style>
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --radius: 8px;
+  --bubble-ai: #F0EBE3; --bubble-user: #EDE4D6;
+  --font: -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --font-mono: ui-monospace,'SF Mono','Fira Code','Consolas',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* 侧栏 */
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{padding:8px 0}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;font-size:15px;flex-shrink:0}
+
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;flex-shrink:0}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+
+/* 三栏布局 */
+.tester-layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 48px)}
+
+/* 会话侧栏 */
+.session-sidebar{width:280px;min-width:220px;max-width:320px;background:var(--card-bg);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.session-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:var(--border)}
+.session-header h3{font-size:15px;font-weight:600;color:var(--text)}
+.session-clear{font-size:12px;color:var(--primary);cursor:pointer;background:none;border:none;padding:2px 6px;border-radius:4px}
+.session-clear:hover{background:var(--primary-bg)}
+.session-body{flex:1;overflow-y:auto;padding:12px}
+.new-chat-btn{display:block;width:100%;padding:10px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:12px;transition:background 0.2s}
+.new-chat-btn:hover{background:var(--primary-light)}
+.session-list{display:flex;flex-direction:column;gap:2px}
+.session-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:var(--radius);cursor:pointer;transition:background 0.2s}
+.session-item:hover{background:var(--primary-bg)}
+.session-item.active{background:var(--primary-bg);border-left:3px solid var(--primary);border-radius:0 var(--radius) var(--radius) 0}
+.session-info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.session-name{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.session-time{font-size:11px;color:var(--text-muted)}
+.session-actions{display:flex;gap:2px;opacity:0;transition:opacity 0.2s}
+.session-item:hover .session-actions{opacity:1}
+.session-action-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;color:var(--text-muted)}
+.session-action-btn:hover{background:var(--primary-bg);color:var(--primary)}
+.session-empty{text-align:center;color:var(--text-muted);font-size:13px;padding:32px 0}
+
+/* 聊天区 */
+.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.chat-header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:var(--border);background:var(--card-bg);flex-shrink:0}
+.chat-title{font-size:16px;font-weight:600;color:var(--text)}
+.model-select{padding:5px 10px;border:var(--border);border-radius:6px;font-size:13px;background:var(--card-bg);color:var(--text);outline:none;cursor:pointer;min-width:160px}
+.model-select:focus{border-color:var(--primary)}
+
+/* 消息列表 */
+.message-container{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.message-row{display:flex;gap:10px;max-width:75%;position:relative}
+.message-row-user{align-self:flex-end;flex-direction:row-reverse}
+.message-row-ai{align-self:flex-start}
+.avatar-col{flex-shrink:0}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.ai-avatar{background:var(--primary);color:#fff}
+.user-avatar{background:var(--accent);color:#fff}
+.message-bubble{padding:12px 16px;border-radius:12px;position:relative}
+.bubble-ai{background:var(--bubble-ai);border-bottom-left-radius:4px}
+.bubble-user{background:var(--bubble-user);border-bottom-right-radius:4px}
+.message-text{font-size:14px;line-height:1.6;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.message-time{font-size:11px;color:var(--text-muted);margin-top:6px;text-align:right}
+.message-actions{position:absolute;top:-22px;display:flex;gap:2px;opacity:0;transition:opacity 0.2s;background:var(--card-bg);border-radius:6px;padding:2px 4px;box-shadow:0 2px 8px rgba(60,40,20,0.1)}
+.message-row:hover .message-actions{opacity:1}
+.message-row-user .message-actions{right:0}
+.message-row-ai .message-actions{left:0}
+.msg-action-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;color:var(--text-muted);transition:all 0.2s}
+.msg-action-btn:hover{background:var(--primary-bg);color:var(--primary)}
+.message-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted)}
+.message-empty .empty-icon{font-size:48px;margin-bottom:12px}
+
+/* 输入区 */
+.input-area{border-top:var(--border);padding:12px 20px;background:var(--card-bg);flex-shrink:0}
+.input-row{display:flex;gap:12px;align-items:flex-end}
+.input-wrap{flex:1;position:relative}
+.input-wrap textarea{width:100%;padding:10px 14px;border:var(--border);border-radius:10px;font-size:14px;font-family:inherit;resize:none;outline:none;background:var(--bg);color:var(--text);line-height:1.5;min-height:48px;max-height:144px;transition:border-color 0.2s}
+.input-wrap textarea:focus{border-color:var(--primary)}
+.input-wrap textarea::placeholder{color:var(--text-muted)}
+.send-btn{width:38px;height:38px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;flex-shrink:0}
+.send-btn:hover:not(:disabled){background:var(--primary-light)}
+.send-btn:disabled{background:rgba(198,123,92,0.3);cursor:not-allowed}
+
+/* 模态框 */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.35);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--card-bg);border-radius:12px;box-shadow:0 8px 32px rgba(60,40,20,0.15);width:380px;padding:24px;max-width:90vw}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:16px;color:var(--text)}
+.modal-input{width:100%;padding:10px 14px;border:var(--border);border-radius:8px;font-size:14px;outline:none;font-family:inherit;color:var(--text);background:var(--bg)}
+.modal-input:focus{border-color:var(--primary)}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.modal-btn{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.2s}
+.modal-btn-cancel{background:var(--sidebar-bg);color:var(--text-secondary)}
+.modal-btn-cancel:hover{background:var(--primary-bg)}
+.modal-btn-confirm{background:var(--primary);color:#fff}
+.modal-btn-confirm:hover{background:var(--primary-light)}
+
+/* Typing indicator */
+.typing-indicator{display:flex;gap:4px;padding:12px 16px;align-items:center}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:bounce 1.4s infinite ease-in-out}
+.typing-dot:nth-child(2){animation-delay:0.2s}
+.typing-dot:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:8px;padding:10px 18px;font-size:13px;color:var(--text);box-shadow:0 4px 16px rgba(60,40,20,0.1);display:none;align-items:center;gap:8px;animation:slideIn 0.3s ease}
+.toast.show{display:flex}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+@media(max-width:768px){
+  .sidebar{width:60px}
+  .sidebar-logo span,.menu-group-title,.menu-item .label{display:none}
+  .sidebar-logo{justify-content:center;padding:14px 0}
+  .menu-item{justify-content:center;padding:10px 0;border-left:none}
+  .main{margin-left:60px}
+  .session-sidebar{display:none}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">🤖</div><span>AI 智能测试</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">AI 智能测试</div>
+    <a class="menu-item" href="50-AI智能测试模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="02-AI用例生成.html"><span class="icon">🤖</span><span>AI用例生成</span></a>
+    <a class="menu-item active" href="03-AI评测师.html"><span class="icon">🔍</span><span>AI评测师</span></a>
+    <a class="menu-item" href="04-AI测试报告.html"><span class="icon">📈</span><span>AI测试报告</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+
+<div class="main">
+  <div class="topbar"><div class="breadcrumb">AI 智能测试 / <span>AI评测师</span></div></div>
+  <div class="tester-layout">
+    <!-- 左栏：会话历史 -->
+    <div class="session-sidebar">
+      <div class="session-header">
+        <h3>会话历史</h3>
+        <button class="session-clear" onclick="confirmClear()">清空</button>
+      </div>
+      <div class="session-body">
+        <button class="new-chat-btn" onclick="newChat()">+ 新建对话</button>
+        <div class="session-list" id="sessionList"></div>
+      </div>
+    </div>
+
+    <!-- 右栏：聊天区 -->
+    <div class="chat-area">
+      <div class="chat-header">
+        <span class="chat-title" id="chatTitle">AI 评测师</span>
+        <select class="model-select" id="modelSelect">
+          <option value="deepseek-chat">DeepSeek Chat</option>
+          <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+          <option value="qwen-max">Qwen Max</option>
+          <option value="qwen-plus">Qwen Plus</option>
+          <option value="gpt-4o">GPT-4o</option>
+        </select>
+      </div>
+
+      <div class="message-container" id="msgContainer">
+        <div class="message-empty" id="msgEmpty">
+          <div class="empty-icon">💬</div>
+          <p>开始一个新的评测对话</p>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-row">
+          <div class="input-wrap">
+            <textarea id="inputText" rows="2" placeholder="输入您的问题，例如：请帮我评审这批测试用例..." oninput="onInput(this)" onkeydown="onKey(event)"></textarea>
+          </div>
+          <button class="send-btn" id="sendBtn" disabled onclick="sendMsg()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 重命名弹窗 -->
+<div class="modal-overlay" id="renameModal">
+  <div class="modal-box">
+    <div class="modal-title">重命名会话</div>
+    <input class="modal-input" id="renameInput" placeholder="输入新名称" onkeydown="if(event.key==='Enter')confirmRename()">
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeRename()">取消</button>
+      <button class="modal-btn modal-btn-confirm" onclick="confirmRename()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 确认弹窗 -->
+<div class="modal-overlay" id="confirmDialog">
+  <div class="modal-box" style="text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">🗑️</div>
+    <div class="modal-title" style="text-align:center">确认删除</div>
+    <div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px">确定要删除该会话吗？此操作不可撤销。</div>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="modal-btn modal-btn-cancel" onclick="closeConfirm()">取消</button>
+      <button class="modal-btn modal-btn-confirm" id="confirmDelBtn" onclick="deleteSession()">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 清空确认 -->
+<div class="modal-overlay" id="clearConfirm">
+  <div class="modal-box" style="text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">🗑️</div>
+    <div class="modal-title" style="text-align:center">清空历史</div>
+    <div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px">确定要清空所有会话吗？</div>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="modal-btn modal-btn-cancel" onclick="closeClear()">取消</button>
+      <button class="modal-btn modal-btn-confirm" onclick="confirmClearAll()">确认清空</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var sessions=[],currentId='',msgs={},typing=false,renameId=null,delId=null;
+
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function fmtTime(){var n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
+function fmtDate(){var n=new Date();return '2025-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+' '+fmtTime()}
+function mkSess(n){return{id:genId(),name:n,time:fmtDate()}}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+function showToast(m){var t=document.getElementById('toast');t.textContent='✓ '+m;t.className='toast show';setTimeout(function(){t.className='toast'},2000)}
+
+function renderSessions(){
+  var list=document.getElementById('sessionList');
+  if(sessions.length===0){list.innerHTML='<div class="session-empty">暂无历史会话</div>';return}
+  list.innerHTML=sessions.map(function(s){return'<div class="session-item'+(s.id===currentId?' active':'')+'" data-id="'+s.id+'" onclick="switchSession(\''+s.id+'\')"><div class="session-info"><span class="session-name">'+esc(s.name)+'</span><span class="session-time">'+s.time+'</span></div><div class="session-actions"><button class="session-action-btn" onclick="event.stopPropagation();openRename(\''+s.id+'\')" title="重命名">✏️</button><button class="session-action-btn" onclick="event.stopPropagation();openDelete(\''+s.id+'\')" title="删除">🗑️</button></div></div>'}).join('')
+}
+
+function switchSession(id){
+  if(typing)return;currentId=id;renderSessions();updateTitle();renderMsgs()
+}
+function updateTitle(){
+  var s=sessions.find(function(s){return s.id===currentId});
+  document.getElementById('chatTitle').textContent=s?s.name:'AI 评测师'
+}
+
+function renderMsgs(){
+  var c=document.getElementById('msgContainer'),e=document.getElementById('msgEmpty');
+  var m=msgs[currentId]||[];c.innerHTML='';
+  if(m.length===0){c.appendChild(e);return}
+  m.forEach(function(msg,i){
+    var row=document.createElement('div');row.className='message-row '+(msg.role==='user'?'message-row-user':'message-row-ai');
+    if(msg.role==='ai')row.innerHTML='<div class="avatar-col"><div class="avatar ai-avatar">AI</div></div>';
+    var bubble=document.createElement('div');bubble.className='message-bubble '+(msg.role==='user'?'bubble-user':'bubble-ai');
+    var text=document.createElement('div');text.className='message-text';text.textContent=msg.content;
+    var time=document.createElement('div');time.className='message-time';time.textContent=msg.time;
+    bubble.appendChild(text);bubble.appendChild(time);
+    var acts=document.createElement('div');acts.className='message-actions';
+    acts.innerHTML='<button class="msg-action-btn" onclick="copyMsg(this)" title="复制">📋</button><button class="msg-action-btn" onclick="rateMsg(this,1)" title="👍">👍</button><button class="msg-action-btn" onclick="rateMsg(this,0)" title="👎">👎</button>';
+    bubble.appendChild(acts);row.appendChild(bubble);
+    if(msg.role==='user')row.innerHTML+='<div class="avatar-col"><div class="avatar user-avatar">我</div></div>';
+    c.appendChild(row)
+  });scrollBottom()
+}
+
+function scrollBottom(){var c=document.getElementById('msgContainer');setTimeout(function(){c.scrollTop=c.scrollHeight},10)}
+function getMsgs(){if(!msgs[currentId])msgs[currentId]=[];return msgs[currentId]}
+
+function newChat(){
+  if(typing)return;var s=mkSess('新对话 '+(sessions.length+1));sessions.unshift(s);msgs[s.id]=[];currentId=s.id;renderSessions();updateTitle();renderMsgs();showToast('已创建新对话')
+}
+
+function onInput(el){
+  el.style.height='auto';el.style.height=Math.min(el.scrollHeight,144)+'px';
+  document.getElementById('sendBtn').disabled=!el.value.trim()
+}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}}
+
+function sendMsg(){
+  var ta=document.getElementById('inputText'),text=ta.value.trim();if(!text||typing)return;
+  ta.value='';ta.style.height='auto';document.getElementById('sendBtn').disabled=true;
+  if(!currentId||!sessions.find(function(s){return s.id===currentId})){var s=mkSess('新对话 '+(sessions.length+1));sessions.unshift(s);currentId=s.id;msgs[currentId]=[];renderSessions();updateTitle()}
+  getMsgs().push({role:'user',content:text,time:fmtTime()});renderMsgs();showTyping();typing=true;
+  var replies=['您好！我已收到您的问题：「'+text+'」\n\n作为 AI 评测师，我将对您的测试场景进行分析。以下是我的初步评估：\n\n**1. 覆盖范围分析**\n✅ 正向测试场景覆盖合理\n⚠️ 需补充以下边界情况：\n  - 输入参数值为空时的处理逻辑\n  - 并发请求下的数据一致性\n  - 异常网络环境重试机制\n\n**2. 优先级建议**\nP0 核心业务流应优先覆盖，P1 异常分支次之，P2 体验优化可延后。\n\n**3. 风险提示**\n建议关注数据完整性校验用例的完整性。',
+'收到您的分析需求，正在进行详细评估。\n\n## 综合评审结果\n\n| 评估维度 | 评分 | 建议 |\n|---------|------|------|\n| 功能覆盖 | 85/100 | 补充异常场景 |\n| 数据校验 | 72/100 | 需加强边界测试 |\n| 性能考量 | 68/100 | 建议增加压力测试 |\n| 安全测试 | 78/100 | SQL注入场景待补充 |\n\n### 优化建议\n1. 增加对超时场景的测试\n2. 补充多用户并发操作测试\n3. 完善接口幂等性验证',
+'好的，我来分析您的测试场景。\n\n📋 **用例质量评分**: **83/100**\n\n**优势项** ✅\n- 业务路径覆盖完整\n- 预期结果定义清晰\n- 测试数据设计合理\n\n**待改进项** ⚠️\n- 缺少异常恢复验证\n- 未覆盖降级方案\n- 可测性文档补充\n\n**建议措施**: 建议优先补充 P0 级别的异常场景用例，确保核心功能的健壮性。'];
+  var reply=replies[Math.floor(Math.random()*replies.length)];
+  setTimeout(function(){removeTyping();var ai={role:'ai',content:reply,time:fmtTime()};getMsgs().push(ai);renderMsgs();typing=false;scrollBottom()},1200)
+}
+
+function showTyping(){
+  var c=document.getElementById('msgContainer'),e=document.getElementById('msgEmpty');
+  if(c.contains(e))e.remove();
+  var r=document.createElement('div');r.className='message-row message-row-ai';r.id='typingRow';
+  r.innerHTML='<div class="avatar-col"><div class="avatar ai-avatar">AI</div></div><div class="message-bubble bubble-ai"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>';
+  c.appendChild(r);scrollBottom()
+}
+function removeTyping(){var e=document.getElementById('typingRow');if(e)e.remove()}
+
+function copyMsg(b){var t=b.closest('.message-bubble').querySelector('.message-text').textContent;navigator.clipboard.writeText(t).then(function(){showToast('已复制')})}
+function rateMsg(b,t){showToast('已反馈 '+(t===1?'👍':'👎'))}
+
+function openRename(id){renameId=id;var s=sessions.find(function(s){return s.id===id});if(!s)return;document.getElementById('renameInput').value=s.name;document.getElementById('renameModal').className='modal-overlay open';setTimeout(function(){document.getElementById('renameInput').focus()},100)}
+function closeRename(){document.getElementById('renameModal').className='modal-overlay';renameId=null}
+function confirmRename(){var v=document.getElementById('renameInput').value.trim();if(v){var s=sessions.find(function(s){return s.id===renameId});if(s){s.name=v;renderSessions();updateTitle();showToast('已重命名'})}closeRename()}
+
+function openDelete(id){delId=id;document.getElementById('confirmDialog').className='modal-overlay open'}
+function closeConfirm(){document.getElementById('confirmDialog').className='modal-overlay';delId=null}
+function deleteSession(){if(!delId)return;sessions=sessions.filter(function(s){return s.id!==delId});delete msgs[delId];if(currentId===delId)currentId=sessions[0]?sessions[0].id:'';delId=null;renderSessions();updateTitle();renderMsgs();closeConfirm();showToast('已删除')}
+
+function confirmClear(){document.getElementById('clearConfirm').className='modal-overlay open'}
+function closeClear(){document.getElementById('clearConfirm').className='modal-overlay'}
+function confirmClearAll(){sessions=[];msgs={};currentId='';renderSessions();updateTitle();renderMsgs();closeClear();showToast('已清空')}
+
+// 初始化
+(function(){
+  var s=mkSess('API 接口测试评审');sessions.push(s);currentId=s.id;msgs[s.id]=[
+    {role:'ai',content:'您好！我是 AI 评测师，可以协助您评审测试用例、分析测试结果、优化测试策略。请描述您需要评测的内容。',time:fmtTime()},
+    {role:'user',content:'请帮我评审用户登录模块的测试用例覆盖情况',time:fmtTime()},
+    {role:'ai',content:'好的，我来分析用户登录模块的测试用例覆盖情况。\n\n## 登录模块用例评审报告\n\n### ✅ 已有用例覆盖\n- 正常用户名密码登录\n- 密码错误提示\n- 用户名不存在处理\n- 多次失败锁定\n\n### ⚠️ 建议补充\n1. **SSO单点登录** - 缺少第三方认证的测试\n2. **Token过期刷新** - 需验证refresh token机制\n3. **并发登录** - 同一账号多地登录场景\n4. **密码策略** - 弱密码检测、历史密码复用\n\n### 📊 综合评分: **78/100**\n整体覆盖度良好，建议优先补充安全相关场景。',time:fmtTime()}
+  ];
+  ['用户登录模块用例评审','订单流程边界分析','支付系统安全性评估'].forEach(function(n){var s2=mkSess(n);sessions.push(s2);msgs[s2.id]=[]});
+  renderSessions();renderMsgs()
+})();
+</script>
+</body>
+</html>

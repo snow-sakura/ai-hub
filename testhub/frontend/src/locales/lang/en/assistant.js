@@ -23,7 +23,7 @@ export default {
     apiTest: 'API Test Cases',
     apiTestQuestion: 'How to design test cases for login API?',
     performancePlan: 'Performance Test Plan',
-    performancePlanQuestion: 'Help me generate a performance test plan template',
+    performancePlanQuestion: 'Help me generate a performance test plan_bak template',
     testTheory: 'Testing Theory',
     testTheoryQuestion: 'Explain the boundary value analysis method',
     automationDebug: 'Automation Debug',

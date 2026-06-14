@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API自动化测试 · AI-HUB 智能工作台</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--danger:#D4745C;--info:#5B8DEF;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;--font-mono:ui-monospace,'SF Mono','Fira Code','Consolas',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;height:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px;flex:1}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-0.02em}
+.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light);box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:var(--border)}
+.btn-secondary:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid rgba(180,150,120,0.15)}
+.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}
+.btn-xs{height:24px;padding:0 8px;font-size:11px}
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:16px 20px}
+.suite-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.suite-card{background:var(--card-bg);border:var(--border);border-radius:12px;padding:16px 18px;cursor:pointer;transition:all 0.2s}
+.suite-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.suite-card.expanded{grid-column:1/-1}
+.suite-name{font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px}
+.info-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.info-row strong{color:var(--text-secondary);font-weight:600}
+.tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500}
+.tag-active{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-paused{background:rgba(212,165,116,0.12);color:#B8860B}
+.tag-pass{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-fail{background:rgba(212,116,92,0.12);color:var(--danger)}
+.method-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;color:#fff;min-width:32px;text-align:center}
+.suite-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:var(--border)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);white-space:nowrap;background:var(--sidebar-bg);font-size:12px}
+td{padding:10px 12px;border-bottom:var(--border);color:var(--text)}
+tr:nth-child(even) td{background:rgba(180,150,120,0.03)}
+tr:hover td{background:var(--primary-bg)}
+.text-muted{color:var(--text-muted)}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(30,20,10,0.35);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--card-bg);border-radius:14px;width:92%;max-width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(30,20,10,0.18);animation:modalIn 0.2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border)}
+.modal-head h3{font-size:16px;font-weight:600}
+.modal-close{width:28px;height:28px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--primary-bg);color:var(--text)}
+.modal-body{padding:20px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:var(--border)}
+.input{width:100%;height:34px;border:var(--border);border-radius:6px;padding:0 12px;font-size:13px;color:var(--text);font-family:inherit;background:var(--card-bg);outline:none}
+.input:focus{border-color:var(--primary)}
+label{font-size:13px;color:var(--text-secondary);margin-bottom:4px;display:block}
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:10px;padding:12px 20px;box-shadow:0 8px 30px rgba(30,20,10,0.12);display:flex;align-items:center;gap:10px;font-size:13px;animation:slideIn 0.25s ease;max-width:360px}
+.toast-success{border-left:4px solid var(--success)}
+.toast-info{border-left:4px solid var(--info)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.suite-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}.sidebar-logo span,.menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}.sidebar-logo{padding:14px 0;justify-content:center}.menu-item{justify-content:center;padding:9px 0}.main{margin-left:60px}.suite-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">🔌</div><span>接口测试</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">接口测试</div>
+    <a class="menu-item" href="51-接口测试模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="05-接口仪表盘.html"><span class="icon">📊</span><span>数据看板</span></a>
+    <a class="menu-item" href="06-接口管理.html"><span class="icon">🔗</span><span>接口管理</span></a>
+    <a class="menu-item active" href="07-接口自动化.html"><span class="icon">⚡</span><span>自动化测试</span></a>
+    <a class="menu-item" href="08-接口环境管理.html"><span class="icon">🌐</span><span>环境管理</span></a>
+    <a class="menu-item" href="09-接口请求历史.html"><span class="icon">📜</span><span>请求历史</span></a>
+    <a class="menu-item" href="10-Mock服务.html"><span class="icon">🎭</span><span>Mock服务</span></a>
+    <a class="menu-item" href="11-接口定时任务.html"><span class="icon">⏰</span><span>定时任务</span></a>
+    <a class="menu-item" href="12-接口通知.html"><span class="icon">🔔</span><span>通知配置</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">接口测试 / <span>自动化测试</span></div>
+    <div class="topbar-right"><button class="topbar-btn" onclick="showToast('页面已刷新','info')" title="刷新">⟳</button><button class="topbar-btn" onclick="showToast('暂无新通知','info')" title="通知">🔔</button><div class="avatar-sm">张</div></div>
+  </header>
+  <div class="content">
+    <div class="page-header fade-in">
+      <div><h1 class="page-title">API 自动化测试</h1><p class="page-sub">管理测试套件 · 共 3 个套件</p></div>
+      <div class="header-actions"><button class="btn btn-primary" onclick="showModal('suiteModal')">+ 新建套件</button></div>
+    </div>
+
+    <!-- 套件网格 -->
+    <div class="suite-grid fade-in" id="suiteGrid">
+      <!-- 由 JS 渲染 -->
+    </div>
+
+    <!-- 执行历史 -->
+    <div class="card fade-in">
+      <div class="card-header">🕐 执行历史</div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>执行时间</th><th>套件</th><th>总接口</th><th>通过 ✅</th><th>失败 ❌</th><th>耗时</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td class="text-muted">2026-06-12 10:30:00</td><td>订单流程回归</td><td>8</td><td style="color:var(--success);font-weight:600">7</td><td style="color:var(--danger);font-weight:600">1</td><td class="text-muted">12.3s</td><td><button class="btn btn-ghost btn-xs" onclick="showToast('查看报告','info')">查看报告</button></td></tr>
+              <tr><td class="text-muted">2026-06-12 09:00:00</td><td>用户注册全流程</td><td>3</td><td style="color:var(--success);font-weight:600">3</td><td style="color:var(--danger);font-weight:600">0</td><td class="text-muted">3.2s</td><td><button class="btn btn-ghost btn-xs" onclick="showToast('查看报告','info')">查看报告</button></td></tr>
+              <tr><td class="text-muted">2026-06-11 22:00:00</td><td>支付系统冒烟测试</td><td>3</td><td style="color:var(--success);font-weight:600">2</td><td style="color:var(--danger);font-weight:600">1</td><td class="text-muted">5.8s</td><td><button class="btn btn-ghost btn-xs" onclick="showToast('查看报告','info')">查看报告</button></td></tr>
+              <tr><td class="text-muted">2026-06-11 18:00:00</td><td>订单流程回归</td><td>8</td><td style="color:var(--success);font-weight:600">8</td><td style="color:var(--danger);font-weight:600">0</td><td class="text-muted">11.1s</td><td><button class="btn btn-ghost btn-xs" onclick="showToast('查看报告','info')">查看报告</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新建套件模态框 -->
+<div class="modal-overlay" id="suiteModal">
+  <div class="modal-box">
+    <div class="modal-head"><h3>📁 新建测试套件</h3><button class="modal-close" onclick="hideModal('suiteModal')">✕</button></div>
+    <div class="modal-body">
+      <label>套件名称</label>
+      <input class="input" placeholder="例如：订单流程回归测试" style="margin-bottom:12px">
+      <label>关联项目</label>
+      <select class="input"><option>电商平台</option><option>金融风控</option><option>移动端网关</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="hideModal('suiteModal')">取消</button>
+      <button class="btn btn-primary" onclick="hideModal('suiteModal');showToast('套件创建成功','success')">创建</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 测试套件数据
+var suites = [
+  { id: 1, name: '订单流程回归测试', project: '电商平台', apiCount: 8, lastRun: '2026-06-12 10:30', status: 'active', expanded: false, apis: [
+    { seq: 1, method: 'POST', url: '/api/v1/orders/create', assert: 5, status: 'pass' },
+    { seq: 2, method: 'GET', url: '/api/v1/orders/list', assert: 3, status: 'pass' },
+    { seq: 3, method: 'GET', url: '/api/v1/orders/{id}', assert: 4, status: 'pass' },
+    { seq: 4, method: 'PUT', url: '/api/v1/orders/{id}/cancel', assert: 5, status: 'pass' },
+    { seq: 5, method: 'GET', url: '/api/v1/orders/{id}/refund', assert: 4, status: 'fail' },
+    { seq: 6, method: 'POST', url: '/api/v1/payments/pay', assert: 6, status: 'pass' },
+    { seq: 7, method: 'GET', url: '/api/v1/payments/status', assert: 3, status: 'pass' },
+    { seq: 8, method: 'DELETE', url: '/api/v1/cart/items', assert: 2, status: 'pass' }
+  ]},
+  { id: 2, name: '用户注册全流程', project: '用户中心', apiCount: 3, lastRun: '2026-06-12 09:00', status: 'active', expanded: false, apis: [
+    { seq: 1, method: 'POST', url: '/api/v1/auth/register', assert: 5, status: 'pass' },
+    { seq: 2, method: 'POST', url: '/api/v1/auth/login', assert: 4, status: 'pass' },
+    { seq: 3, method: 'GET', url: '/api/v1/users/profile', assert: 3, status: 'pass' }
+  ]},
+  { id: 3, name: '支付系统冒烟测试', project: '金融风控', apiCount: 3, lastRun: '2026-06-11 22:00', status: 'paused', expanded: false, apis: [
+    { seq: 1, method: 'POST', url: '/api/v1/payments/pay', assert: 6, status: 'pass' },
+    { seq: 2, method: 'POST', url: '/api/v1/payments/refund', assert: 5, status: 'fail' },
+    { seq: 3, method: 'GET', url: '/api/v1/payments/status', assert: 3, status: 'pass' }
+  ]}
+];
+
+var methodColors = { GET:'#7BA87D', POST:'#D4A574', PUT:'#5B8DEF', DELETE:'#D4745C', PATCH:'#A07BC6' };
+
+function renderSuites() {
+  var grid = document.getElementById('suiteGrid');
+  grid.innerHTML = suites.map(function(s, i) {
+    var statusTag = s.status === 'active' ? '<span class="tag tag-active">运行中</span>' : '<span class="tag tag-paused">已暂停</span>';
+    var detailHtml = '';
+    if (s.expanded) {
+      var rows = s.apis.map(function(a) {
+        var st = a.status === 'pass' ? '<span class="tag tag-pass">通过</span>' : '<span class="tag tag-fail">失败</span>';
+        return '<tr><td>'+a.seq+'</td><td><span class="method-tag" style="background:'+methodColors[a.method]+'">'+a.method+'</span></td><td style="font-family:var(--font-mono);font-size:12px">'+a.url+'</td><td>'+a.assert+'</td><td>'+st+'</td></tr>';
+      }).join('');
+      detailHtml = '<div style="margin-top:12px;padding-top:12px;border-top:var(--border)"><table><thead><tr><th>序号</th><th>方法</th><th>URL</th><th>断言数</th><th>状态</th></tr></thead><tbody>'+rows+'</tbody></table><div style="margin-top:10px"><button class="btn btn-primary btn-sm" onclick="showToast(\'执行全部套件\',\'info\')">▶ 执行全部</button></div></div>';
+    }
+    return '<div class="suite-card'+(s.expanded?' expanded':'')+'" onclick="toggleSuite('+i+')">'+
+      '<div class="suite-name">'+s.name+'</div>'+
+      '<div class="info-row"><span>关联项目</span><strong>'+s.project+'</strong></div>'+
+      '<div class="info-row"><span>接口数</span><strong>'+s.apiCount+' 个</strong></div>'+
+      '<div class="info-row"><span>最后执行</span><strong>'+s.lastRun+'</strong></div>'+
+      '<div class="info-row"><span>状态</span>'+statusTag+'</div>'+
+      '<div class="suite-actions" onclick="event.stopPropagation()">'+
+        '<button class="btn btn-ghost btn-xs">编辑</button>'+
+        '<button class="btn btn-ghost btn-xs" onclick="toggleSuiteStatus('+i+')">'+(s.status==='active'?'暂停':'恢复')+'</button>'+
+        '<button class="btn btn-primary btn-xs" onclick="showToast(\'开始执行 '+s.name+'\',\'info\')">▶ 执行</button>'+
+      '</div>'+
+      detailHtml+
+    '</div>';
+  }).join('');
+}
+
+function toggleSuite(idx) {
+  suites[idx].expanded = !suites[idx].expanded;
+  renderSuites();
+}
+
+function toggleSuiteStatus(idx) {
+  suites[idx].status = suites[idx].status === 'active' ? 'paused' : 'active';
+  renderSuites();
+  showToast(suites[idx].status === 'active' ? '套件已恢复' : '套件已暂停', 'success');
+}
+
+function showModal(id) { document.getElementById(id).classList.add('active'); }
+function hideModal(id) { document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.modal-overlay').forEach(function(o) { o.addEventListener('click', function(e) { if(e.target===this)this.classList.remove('active'); }); });
+
+function showToast(msg, type) {
+  type=type||'success';var t=document.createElement('div');t.className='toast toast-'+type;
+  t.innerHTML=(type==='success'?'✅ ':'ℹ️ ')+msg;document.body.appendChild(t);setTimeout(function(){t.remove()},2500);
+}
+
+renderSuites();
+</script>
+</body>
+</html>

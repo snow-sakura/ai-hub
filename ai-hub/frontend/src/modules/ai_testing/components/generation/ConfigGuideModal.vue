@@ -12,7 +12,7 @@
       <n-progress
         v-if="passedCount > 0"
         type="line"
-        :percentage="Math.round(passedCount / 5 * 100)"
+        :percentage="Math.round(passedCount / ITEMS.length * 100)"
         :indicator-placement="'inside'"
         class="guide-progress"
       />
@@ -36,7 +36,15 @@
               size="small"
               round
             >
-              {{ item.status === 'ok' ? '✅ 已配置' : '❌ 未配置' }}
+              <template v-if="item.status === 'ok' && item.message === '使用默认模板'">
+                ✅ 默认模板
+              </template>
+              <template v-else-if="item.status === 'ok'">
+                ✅ 已配置
+              </template>
+              <template v-else>
+                ❌ 未配置
+              </template>
             </n-tag>
             <span class="guide-item-label">{{ item.label }}</span>
             <n-tag size="small" :bordered="false" class="guide-item-cat">
@@ -99,6 +107,7 @@ const ITEMS = [
   { key: 'write_prompt', label: '用例编写提示词', category: 'prompt' },
   { key: 'review_prompt', label: 'AI 评审提示词', category: 'prompt' },
   { key: 'revise_prompt', label: '用例修订提示词', category: 'prompt' },
+  { key: 'language', label: '输出语言', category: 'behavior' },
 ]
 
 const rawItems = ref<ConfigCheckItem[]>([])

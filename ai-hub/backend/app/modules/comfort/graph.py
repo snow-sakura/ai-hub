@@ -3,13 +3,13 @@
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
 
-from app.shared.agent.state import AgentState
-from app.shared.agent.nodes.tool_node import tool_node
-from app.shared.agent.nodes.rag_node import rag_node
+from app.common.agent.state import AgentState
+from app.common.agent.nodes.tool_node import tool_node
+from app.common.agent.nodes.rag_node import rag_node
 from app.modules.comfort.nodes.emotion_node import emotion_node
 from app.modules.comfort.nodes.forgiveness_node import forgiveness_node
 from app.modules.comfort.nodes.comfort_agent_node import comfort_agent_node
-from app.shared.core.managed_graph import ManagedGraphBase
+from app.common.core.managed_graph import ManagedGraphBase
 
 
 def should_continue(state: AgentState) -> Literal["tool_node", "forgiveness_node"]:
@@ -25,7 +25,7 @@ class ManagedComfortGraph(ManagedGraphBase):
   """管理哄哄模拟器 LangGraph 图的生命周期（包括数据库连接）"""
 
   def __init__(self):
-    super().__init__('_comfort_graph.db')
+    super().__init__(db_suffix='_comfort_graph', use_mysql_checkpoint=True)
 
   def _build_graph(self) -> StateGraph:
     builder = StateGraph(AgentState)

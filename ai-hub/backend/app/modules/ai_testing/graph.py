@@ -23,7 +23,7 @@ import logging
 from langgraph.graph import StateGraph, START, END
 from typing_extensions import TypedDict
 
-from app.shared.core.managed_graph import ManagedGraphBase
+from app.common.core.managed_graph import ManagedGraphBase
 from app.modules.ai_testing.nodes import (
   analyze_node,
   write_node,
@@ -42,6 +42,8 @@ class TestCaseGenState(TypedDict, total=False):
   model_name: str              # 入参：LLM model
   model_api_key: str           # 入参：模块级自定义 API Key（可选）
   custom_suggestions: list     # 入参：用户选中的改进建议（可选）
+  existing_analysis: str       # 入参：已有的分析结果（修订时跳过 analyze）
+  existing_draft: str          # 入参：已有的用例草稿（修订时跳过 write）
   analysis_result: str         # Step1 输出
   test_cases_draft: str        # Step2 输出
   review_result: dict          # Step3 输出
@@ -94,10 +96,10 @@ def build_testing_graph() -> StateGraph:
 
 # ── 托管图实例 ────────────────────────────────────────────────────────────────
 class ManagedTestingGraph(ManagedGraphBase):
-  """AI Testing 托管图，带 SQLite checkpointer"""
+  """AI Testing 托管图，带 MySQL checkpointer（SQLite 回退）"""
 
   def __init__(self):
-    super().__init__("_testing_graph.db")
+    super().__init__(db_suffix='_testing_graph', use_mysql_checkpoint=True)
 
   def _build_graph(self) -> StateGraph:
     return build_testing_graph()

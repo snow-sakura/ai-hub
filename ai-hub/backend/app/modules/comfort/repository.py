@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from app.shared.core.database import MySQLConnection
+from app.common.core.database import MySQLConnection
 from app.modules.comfort.domain import (
   ComfortScene,
   ComfortCharacter,
@@ -122,7 +122,6 @@ class ComfortRepo:
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
       return False
-    # personality_tags 需要 JSON 序列化
     if "personality_tags" in fields:
       updates["personality_tags"] = json.dumps(
         fields["personality_tags"], ensure_ascii=False
@@ -196,15 +195,15 @@ class ComfortRepo:
     intensity: float,
     comfort_score: float | None = None,
   ) -> None:
-    """插入或更新情绪统计（按日期+情绪类型聚合，原子操作避免竞态）"""
+    """插入或更新情绪统计（按日期+情绪类型聚合）"""
     await self.db.execute(
       "INSERT INTO emotion_statistics "
       "(id, user_date, emotion_label, avg_intensity, count, comfort_score, created_at) "
-      "VALUES (?, ?, ?, ?, ?, ?, ?) "
+      "VALUES (?, ?, ?, ?, ?, ?, ?) AS new "
       "ON DUPLICATE KEY UPDATE "
-      "  avg_intensity = (avg_intensity * count + VALUES(avg_intensity)) / (count + 1), "
+      "  avg_intensity = (avg_intensity * count + new.avg_intensity) / (count + 1), "
       "  count = count + 1, "
-      "  comfort_score = COALESCE(VALUES(comfort_score), comfort_score)",
+      "  comfort_score = COALESCE(new.comfort_score, comfort_score)",
       (str(uuid.uuid4()), user_date, emotion_label, intensity, 1, comfort_score,
        datetime.now().isoformat()),
     )

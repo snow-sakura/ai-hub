@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI模型配置 - AI-HUB</title>
+<style>
+:root{
+  --primary:#C67B5C;
+  --primary-light:#D49472;
+  --accent:#D4A574;
+  --bg:#FBF7F0;
+  --card-bg:#FFFDF9;
+  --sidebar-bg:#F6F0E7;
+  --text:#3D2E1F;
+  --text-secondary:#5C4A38;
+  --text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);
+  --radius:8px;
+  --radius-lg:12px;
+  --font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;height:100vh;}
+/* Sidebar */
+.sidebar{width:220px;background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-header{padding:20px;border-bottom:var(--border);}
+.sidebar-header h1{font-size:18px;color:var(--primary);font-weight:700;letter-spacing:1px;}
+.sidebar-header p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.nav-tabs{list-style:none;padding:12px 0;}
+.nav-tabs li{padding:10px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s;border-left:3px solid transparent;}
+.nav-tabs li:hover{background:rgba(198,123,92,0.06);color:var(--text);}
+.nav-tabs li.active{background:rgba(198,123,92,0.1);color:var(--primary);border-left-color:var(--primary);font-weight:600;}
+.nav-tabs li svg{width:18px;height:18px;flex-shrink:0;}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.main-header{padding:16px 28px;border-bottom:var(--border);background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;}
+.main-header h2{font-size:18px;font-weight:600;}
+.breadcrumb{font-size:13px;color:var(--text-muted);}
+.breadcrumb span{color:var(--text-secondary);}
+.content{padding:24px 28px;overflow-y:auto;flex:1;}
+/* Cards */
+.card{background:var(--card-bg);border-radius:var(--radius-lg);border:var(--border);padding:24px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);}
+/* Form */
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;}
+.form-group select,.form-group input,.form-group textarea{width:100%;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;transition:border-color .2s;}
+.form-group select:focus,.form-group input:focus,.form-group textarea:focus{border-color:var(--primary);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+/* Slider */
+.slider-group{display:flex;align-items:center;gap:12px;}
+.slider-group input[type="range"]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(198,123,92,0.2);outline:none;}
+.slider-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--primary);cursor:pointer;}
+.slider-value{font-size:14px;font-weight:600;color:var(--primary);min-width:32px;text-align:center;}
+/* Buttons */
+.btn{padding:8px 20px;font-size:14px;font-family:var(--font);border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s;font-weight:500;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-light);}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-success{background:#6B9E6B;color:#fff;}
+.btn-success:hover{background:#5A8E5A;}
+.btn-group{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
+/* API Key */
+.api-key-wrap{display:flex;gap:8px;}
+.api-key-wrap input{flex:1;}
+.api-key-wrap .btn{flex-shrink:0;}
+/* Status badge */
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:12px;font-size:12px;}
+.status-badge.success{background:rgba(107,158,107,0.12);color:#5A8E5A;}
+.status-badge.pending{background:rgba(212,165,116,0.12);color:var(--accent);}
+/* Api provider select */
+.provider-select{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.provider-option{padding:14px;text-align:center;border-radius:var(--radius);border:var(--border);cursor:pointer;transition:all .2s;background:var(--card-bg);font-size:14px;color:var(--text-secondary);}
+.provider-option:hover{border-color:var(--primary-light);}
+.provider-option.active{border-color:var(--primary);background:rgba(198,123,92,0.06);color:var(--primary);font-weight:600;}
+.provider-option .provider-icon{font-size:28px;display:block;margin-bottom:6px;}
+/* Scrollbar */
+.content::-webkit-scrollbar{width:6px;}
+.content::-webkit-scrollbar-track{background:transparent;}
+.content::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>AI-HUB</h1>
+    <p>智能测试平台</p>
+  </div>
+  <ul class="nav-tabs">
+    <li class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      AI模型配置
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      提示词配置
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      生成行为
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      UI环境
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      APP环境
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      AI聊天室
+    </li>
+  </ul>
+</div>
+
+<div class="main">
+  <div class="main-header">
+    <div>
+      <h2>AI模型配置</h2>
+      <div class="breadcrumb">配置中心 / <span>AI模型配置</span></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <span class="status-badge success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+        连接正常
+      </span>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- AI 提供商选择 -->
+    <div class="card">
+      <div class="card-title">选择 AI 提供商</div>
+      <div class="provider-select">
+        <div class="provider-option active">
+          <span class="provider-icon">🤖</span>
+          GPT-4o
+        </div>
+        <div class="provider-option">
+          <span class="provider-icon">🟣</span>
+          Claude
+        </div>
+        <div class="provider-option">
+          <span class="provider-icon">🔵</span>
+          DeepSeek
+        </div>
+        <div class="provider-option">
+          <span class="provider-icon">🟢</span>
+          通义千问
+        </div>
+      </div>
+    </div>
+
+    <!-- 模型配置 -->
+    <div class="card">
+      <div class="card-title">模型连接配置</div>
+      <div class="form-group">
+        <label>API 密钥</label>
+        <div class="api-key-wrap">
+          <input type="password" value="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" placeholder="输入 API Key">
+          <button class="btn btn-outline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>模型选择</label>
+          <select>
+            <option>gpt-4o</option>
+            <option>gpt-4o-mini</option>
+            <option>gpt-4-turbo</option>
+            <option>gpt-3.5-turbo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>API 地址</label>
+          <input type="text" value="https://api.openai.com/v1" placeholder="API 基础地址">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>温度 (Temperature)</label>
+          <div class="slider-group">
+            <input type="range" min="0" max="2" step="0.1" value="0.7">
+            <span class="slider-value">0.7</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>最大 Token 数</label>
+          <input type="number" value="4096" min="1" max="128000">
+        </div>
+      </div>
+    </div>
+
+    <!-- 高级设置 -->
+    <div class="card">
+      <div class="card-title">高级设置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>请求超时 (秒)</label>
+          <input type="number" value="60">
+        </div>
+        <div class="form-group">
+          <label>最大重试次数</label>
+          <input type="number" value="3">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>代理设置 (可选)</label>
+        <input type="text" placeholder="http://proxy.example.com:8080">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-outline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        测试连接
+      </button>
+      <button class="btn btn-primary">保存配置</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

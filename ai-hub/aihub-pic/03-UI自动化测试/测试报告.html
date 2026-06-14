@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI测试报告 - AI-HUB</title>
+<style>
+  :root {
+    --primary:#C67B5C;--primary-light:#D49472;--primary-dark:#A86545;
+    --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;
+    --sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;
+    --text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);
+    --radius:8px;--radius-lg:12px;
+    --font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+    --shadow:0 1px 3px rgba(60,45,30,0.06);
+    --shadow-md:0 4px 12px rgba(60,45,30,0.08);
+    --sidebar-width:220px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.6;}
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.25);border-radius:10px;}
+
+  .sidebar{width:var(--sidebar-width);background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+  .sidebar-logo{padding:20px 18px 14px;border-bottom:var(--border);display:flex;align-items:center;gap:10px;}
+  .sidebar-logo svg{flex-shrink:0;}
+  .sidebar-logo span{font-size:16px;font-weight:600;color:var(--text);letter-spacing:0.5px;}
+  .sidebar-logo small{display:block;font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:1px;}
+  .sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+  .nav-section-title{font-size:11px;color:var(--text-muted);padding:8px 12px 4px;letter-spacing:0.8px;font-weight:500;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);color:var(--text-secondary);text-decoration:none;font-size:13px;cursor:pointer;transition:all 0.15s;margin-bottom:1px;}
+  .nav-item:hover{background:rgba(200,170,140,0.15);color:var(--text);}
+  .nav-item.active{background:var(--primary);color:#fff;font-weight:500;}
+  .nav-item svg{flex-shrink:0;opacity:0.7;}
+  .nav-item.active svg{opacity:1;}
+
+  .main{margin-left:var(--sidebar-width);flex:1;min-height:100vh;}
+  .header{height:56px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+  .header-left .breadcrumb{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+  .header-left .breadcrumb span{color:var(--text-secondary);}
+  .header-right{display:flex;align-items:center;gap:16px;}
+  .time{font-size:12px;color:var(--text-muted);}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;}
+
+  .content{padding:24px 28px;}
+  .page-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .page-toolbar h2{font-size:18px;font-weight:600;}
+  .page-toolbar-actions{display:flex;gap:10px;align-items:center;}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:var(--font);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+  .btn-outline:hover{border-color:var(--primary-light);color:var(--text);}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+
+  .search-box{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:var(--border);border-radius:var(--radius);padding:0 12px;}
+  .search-box input{border:none;background:transparent;padding:8px 0;font-size:13px;outline:none;color:var(--text);width:200px;font-family:var(--font);}
+  .search-box input::placeholder{color:var(--text-muted);}
+
+  .filter-select{padding:6px 10px;border:var(--border);border-radius:var(--radius);font-size:12px;background:var(--card-bg);color:var(--text-secondary);outline:none;font-family:var(--font);}
+
+  /* ===== 报告列表 ===== */
+  .report-list{display:grid;grid-template-columns:1fr;gap:12px;}
+  .report-card{background:var(--card-bg);border:var(--border);border-radius:var(--radius-lg);padding:16px 20px;cursor:pointer;transition:all 0.15s;}
+  .report-card:hover{box-shadow:var(--shadow-md);}
+  .report-card .rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  .report-card .rc-title{font-size:14px;font-weight:600;color:var(--text);}
+  .report-card .rc-meta{font-size:12px;color:var(--text-muted);display:flex;gap:16px;flex-wrap:wrap;}
+  .report-card .rc-meta span{display:flex;align-items:center;gap:4px;}
+  .report-card .rc-stats{display:flex;gap:20px;padding-top:10px;border-top:var(--border);}
+  .report-card .rc-stat{display:flex;align-items:center;gap:6px;font-size:12px;}
+  .report-card .rc-stat .num{font-weight:600;font-size:14px;}
+  .report-card .rc-stat.pass .num{color:#7BA67C;}
+  .report-card .rc-stat.fail .num{color:var(--primary);}
+  .report-card .rc-stat.skip .num{color:var(--text-muted);}
+
+  .result-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;}
+  .result-pass{background:rgba(123,166,124,0.1);color:#7BA67C;}
+  .result-fail{background:rgba(198,123,92,0.1);color:var(--primary);}
+
+  /* ===== 报告详情面板 ===== */
+  .report-detail{background:var(--card-bg);border:var(--border);border-radius:var(--radius-lg);overflow:hidden;display:none;margin-top:20px;}
+  .report-detail.show{display:block;}
+  .detail-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border);}
+  .detail-header h3{font-size:15px;font-weight:600;}
+  .detail-header .close-btn{width:28px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+  .detail-header .close-btn:hover{background:rgba(200,170,140,0.12);color:var(--text);}
+  .detail-body{padding:20px;}
+
+  .detail-summary{display:flex;gap:24px;padding:16px 20px;background:var(--bg);border-radius:var(--radius);margin-bottom:20px;}
+  .ds-item{text-align:center;flex:1;}
+  .ds-item .ds-val{font-size:22px;font-weight:700;color:var(--text);}
+  .ds-item .ds-label{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  .ds-item.pass .ds-val{color:#7BA67C;}
+  .ds-item.fail .ds-val{color:var(--primary);}
+
+  .section-title{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text);display:flex;align-items:center;gap:8px;}
+  .screenshots{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+  .screenshot-card{background:var(--bg);border:var(--border);border-radius:var(--radius);padding:8px;text-align:center;cursor:pointer;transition:all 0.12s;}
+  .screenshot-card:hover{border-color:var(--primary-light);}
+  .screenshot-card .ss-img{height:100px;background:linear-gradient(135deg,var(--bg),var(--sidebar-bg));border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted);margin-bottom:6px;border:1px dashed rgba(180,150,120,0.2);}
+  .screenshot-card .ss-name{font-size:11px;color:var(--text-secondary);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:8px 12px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);background:var(--bg);font-size:12px;}
+  td{padding:8px 12px;border-bottom:var(--border);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:nth-child(even) td{background:rgba(246,240,231,0.3);}
+
+  .step-status{display:inline-block;width:8px;height:8px;border-radius:50%;}
+  .step-status.pass{background:#7BA67C;}
+  .step-status.fail{background:var(--primary);}
+
+  .log-area{background:#2D2418;color:#E8DCC8;padding:12px;border-radius:var(--radius);font-family:'SF Mono','Menlo',monospace;font-size:11px;line-height:1.6;max-height:150px;overflow-y:auto;}
+  .log-area .log-time{color:var(--text-muted);}
+  .log-area .log-error{color:var(--primary);}
+  .log-area .log-info{color:#7BAEC4;}
+
+  @media(max-width:768px){
+    .sidebar{width:56px;}
+    .sidebar-logo span,.sidebar-logo small,.nav-item span,.nav-section-title{display:none;}
+    .sidebar-logo{padding:14px;justify-content:center;}
+    .nav-item{justify-content:center;padding:10px;}
+    .main{margin-left:56px;}
+    .screenshots{grid-template-columns:repeat(2,1fr);}
+    .detail-summary{flex-wrap:wrap;gap:12px;}
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="6" fill="#C67B5C"/><path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><span>AI-HUB</span><small>测试平台</small></div></div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">导航</div>
+    <a class="nav-item" href="../00-首页仪表盘/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h3l1.5-6 3 12L11 4h3"/></svg><span>首页仪表盘</span></a>
+    <a class="nav-item" href="../01-AI智能测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg><span>AI智能测试</span></a>
+    <a class="nav-item" href="../02-API接口测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4L1 8l3 4M12 4l3 4-3 4M9 1L7 15"/></svg><span>API接口测试</span></a>
+    <a class="nav-item active" href="数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>UI自动化测试</span></a>
+    <a class="nav-item" href="../04-APP自动化测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 12h6"/></svg><span>APP自动化测试</span></a>
+    <a class="nav-item" href="../05-测试管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h2l1-3 2 6 2-5 1 2h2"/></svg><span>测试管理</span></a>
+    <a class="nav-item" href="../06-配置中心/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v1M8 14v1M1 8h1M14 8h1M3.05 3.05l.7.7M12.25 12.25l.7.7M3.05 12.95l.7-.7M12.25 3.75l.7-.7"/></svg><span>配置中心</span></a>
+    <a class="nav-item" href="../07-AI聊天室/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H5l-4 3V3z"/></svg><span>AI聊天室</span></a>
+    <a class="nav-item" href="../08-知识库/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 3v10M2 3a3 3 0 013-3h9v10H5a3 3 0 00-3 3M14 3v10"/></svg><span>知识库</span></a>
+    <a class="nav-item" href="../09-系统管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M6 6h4M6 9h4"/></svg><span>系统管理</span></a>
+  </nav>
+</aside>
+
+<div class="main">
+  <header class="header">
+    <div class="header-left"><div class="breadcrumb">AI-HUB / <span>UI自动化测试</span> / <span>测试报告</span></div></div>
+    <div class="header-right"><span class="time" id="currentTime"></span><div class="avatar">管</div></div>
+  </header>
+
+  <div class="content" id="reportContent">
+    <div class="page-toolbar">
+      <h2>测试报告</h2>
+      <div class="page-toolbar-actions">
+        <div class="search-box"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--text-muted)" stroke-width="1.4" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5L13 13"/></svg><input type="text" placeholder="搜索报告..." id="searchInput" oninput="filterReports()"></div>
+        <select class="filter-select"><option value="">所有结果</option><option>通过</option><option>失败</option></select>
+      </div>
+    </div>
+
+    <!-- 报告列表 -->
+    <div class="report-list" id="reportList">
+      <div class="report-card" onclick="openReport(this)" data-pass="8" data-fail="0" data-skip="0" data-total="8">
+        <div class="rc-top">
+          <div class="rc-title">官网登录回归测试 - 执行报告</div>
+          <span class="result-badge result-pass">通过</span>
+        </div>
+        <div class="rc-meta">
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M1 3h10M2 3v8a1 1 0 001 1h6a1 1 0 001-1V3"/></svg>官网登录回归测试</span>
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="6" cy="6" r="5"/><path d="M6 3v3l2 1"/></svg>2026-06-14 10:32</span>
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M6 1v2M6 9v2M1 6h2M9 6h2"/></svg>耗时: 2分15秒</span>
+        </div>
+        <div class="rc-stats">
+          <div class="rc-stat"><span class="num">8</span> 总用例</div>
+          <div class="rc-stat pass"><span class="num">8</span> 通过</div>
+          <div class="rc-stat fail"><span class="num">0</span> 失败</div>
+          <div class="rc-stat skip"><span class="num">0</span> 跳过</div>
+        </div>
+      </div>
+
+      <div class="report-card" onclick="openReport(this)" data-pass="15" data-fail="0" data-skip="0" data-total="15">
+        <div class="rc-top">
+          <div class="rc-title">用户中心全量测试 - 执行报告</div>
+          <span class="result-badge result-pass">通过</span>
+        </div>
+        <div class="rc-meta">
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M1 3h10M2 3v8a1 1 0 001 1h6a1 1 0 001-1V3"/></svg>用户中心全量测试</span>
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="6" cy="6" r="5"/><path d="M6 3v3l2 1"/></svg>2026-06-14 09:08</span>
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M6 1v2M6 9v2M1 6h2M9 6h2"/></svg>耗时: 8分42秒</span>
+        </div>
+        <div class="rc-stats">
+          <div class="rc-stat"><span class="num">15</span> 总用例</div>
+          <div class="rc-stat pass"><span class="num">15</span> 通过</div>
+          <div class="rc-stat fail"><span class="num">0</span> 失败</div>
+          <div class="rc-stat skip"><span class="num">0</span> 跳过</div>
+        </div>
+      </div>
+
+      <div class="report-card" onclick="openReport(this)" data-pass="5" data-fail="1" data-skip="0" data-total="6">
+        <div class="rc-top">
+          <div class="rc-title">购物车流程冒烟测试 - 执行报告</div>
+          <span class="result-badge result-fail">失败</span>
+        </div>
+        <div class="rc-meta">
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M1 3h10M2 3v8a1 1 0 001 1h6a1 1 0 001-1V3"/></svg>购物车流程冒烟测试</span>
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="6" cy="6" r="5"/><path d="M6 3v3l2 1"/></svg>2026-06-13 16:04</span>
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M6 1v2M6 9v2M1 6h2M9 6h2"/></svg>耗时: 4分18秒</span>
+        </div>
+        <div class="rc-stats">
+          <div class="rc-stat"><span class="num">6</span> 总用例</div>
+          <div class="rc-stat pass"><span class="num">5</span> 通过</div>
+          <div class="rc-stat fail"><span class="num">1</span> 失败</div>
+          <div class="rc-stat skip"><span class="num">0</span> 跳过</div>
+        </div>
+      </div>
+
+      <div class="report-card" onclick="openReport(this)" data-pass="26" data-fail="2" data-skip="0" data-total="28">
+        <div class="rc-top">
+          <div class="rc-title">每日回归测试（定时） - 执行报告</div>
+          <span class="result-badge result-fail">失败</span>
+        </div>
+        <div class="rc-meta">
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M1 3h10M2 3v8a1 1 0 001 1h6a1 1 0 001-1V3"/></svg>每日回归测试（定时）</span>
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="6" cy="6" r="5"/><path d="M6 3v3l2 1"/></svg>2026-06-13 08:15</span>
+          <span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M6 1v2M6 9v2M1 6h2M9 6h2"/></svg>耗时: 15分20秒</span>
+        </div>
+        <div class="rc-stats">
+          <div class="rc-stat"><span class="num">28</span> 总用例</div>
+          <div class="rc-stat pass"><span class="num">26</span> 通过</div>
+          <div class="rc-stat fail"><span class="num">2</span> 失败</div>
+          <div class="rc-stat skip"><span class="num">0</span> 跳过</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 报告详情 -->
+    <div class="report-detail" id="reportDetail">
+      <div class="detail-header">
+        <h3 id="detailTitle">官网登录回归测试 - 执行报告</h3>
+        <div>
+          <button class="btn btn-outline btn-sm" onclick="alert('导出报告PDF（模拟）')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 1v7M3 5l3 4 3-4M1 10h10"/></svg>导出PDF</button>
+          <button class="close-btn" onclick="closeReportDetail()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+        </div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-summary">
+          <div class="ds-item"><div class="ds-val" id="dTotal">8</div><div class="ds-label">总用例</div></div>
+          <div class="ds-item pass"><div class="ds-val" id="dPass">8</div><div class="ds-label">通过</div></div>
+          <div class="ds-item fail"><div class="ds-val" id="dFail">0</div><div class="ds-label">失败</div></div>
+          <div class="ds-item"><div class="ds-val" id="dPassRate">100%</div><div class="ds-label">通过率</div></div>
+          <div class="ds-item"><div class="ds-val" id="dDuration">2分15秒</div><div class="ds-label">总耗时</div></div>
+        </div>
+
+        <div class="section-title"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>截图附件</div>
+        <div class="screenshots">
+          <div class="screenshot-card" onclick="alert('查看大图（模拟）')"><div class="ss-img"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="16" cy="9" r="2"/><path d="M2 16l6-6 4 4 4-2 6 4"/></svg></div><div class="ss-name">登录页面_步骤1.png</div></div>
+          <div class="screenshot-card" onclick="alert('查看大图（模拟）')"><div class="ss-img"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="16" cy="9" r="2"/><path d="M2 16l6-6 4 4 4-2 6 4"/></svg></div><div class="ss-name">登录页面_步骤2.png</div></div>
+          <div class="screenshot-card" onclick="alert('查看大图（模拟）')"><div class="ss-img"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="16" cy="9" r="2"/><path d="M2 16l6-6 4 4 4-2 6 4"/></svg></div><div class="ss-name">登录页面_步骤3.png</div></div>
+          <div class="screenshot-card" onclick="alert('查看大图（模拟）')"><div class="ss-img"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="16" cy="9" r="2"/><path d="M2 16l6-6 4 4 4-2 6 4"/></svg></div><div class="ss-name">首页_步骤6.png</div></div>
+        </div>
+
+        <div class="section-title"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H5l-4 3V3z"/></svg>执行日志</div>
+        <div class="log-area">
+          <div><span class="log-time">[10:30:01]</span> <span class="log-info">INFO</span> 开始执行测试套件: 官网登录回归测试</div>
+          <div><span class="log-time">[10:30:02]</span> <span class="log-info">INFO</span> 启动浏览器: Chrome v126</div>
+          <div><span class="log-time">[10:30:05]</span> <span class="log-info">INFO</span> UI-TC-001 用户登录成功流程 - 开始执行</div>
+          <div><span class="log-time">[10:30:08]</span> <span class="log-info">INFO</span> UI-TC-001 步骤1: 点击登录按钮 - 成功</div>
+          <div><span class="log-time">[10:30:10]</span> <span class="log-info">INFO</span> UI-TC-001 步骤2: 输入用户名 - 成功</div>
+          <div><span class="log-time">[10:30:12]</span> <span class="log-info">INFO</span> UI-TC-001 步骤3: 输入密码 - 成功</div>
+          <div><span class="log-time">[10:30:14]</span> <span class="log-info">INFO</span> UI-TC-001 步骤4: 提交登录 - 成功</div>
+          <div><span class="log-time">[10:30:17]</span> <span class="log-info">INFO</span> UI-TC-001 断言: 页面标题包含"欢迎" - 通过</div>
+          <div><span class="log-time">[10:30:17]</span> <span class="log-info">INFO</span> UI-TC-001 执行通过 (15秒)</div>
+          <div><span class="log-time">[10:32:15]</span> <span class="log-info">INFO</span> 所有用例执行完毕，关闭浏览器</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateTime(){const n=new Date();document.getElementById('currentTime').textContent=n.toLocaleString('zh-CN',{hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+  updateTime();setInterval(updateTime,10000);
+
+  function filterReports(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.report-card').forEach(r=>{
+      r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
+    });
+    closeReportDetail();
+  }
+
+  function openReport(card){
+    // 关闭其他已展开的详情
+    document.getElementById('reportDetail').classList.add('show');
+    const title=card.querySelector('.rc-title').textContent;
+    document.getElementById('detailTitle').textContent=title;
+    document.getElementById('dTotal').textContent=card.dataset.total;
+    document.getElementById('dPass').textContent=card.dataset.pass;
+    document.getElementById('dFail').textContent=card.dataset.fail;
+    const total=parseInt(card.dataset.total);
+    const pass=parseInt(card.dataset.pass);
+    const rate=total>0?Math.round(pass/total*100)+'%':'0%';
+    document.getElementById('dPassRate').textContent=rate;
+    // 滚动到详情
+    card.closest('.content').querySelector('.report-detail').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function closeReportDetail(){
+    document.getElementById('reportDetail').classList.remove('show');
+  }
+</script>
+</body>
+</html>

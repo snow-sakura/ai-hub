@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哄哄模拟器 - 情绪仪表盘</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: #FBF7F0;
+  color: #3D2E1F;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+/* Nav */
+.navbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; background: #FFFDF9;
+  border-bottom: 1px solid rgba(180,150,120,0.12);
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-back {
+  display: flex; align-items: center; gap: 4px;
+  color: #8B7355; font-size: 14px; cursor: pointer;
+  padding: 6px 10px; border-radius: 8px; transition: all 0.2s;
+}
+.nav-back:hover { background: rgba(198,123,92,0.08); color: #C67B5C; }
+.nav-title { flex: 1; font-size: 18px; font-weight: 600; }
+.date-picker {
+  padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(180,150,120,0.15);
+  background: #FFFDF9; color: #8B7355; font-size: 13px;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: all 0.2s;
+}
+.date-picker:hover { border-color: #C67B5C; color: #C67B5C; }
+
+/* Content */
+.content {
+  flex: 1; overflow-y: auto; padding: 16px 20px 24px;
+  max-width: 800px; margin: 0 auto; width: 100%;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* Card */
+.card {
+  background: #FFFDF9; border-radius: 12px;
+  border: 1px solid rgba(180,150,120,0.12);
+  box-shadow: 0 4px 14px rgba(60,40,20,0.06);
+  padding: 20px;
+}
+.card-title {
+  font-size: 15px; font-weight: 600; margin-bottom: 16px;
+  color: #3D2E1F;
+}
+
+/* Emotion Distribution */
+.emotion-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.emotion-row:last-child { margin-bottom: 0; }
+.emotion-icon { width: 32px; font-size: 16px; }
+.emotion-name { width: 32px; font-size: 13px; color: #8B7355; }
+.emotion-bar-wrap { flex: 1; }
+.emotion-bar-bg {
+  height: 20px; border-radius: 6px; background: rgba(180,150,120,0.1);
+  overflow: hidden; position: relative;
+}
+.emotion-bar-fill {
+  height: 100%; border-radius: 6px; transition: width 0.8s ease;
+}
+.emotion-bar-label {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  font-size: 11px; font-weight: 600; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.emotion-count {
+  width: 40px; font-size: 13px; color: #8B7355; text-align: right;
+}
+
+/* Chart - Forgiveness Trend */
+.chart-area {
+  height: 160px; display: flex; align-items: flex-end;
+  justify-content: space-around; padding: 0 8px;
+}
+.chart-bar-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.chart-bar {
+  width: 36px; border-radius: 6px 6px 2px 2px; transition: height 0.8s ease;
+  cursor: pointer; position: relative;
+}
+.chart-bar:hover { opacity: 0.8; transform: scaleX(1.05); }
+.chart-bar .bar-val {
+  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; font-weight: 600; color: #3D2E1F;
+}
+.chart-label { font-size: 11px; color: #B5A590; }
+
+/* Ability Analysis */
+.ability-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.ability-row:last-child { margin-bottom: 0; }
+.ability-name { width: 80px; font-size: 13px; color: #8B7355; flex-shrink: 0; }
+.ability-bar-wrap { flex: 1; }
+.ability-bar-bg {
+  height: 18px; border-radius: 9px; background: rgba(180,150,120,0.1);
+  overflow: hidden;
+}
+.ability-bar-fill {
+  height: 100%; border-radius: 9px;
+  background: linear-gradient(90deg, #C67B5C, #D4A574);
+  transition: width 0.8s ease;
+}
+.ability-value { width: 36px; font-size: 13px; font-weight: 600; text-align: right; }
+
+/* Memory Manager (embed from 27) */
+.memory-list { display: flex; flex-direction: column; gap: 8px; }
+.memory-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  background: rgba(248,244,236,0.5);
+  border: 1px solid rgba(180,150,120,0.08);
+  transition: all 0.2s;
+}
+.memory-item:hover { background: rgba(248,244,236,0.8); }
+.memory-border {
+  width: 3px; height: 32px; border-radius: 2px; flex-shrink: 0;
+}
+.memory-tag {
+  padding: 2px 8px; border-radius: 10px; font-size: 10px;
+  font-weight: 500; color: white; flex-shrink: 0;
+}
+.memory-text {
+  flex: 1; font-size: 13px; color: #3D2E1F;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.memory-actions {
+  display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s;
+}
+.memory-item:hover .memory-actions { opacity: 1; }
+.mem-action-btn {
+  width: 26px; height: 26px; border: none; border-radius: 6px;
+  background: transparent; cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.mem-action-btn:hover { background: rgba(198,123,92,0.1); }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="nav-back">← 返回</div>
+  <div class="nav-title">📊 情绪仪表盘</div>
+  <div class="date-picker">📅 2025-03-01 至 2025-04-07</div>
+</div>
+
+<div class="content">
+  <!-- Card 1: Emotion Distribution -->
+  <div class="card">
+    <div class="card-title">😌 情绪分布</div>
+    <div class="emotion-row">
+      <span class="emotion-icon">😡</span>
+      <span class="emotion-name">愤怒</span>
+      <div class="emotion-bar-wrap">
+        <div class="emotion-bar-bg">
+          <div class="emotion-bar-fill" style="width:40%;background:#D4745C;"></div>
+          <span class="emotion-bar-label">40%</span>
+        </div>
+      </div>
+      <span class="emotion-count">8次</span>
+    </div>
+    <div class="emotion-row">
+      <span class="emotion-icon">😢</span>
+      <span class="emotion-name">悲伤</span>
+      <div class="emotion-bar-wrap">
+        <div class="emotion-bar-bg">
+          <div class="emotion-bar-fill" style="width:25%;background:#6B8FA3;"></div>
+          <span class="emotion-bar-label">25%</span>
+        </div>
+      </div>
+      <span class="emotion-count">5次</span>
+    </div>
+    <div class="emotion-row">
+      <span class="emotion-icon">😰</span>
+      <span class="emotion-name">焦虑</span>
+      <div class="emotion-bar-wrap">
+        <div class="emotion-bar-bg">
+          <div class="emotion-bar-fill" style="width:20%;background:#D4A574;"></div>
+          <span class="emotion-bar-label">20%</span>
+        </div>
+      </div>
+      <span class="emotion-count">4次</span>
+    </div>
+    <div class="emotion-row">
+      <span class="emotion-icon">😩</span>
+      <span class="emotion-name">疲惫</span>
+      <div class="emotion-bar-wrap">
+        <div class="emotion-bar-bg">
+          <div class="emotion-bar-fill" style="width:10%;background:#B5A590;"></div>
+          <span class="emotion-bar-label">10%</span>
+        </div>
+      </div>
+      <span class="emotion-count">2次</span>
+    </div>
+    <div class="emotion-row">
+      <span class="emotion-icon">😌</span>
+      <span class="emotion-name">平静</span>
+      <div class="emotion-bar-wrap">
+        <div class="emotion-bar-bg">
+          <div class="emotion-bar-fill" style="width:5%;background:#7BA87D;"></div>
+          <span class="emotion-bar-label">5%</span>
+        </div>
+      </div>
+      <span class="emotion-count">1次</span>
+    </div>
+  </div>
+
+  <!-- Card 2: Forgiveness Trend -->
+  <div class="card">
+    <div class="card-title">📈 原谅值趋势</div>
+    <div class="chart-area">
+      <div class="chart-bar-group">
+        <div class="chart-bar" style="height:72px;background:#D4745C;">
+          <span class="bar-val">18%</span>
+        </div>
+        <span class="chart-label">04-01</span>
+      </div>
+      <div class="chart-bar-group">
+        <div class="chart-bar" style="height:96px;background:#D4745C;">
+          <span class="bar-val">24%</span>
+        </div>
+        <span class="chart-label">04-02</span>
+      </div>
+      <div class="chart-bar-group">
+        <div class="chart-bar" style="height:128px;background:#D4A574;">
+          <span class="bar-val">42%</span>
+        </div>
+        <span class="chart-label">04-03</span>
+      </div>
+      <div class="chart-bar-group">
+        <div class="chart-bar" style="height:136px;background:#D4A574;">
+          <span class="bar-val">58%</span>
+        </div>
+        <span class="chart-label">04-04</span>
+      </div>
+      <div class="chart-bar-group">
+        <div class="chart-bar" style="height:148px;background:#7BA87D;">
+          <span class="bar-val">76%</span>
+        </div>
+        <span class="chart-label">04-05</span>
+      </div>
+      <div class="chart-bar-group">
+        <div class="chart-bar" style="height:156px;background:#7BA87D;">
+          <span class="bar-val">82%</span>
+        </div>
+        <span class="chart-label">04-06</span>
+      </div>
+      <div class="chart-bar-group">
+        <div class="chart-bar" style="height:160px;background:#7BA87D;">
+          <span class="bar-val">91%</span>
+        </div>
+        <span class="chart-label">04-07</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: Ability Analysis -->
+  <div class="card">
+    <div class="card-title">📊 哄人能力分析</div>
+    <div class="ability-row">
+      <span class="ability-name">共情能力</span>
+      <div class="ability-bar-wrap">
+        <div class="ability-bar-bg">
+          <div class="ability-bar-fill" style="width:75%;"></div>
+        </div>
+      </div>
+      <span class="ability-value">75%</span>
+    </div>
+    <div class="ability-row">
+      <span class="ability-name">安抚技巧</span>
+      <div class="ability-bar-wrap">
+        <div class="ability-bar-bg">
+          <div class="ability-bar-fill" style="width:62%;"></div>
+        </div>
+      </div>
+      <span class="ability-value">62%</span>
+    </div>
+    <div class="ability-row">
+      <span class="ability-name">耐心程度</span>
+      <div class="ability-bar-wrap">
+        <div class="ability-bar-bg">
+          <div class="ability-bar-fill" style="width:48%;"></div>
+        </div>
+      </div>
+      <span class="ability-value">48%</span>
+    </div>
+    <div class="ability-row">
+      <span class="ability-name">话术丰富度</span>
+      <div class="ability-bar-wrap">
+        <div class="ability-bar-bg">
+          <div class="ability-bar-fill" style="width:35%;"></div>
+        </div>
+      </div>
+      <span class="ability-value">35%</span>
+    </div>
+    <div class="ability-row">
+      <span class="ability-name">情绪感知</span>
+      <div class="ability-bar-wrap">
+        <div class="ability-bar-bg">
+          <div class="ability-bar-fill" style="width:80%;"></div>
+        </div>
+      </div>
+      <span class="ability-value">80%</span>
+    </div>
+  </div>
+
+  <!-- Card 4: Memory Management (embed) -->
+  <div class="card">
+    <div class="card-title">💭 记忆管理</div>
+    <div class="memory-list">
+      <div class="memory-item">
+        <div class="memory-border" style="background:#7BA87D;"></div>
+        <span class="memory-tag" style="background:#7BA87D;">事实</span>
+        <span class="memory-text">她有一只叫"团子"的英短蓝猫，养了三年了</span>
+        <div class="memory-actions">
+          <button class="mem-action-btn">✏️</button>
+          <button class="mem-action-btn">🗑️</button>
+        </div>
+      </div>
+      <div class="memory-item">
+        <div class="memory-border" style="background:#C67B5C;"></div>
+        <span class="memory-tag" style="background:#C67B5C;">偏好</span>
+        <span class="memory-text">她很喜欢吃抹茶味的甜品，每次吃都会开心</span>
+        <div class="memory-actions">
+          <button class="mem-action-btn">✏️</button>
+          <button class="mem-action-btn">🗑️</button>
+        </div>
+      </div>
+      <div class="memory-item">
+        <div class="memory-border" style="background:#9B8EC4;"></div>
+        <span class="memory-tag" style="background:#9B8EC4;">事件</span>
+        <span class="memory-text">上周五和男朋友分手，原因是对方觉得她太敏感了</span>
+        <div class="memory-actions">
+          <button class="mem-action-btn">✏️</button>
+          <button class="mem-action-btn">🗑️</button>
+        </div>
+      </div>
+      <div class="memory-item">
+        <div class="memory-border" style="background:#7BA87D;"></div>
+        <span class="memory-tag" style="background:#7BA87D;">事实</span>
+        <span class="memory-text">她在互联网公司做产品运营，工作压力很大</span>
+        <div class="memory-actions">
+          <button class="mem-action-btn">✏️</button>
+          <button class="mem-action-btn">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

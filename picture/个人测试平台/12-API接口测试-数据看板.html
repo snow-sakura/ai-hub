@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API接口测试 - 数据看板</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);
+  --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;
+  --text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);
+  --success:#7BA87D;--danger:#D4745C;--warning:#D4A574;--radius:8px;
+}
+body{font-family:-apple-system,PingFang SC,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+/* Sidebar */
+.sidebar{width:240px;background:var(--sidebar-bg);height:100vh;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:var(--border)}
+.sidebar-header .logo{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.sidebar-header span{font-weight:600;font-size:15px;color:var(--text)}
+.sidebar-search{margin:10px 16px;padding:7px 12px;background:rgba(255,255,255,0.6);border:var(--border);border-radius:6px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)}
+.sidebar-search:before{content:'🔍'}
+.sidebar-nav{flex:1;padding:8px 0}
+.nav-group{margin-bottom:4px}
+.nav-group-header{padding:8px 20px 8px 16px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border-left:3px solid transparent}
+.nav-group-header:hover{color:var(--primary)}
+.nav-group-header .arrow{font-size:10px;transition:transform .2s;margin-left:auto}
+.nav-group-header.active{border-left-color:var(--primary);color:var(--primary)}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 16px 7px 31px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(198,123,92,0.06);color:var(--text)}
+.nav-item.active{background:rgba(198,123,92,0.1);color:var(--primary);border-left-color:var(--primary);font-weight:500}
+.nav-item .badge{margin-left:auto;background:var(--primary-bg);color:var(--primary);font-size:11px;padding:1px 7px;border-radius:10px}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+/* Topbar */
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.topbar-right .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)}
+.topbar-right .avatar{width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+/* Content */
+.content{padding:20px 24px;overflow-y:auto;flex:1}
+.page-title{font-size:18px;font-weight:700;margin-bottom:20px}
+/* Stats Cards */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card-bg);border-radius:12px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+.stat-card .stat-label{font-size:12px;color:var(--text-muted)}
+.stat-card .stat-header{display:flex;align-items:center;justify-content:space-between}
+.stat-card .stat-value{font-size:24px;font-weight:700;color:var(--text);line-height:1.2}
+.stat-card .stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.stat-card .stat-footer{display:flex;align-items:center;gap:6px;font-size:12px}
+.stat-card .trend-up{color:var(--success)}
+.stat-card .trend-down{color:var(--danger)}
+.icon-bg1{background:rgba(198,123,92,0.12)}.icon-bg2{background:rgba(123,168,125,0.12)}.icon-bg3{background:rgba(212,165,116,0.12)}.icon-bg4{background:rgba(212,116,92,0.12)}.icon-bg5{background:rgba(198,123,92,0.08)}
+/* Charts */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.chart-card{background:var(--card-bg);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.chart-card .chart-title{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.chart-card .chart-title .sub{font-size:12px;font-weight:400;color:var(--text-muted)}
+.chart-container{width:100%;height:180px;display:flex;align-items:flex-end;justify-content:center;position:relative}
+/* Line Chart */
+.line-chart{position:relative;width:100%;height:100%}
+.line-chart svg{width:100%;height:100%}
+/* Pie Chart */
+.pie-chart{position:relative;width:140px;height:140px;margin:0 auto}
+.pie-chart svg{width:100%;height:100%;transform:rotate(-90deg)}
+.pie-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;justify-content:center}
+.pie-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
+.pie-legend-item .dot{width:8px;height:8px;border-radius:50%}
+/* Bar chart */
+.bar-chart{display:flex;align-items:flex-end;justify-content:space-around;width:100%;height:160px;padding:0 8px;gap:6px}
+.bar-group{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px}
+.bar{width:70%;border-radius:4px 4px 0 0;position:relative;min-height:4px;transition:height .3s}
+.bar-label{font-size:11px;color:var(--text-muted)}
+.bar-value{font-size:10px;color:var(--text-secondary);font-weight:500}
+/* Table */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{padding:10px 12px;text-align:left;font-weight:500;color:var(--text-muted);font-size:12px;border-bottom:var(--border)}
+.data-table td{padding:10px 12px;border-bottom:var(--border);color:var(--text-secondary)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--primary-bg)}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:10px;font-size:12px}
+.status-success{background:rgba(123,168,125,0.12);color:var(--success)}
+.status-fail{background:rgba(212,116,92,0.12);color:var(--danger)}
+.status-pending{background:rgba(212,165,116,0.15);color:#a0845c}
+.recent-table{margin-top:12px;background:var(--card-bg);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.recent-table .table-title{font-size:14px;font-weight:600;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">T</div>
+    <span>TestHub Pro</span>
+  </div>
+  <div class="sidebar-search">搜索功能模块...</div>
+  <div class="sidebar-nav">
+    <div class="nav-group">
+      <div class="nav-group-header active"><span>📊</span> 数据看板 <span class="arrow">▼</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header"><span>🔗</span> 接口管理 <span class="arrow">▶</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header"><span>🤖</span> 自动化测试 <span class="arrow">▶</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header"><span>🌐</span> 环境管理 <span class="arrow">▶</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header"><span>⏱</span> 定时任务 <span class="arrow">▶</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header"><span>📋</span> 测试报告 <span class="arrow">▶</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header"><span>⚙️</span> 配置中心 <span class="arrow">▶</span></div>
+    </div>
+  </div>
+</div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">API接口测试 - 数据看板</div>
+    <div class="topbar-right">
+      <span style="font-size:16px;cursor:pointer">🔔</span>
+      <span style="font-size:16px;cursor:pointer">⚙️</span>
+      <div class="user">
+        <div class="avatar">张</div>
+        <span>张三</span>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-title">📊 数据看板</div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-value">2,486</div>
+          <div class="stat-icon icon-bg1">🔗</div>
+        </div>
+        <div class="stat-label">总接口数</div>
+        <div class="stat-footer"><span class="trend-up">↑ 12.5%</span> <span style="color:var(--text-muted)">较上月</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-value">8,932</div>
+          <div class="stat-icon icon-bg2">▶️</div>
+        </div>
+        <div class="stat-label">总测试数</div>
+        <div class="stat-footer"><span class="trend-up">↑ 8.3%</span> <span style="color:var(--text-muted)">较上月</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-value">96.8%</div>
+          <div class="stat-icon icon-bg3">✅</div>
+        </div>
+        <div class="stat-label">通过率</div>
+        <div class="stat-footer"><span class="trend-up">↑ 2.1%</span> <span style="color:var(--text-muted)">较上月</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-value">286</div>
+          <div class="stat-icon icon-bg4">❌</div>
+        </div>
+        <div class="stat-label">失败数</div>
+        <div class="stat-footer"><span class="trend-down">↓ 5.2%</span> <span style="color:var(--text-muted)">较上月</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-value">342ms</div>
+          <div class="stat-icon icon-bg5">⏱</div>
+        </div>
+        <div class="stat-label">平均响应时间</div>
+        <div class="stat-footer"><span class="trend-up">↑ 18ms</span> <span style="color:var(--text-muted)">较上月</span></div>
+      </div>
+    </div>
+
+    <!-- Chart Row 1 -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">请求趋势 <span class="sub">过去7天</span></div>
+        <div class="chart-container">
+          <div class="line-chart">
+            <svg viewBox="0 0 540 180">
+              <!-- Grid lines -->
+              <line x1="40" y1="20" x2="530" y2="20" stroke="rgba(180,150,120,0.08)" stroke-width="1"/>
+              <line x1="40" y1="60" x2="530" y2="60" stroke="rgba(180,150,120,0.08)" stroke-width="1"/>
+              <line x1="40" y1="100" x2="530" y2="100" stroke="rgba(180,150,120,0.08)" stroke-width="1"/>
+              <line x1="40" y1="140" x2="530" y2="140" stroke="rgba(180,150,120,0.08)" stroke-width="1"/>
+              <!-- Y axis labels -->
+              <text x="36" y="24" font-size="11" fill="#8B7355" text-anchor="end">1.2k</text>
+              <text x="36" y="64" font-size="11" fill="#8B7355" text-anchor="end">900</text>
+              <text x="36" y="104" font-size="11" fill="#8B7355" text-anchor="end">600</text>
+              <text x="36" y="144" font-size="11" fill="#8B7355" text-anchor="end">300</text>
+              <!-- Area fill -->
+              <path d="M50,140 Q80,130 110,100 Q140,70 170,80 Q200,90 230,60 Q260,30 290,50 Q320,70 350,40 Q380,10 410,30 Q440,50 470,55 Q500,60 520,70 L520,150 L50,150 Z" fill="rgba(198,123,92,0.12)"/>
+              <!-- Line -->
+              <path d="M50,140 Q80,130 110,100 Q140,70 170,80 Q200,90 230,60 Q260,30 290,50 Q320,70 350,40 Q380,10 410,30 Q440,50 470,55 Q500,60 520,70" fill="none" stroke="#C67B5C" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Dots -->
+              <circle cx="50" cy="140" r="3.5" fill="#C67B5C"/>
+              <circle cx="110" cy="100" r="3.5" fill="#C67B5C"/>
+              <circle cx="170" cy="80" r="3.5" fill="#C67B5C"/>
+              <circle cx="230" cy="60" r="3.5" fill="#C67B5C"/>
+              <circle cx="290" cy="50" r="3.5" fill="#C67B5C"/>
+              <circle cx="350" cy="40" r="3.5" fill="#C67B5C"/>
+              <circle cx="410" cy="30" r="3.5" fill="#C67B5C"/>
+              <circle cx="470" cy="55" r="3.5" fill="#C67B5C"/>
+              <circle cx="520" cy="70" r="3.5" fill="#C67B5C"/>
+              <!-- X labels -->
+              <text x="50" y="168" font-size="10" fill="#8B7355" text-anchor="middle">06/05</text>
+              <text x="110" y="168" font-size="10" fill="#8B7355" text-anchor="middle">06/06</text>
+              <text x="170" y="168" font-size="10" fill="#8B7355" text-anchor="middle">06/07</text>
+              <text x="230" y="168" font-size="10" fill="#8B7355" text-anchor="middle">06/08</text>
+              <text x="290" y="168" font-size="10" fill="#8B7355" text-anchor="middle">06/09</text>
+              <text x="350" y="168" font-size="10" fill="#8B7355" text-anchor="middle">06/10</text>
+              <text x="410" y="168" font-size="10" fill="#8B7355" text-anchor="middle">06/11</text>
+              <text x="470" y="168" font-size="10" fill="#8B7355" text-anchor="middle">06/12</text>
+              <text x="520" y="168" font-size="10" fill="#8B7355" text-anchor="middle">今天</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">请求方法分布</div>
+        <div class="chart-container" style="flex-direction:column;height:auto;min-height:160px">
+          <div class="pie-chart">
+            <svg viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="60" fill="none" stroke="#C67B5C" stroke-width="28" stroke-dasharray="151 226" stroke-dashoffset="0"/>
+              <circle cx="70" cy="70" r="60" fill="none" stroke="#7BA87D" stroke-width="28" stroke-dasharray="94 283" stroke-dashoffset="151"/>
+              <circle cx="70" cy="70" r="60" fill="none" stroke="#D4A574" stroke-width="28" stroke-dasharray="56 321" stroke-dashoffset="245"/>
+              <circle cx="70" cy="70" r="60" fill="none" stroke="#D4745C" stroke-width="28" stroke-dasharray="37 340" stroke-dashoffset="301"/>
+              <circle cx="70" cy="70" r="28" fill="var(--card-bg)"/>
+            </svg>
+          </div>
+          <div class="pie-legend">
+            <div class="pie-legend-item"><span class="dot" style="background:#C67B5C"></span> GET 40%</div>
+            <div class="pie-legend-item"><span class="dot" style="background:#7BA87D"></span> POST 25%</div>
+            <div class="pie-legend-item"><span class="dot" style="background:#D4A574"></span> PUT 15%</div>
+            <div class="pie-legend-item"><span class="dot" style="background:#D4745C"></span> DELETE 10%</div>
+            <div class="pie-legend-item"><span class="dot" style="background:#8B7355"></span> 其他 10%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Row 2 -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">接口响应时间分布 (ms)</div>
+        <div class="chart-container">
+          <div class="bar-chart">
+            <div class="bar-group">
+              <div class="bar-value">45</div>
+              <div class="bar" style="height:30%;background:var(--success)"></div>
+              <div class="bar-label">&lt;100ms</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-value">28</div>
+              <div class="bar" style="height:50%;background:var(--success)"></div>
+              <div class="bar-label">100-300</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-value">15</div>
+              <div class="bar" style="height:75%;background:var(--accent)"></div>
+              <div class="bar-label">300-500</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-value">8</div>
+              <div class="bar" style="height:90%;background:var(--warning)"></div>
+              <div class="bar-label">500-800</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-value">4</div>
+              <div class="bar" style="height:60%;background:var(--danger)"></div>
+              <div class="bar-label">&gt;800ms</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">按项目统计</div>
+        <table class="data-table">
+          <thead>
+            <tr><th>项目名</th><th>接口数</th><th>测试次数</th><th>成功率</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>电商平台</strong></td><td>486</td><td>3,240</td><td><span class="status-badge status-success">97.2%</span></td></tr>
+            <tr><td><strong>用户中心</strong></td><td>245</td><td>1,890</td><td><span class="status-badge status-success">98.5%</span></td></tr>
+            <tr><td><strong>支付系统</strong></td><td>187</td><td>1,450</td><td><span class="status-badge status-success">99.1%</span></td></tr>
+            <tr><td><strong>消息服务</strong></td><td>96</td><td>892</td><td><span class="status-badge status-pending">94.3%</span></td></tr>
+            <tr><td><strong>数据分析</strong></td><td>134</td><td>1,020</td><td><span class="status-badge status-fail">88.6%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent executions -->
+    <div class="recent-table">
+      <div class="table-title">最近执行记录</div>
+      <table class="data-table">
+        <thead>
+          <tr><th>执行时间</th><th>套件名称</th><th>接口数</th><th>通过</th><th>失败</th><th>耗时</th><th>状态</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-12 14:30:22</td>
+            <td>电商核心接口回归</td>
+            <td>56</td>
+            <td style="color:var(--success)">54</td>
+            <td style="color:var(--danger)">2</td>
+            <td>48s</td>
+            <td><span class="status-badge status-success">已完成</span></td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-12 11:00:15</td>
+            <td>用户模块全量测试</td>
+            <td>38</td>
+            <td style="color:var(--success)">38</td>
+            <td style="color:var(--danger)">0</td>
+            <td>32s</td>
+            <td><span class="status-badge status-success">已完成</span></td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-12 09:45:30</td>
+            <td>支付流程冒烟测试</td>
+            <td>24</td>
+            <td style="color:var(--success)">22</td>
+            <td style="color:var(--danger)">2</td>
+            <td>18s</td>
+            <td><span class="status-badge status-success">已完成</span></td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-11 22:00:00</td>
+            <td>夜间全量定时测试</td>
+            <td>128</td>
+            <td style="color:var(--success)">120</td>
+            <td style="color:var(--danger)">8</td>
+            <td>112s</td>
+            <td><span class="status-badge status-fail">有失败</span></td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">2026-06-11 16:20:45</td>
+            <td>消息推送服务测试</td>
+            <td>18</td>
+            <td style="color:var(--success)">18</td>
+            <td style="color:var(--danger)">0</td>
+            <td>22s</td>
+            <td><span class="status-badge status-success">已完成</span></td>
+            <td><span style="color:var(--primary);cursor:pointer;font-size:12px">查看报告</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

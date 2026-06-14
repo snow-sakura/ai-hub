@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI测试套件 - AI-HUB</title>
+<style>
+  :root {
+    --primary:#C67B5C;--primary-light:#D49472;--primary-dark:#A86545;
+    --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;
+    --sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;
+    --text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);
+    --radius:8px;--radius-lg:12px;
+    --font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+    --shadow:0 1px 3px rgba(60,45,30,0.06);
+    --shadow-md:0 4px 12px rgba(60,45,30,0.08);
+    --sidebar-width:220px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.6;}
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.25);border-radius:10px;}
+
+  .sidebar{width:var(--sidebar-width);background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+  .sidebar-logo{padding:20px 18px 14px;border-bottom:var(--border);display:flex;align-items:center;gap:10px;}
+  .sidebar-logo svg{flex-shrink:0;}
+  .sidebar-logo span{font-size:16px;font-weight:600;color:var(--text);letter-spacing:0.5px;}
+  .sidebar-logo small{display:block;font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:1px;}
+  .sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+  .nav-section-title{font-size:11px;color:var(--text-muted);padding:8px 12px 4px;letter-spacing:0.8px;font-weight:500;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);color:var(--text-secondary);text-decoration:none;font-size:13px;cursor:pointer;transition:all 0.15s;margin-bottom:1px;}
+  .nav-item:hover{background:rgba(200,170,140,0.15);color:var(--text);}
+  .nav-item.active{background:var(--primary);color:#fff;font-weight:500;}
+  .nav-item svg{flex-shrink:0;opacity:0.7;}
+  .nav-item.active svg{opacity:1;}
+
+  .main{margin-left:var(--sidebar-width);flex:1;min-height:100vh;}
+  .header{height:56px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+  .header-left .breadcrumb{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+  .header-left .breadcrumb span{color:var(--text-secondary);}
+  .header-right{display:flex;align-items:center;gap:16px;}
+  .time{font-size:12px;color:var(--text-muted);}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;}
+
+  .content{padding:24px 28px;}
+  .page-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .page-toolbar h2{font-size:18px;font-weight:600;}
+  .page-toolbar-actions{display:flex;gap:10px;align-items:center;}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:var(--font);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+  .btn-outline:hover{border-color:var(--primary-light);color:var(--text);}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+  .btn-danger{background:transparent;border:1px solid rgba(198,123,92,0.3);color:var(--primary);}
+  .btn-danger:hover{background:rgba(198,123,92,0.06);}
+  .btn-success{background:#7BA67C;color:#fff;}
+  .btn-success:hover{background:#6B9670;}
+  .btn-warning{background:var(--accent);color:#fff;}
+  .btn-warning:hover{background:#C49464;}
+  .search-box{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:var(--border);border-radius:var(--radius);padding:0 12px;}
+  .search-box input{border:none;background:transparent;padding:8px 0;font-size:13px;outline:none;color:var(--text);width:200px;font-family:var(--font);}
+  .search-box input::placeholder{color:var(--text-muted);}
+
+  .filter-group{display:flex;gap:8px;align-items:center;}
+  .filter-select{padding:6px 10px;border:var(--border);border-radius:var(--radius);font-size:12px;background:var(--card-bg);color:var(--text-secondary);outline:none;font-family:var(--font);}
+
+  .table-wrap{background:var(--card-bg);border:var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:10px 14px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);background:var(--bg);font-size:12px;}
+  td{padding:10px 14px;border-bottom:var(--border);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:nth-child(even) td{background:rgba(246,240,231,0.3);}
+
+  .switch{position:relative;display:inline-block;width:36px;height:20px;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#ccc;transition:0.2s;border-radius:20px;}
+  .slider:before{position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background:#fff;transition:0.2s;border-radius:50%;}
+  .switch input:checked+.slider{background:var(--primary);}
+  .switch input:checked+.slider:before{transform:translateX(16px);}
+
+  .op-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--text-muted);transition:all 0.1s;font-family:var(--font);}
+  .op-btn:hover{background:rgba(200,170,140,0.12);color:var(--text);}
+
+  .strategy-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;}
+  .strategy-seq{background:rgba(123,166,124,0.08);color:#7BA67C;}
+  .strategy-parallel{background:rgba(139,126,189,0.08);color:#8B7EBD;}
+  .strategy-cron{background:rgba(212,165,116,0.1);color:var(--accent);}
+
+  /* ===== 弹窗 ===== */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(60,45,30,0.35);z-index:200;align-items:center;justify-content:center;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--card-bg);border-radius:var(--radius-lg);width:600px;max-height:80vh;overflow-y:auto;box-shadow:0 12px 40px rgba(60,45,30,0.2);}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border);}
+  .modal-header h3{font-size:15px;font-weight:600;}
+  .modal-close{width:28px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+  .modal-close:hover{background:rgba(200,170,140,0.12);color:var(--text);}
+  .modal-body{padding:20px;}
+  .form-group{margin-bottom:16px;}
+  .form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;}
+  .form-group input,.form-group select{width:100%;padding:8px 10px;border:var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text);outline:none;font-family:var(--font);}
+  .form-group input:focus,.form-group select:focus{border-color:var(--primary-light);}
+  .modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:var(--border);}
+  .btn-cancel{background:transparent;border:var(--border);color:var(--text-secondary);}
+  .btn-cancel:hover{background:rgba(200,170,140,0.06);}
+
+  .case-checklist{padding:8px;border:var(--border);border-radius:var(--radius);max-height:200px;overflow-y:auto;background:var(--bg);}
+  .check-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:13px;cursor:pointer;}
+  .check-item:hover{background:rgba(200,170,140,0.08);}
+  .check-item input[type="checkbox"]{accent-color:var(--primary);}
+  .check-item .case-id{color:var(--text-muted);font-size:11px;}
+
+  .order-controls{display:flex;align-items:center;gap:4px;margin-left:auto;}
+  .order-btn{width:20px;height:20px;border:none;background:var(--bg);border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+  .order-btn:hover{background:rgba(200,170,140,0.15);color:var(--text);}
+
+  @media(max-width:768px){
+    .sidebar{width:56px;}
+    .sidebar-logo span,.sidebar-logo small,.nav-item span,.nav-section-title{display:none;}
+    .sidebar-logo{padding:14px;justify-content:center;}
+    .nav-item{justify-content:center;padding:10px;}
+    .main{margin-left:56px;}
+    .page-toolbar{flex-direction:column;align-items:flex-start;}
+    .modal{width:90%;margin:10px;}
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="6" fill="#C67B5C"/><path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><span>AI-HUB</span><small>测试平台</small></div></div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">导航</div>
+    <a class="nav-item" href="../00-首页仪表盘/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h3l1.5-6 3 12L11 4h3"/></svg><span>首页仪表盘</span></a>
+    <a class="nav-item" href="../01-AI智能测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg><span>AI智能测试</span></a>
+    <a class="nav-item" href="../02-API接口测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4L1 8l3 4M12 4l3 4-3 4M9 1L7 15"/></svg><span>API接口测试</span></a>
+    <a class="nav-item active" href="数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>UI自动化测试</span></a>
+    <a class="nav-item" href="../04-APP自动化测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 12h6"/></svg><span>APP自动化测试</span></a>
+    <a class="nav-item" href="../05-测试管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h2l1-3 2 6 2-5 1 2h2"/></svg><span>测试管理</span></a>
+    <a class="nav-item" href="../06-配置中心/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v1M8 14v1M1 8h1M14 8h1M3.05 3.05l.7.7M12.25 12.25l.7.7M3.05 12.95l.7-.7M12.25 3.75l.7-.7"/></svg><span>配置中心</span></a>
+    <a class="nav-item" href="../07-AI聊天室/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H5l-4 3V3z"/></svg><span>AI聊天室</span></a>
+    <a class="nav-item" href="../08-知识库/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 3v10M2 3a3 3 0 013-3h9v10H5a3 3 0 00-3 3M14 3v10"/></svg><span>知识库</span></a>
+    <a class="nav-item" href="../09-系统管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M6 6h4M6 9h4"/></svg><span>系统管理</span></a>
+  </nav>
+</aside>
+
+<div class="main">
+  <header class="header">
+    <div class="header-left"><div class="breadcrumb">AI-HUB / <span>UI自动化测试</span> / <span>套件管理</span></div></div>
+    <div class="header-right"><span class="time" id="currentTime"></span><div class="avatar">管</div></div>
+  </header>
+
+  <div class="content">
+    <div class="page-toolbar">
+      <h2>测试套件</h2>
+      <div class="page-toolbar-actions">
+        <div class="filter-group">
+          <select class="filter-select"><option value="">所有项目</option><option>官网首页</option><option>用户中心</option><option>购物车流程</option></select>
+        </div>
+        <div class="search-box"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--text-muted)" stroke-width="1.4" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5L13 13"/></svg><input type="text" placeholder="搜索套件..." id="searchInput" oninput="filterSuites()"></div>
+        <button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>新建套件</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="suiteTable">
+        <thead><tr><th>套件名称</th><th>关联项目</th><th>用例数</th><th>执行策略</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td>官网登录回归测试</td><td>官网首页</td><td>8</td><td><span class="strategy-badge strategy-seq">顺序执行</span></td><td><label class="switch"><input type="checkbox" checked onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label></td><td><button class="op-btn" onclick="alert('执行套件（模拟）')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="3,1 12,7 3,13"/></svg>执行</button><button class="op-btn" onclick="openModal(true)">编辑</button><button class="op-btn" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+          <tr><td>用户中心全量测试</td><td>用户中心</td><td>15</td><td><span class="strategy-badge strategy-parallel">并行执行</span></td><td><label class="switch"><input type="checkbox" checked onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label></td><td><button class="op-btn" onclick="alert('执行套件（模拟）')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="3,1 12,7 3,13"/></svg>执行</button><button class="op-btn" onclick="openModal(true)">编辑</button><button class="op-btn" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+          <tr><td>购物车流程冒烟测试</td><td>购物车流程</td><td>6</td><td><span class="strategy-badge strategy-seq">顺序执行</span></td><td><label class="switch"><input type="checkbox" checked onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label></td><td><button class="op-btn" onclick="alert('执行套件（模拟）')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="3,1 12,7 3,13"/></svg>执行</button><button class="op-btn" onclick="openModal(true)">编辑</button><button class="op-btn" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+          <tr><td>每日回归测试（定时）</td><td>官网首页</td><td>28</td><td><span class="strategy-badge strategy-cron">定时执行</span></td><td><label class="switch"><input type="checkbox" checked onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label></td><td><button class="op-btn" onclick="alert('执行套件（模拟）')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="3,1 12,7 3,13"/></svg>执行</button><button class="op-btn" onclick="openModal(true)">编辑</button><button class="op-btn" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+          <tr><td>商品管理后台测试套件</td><td>商品管理后台</td><td>12</td><td><span class="strategy-badge strategy-seq">顺序执行</span></td><td><label class="switch"><input type="checkbox" onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label></td><td><button class="op-btn" onclick="alert('执行套件（模拟）')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="3,1 12,7 3,13"/></svg>执行</button><button class="op-btn" onclick="openModal(true)">编辑</button><button class="op-btn" onclick="if(confirm('确认删除？'))this.closest('tr').remove()">删除</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 新建/编辑套件弹窗 -->
+<div class="modal-overlay" id="suiteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="suiteModalTitle">新建测试套件</h3>
+      <button class="modal-close" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>套件名称</label><input type="text" placeholder="输入套件名称" id="suiteName"></div>
+      <div class="form-group"><label>关联项目</label><select id="suiteProject"><option>官网首页</option><option>用户中心</option><option>商品管理后台</option><option>购物车流程</option></select></div>
+      <div class="form-group">
+        <label>执行策略</label>
+        <select id="suiteStrategy">
+          <option value="sequential">顺序执行 - 按顺序依次执行每个用例</option>
+          <option value="parallel">并行执行 - 同时执行多个用例</option>
+          <option value="cron">定时执行 - 按Cron表达式定时触发</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>选择用例（可调整执行顺序）</label>
+        <div class="case-checklist" id="caseChecklist">
+          <div class="check-item"><input type="checkbox" checked><span class="case-id">UI-TC-001</span> 用户登录成功流程 <span class="order-controls"><button class="order-btn" onclick="moveItem(this,-1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button><button class="order-btn" onclick="moveItem(this,1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button></span></div>
+          <div class="check-item"><input type="checkbox" checked><span class="case-id">UI-TC-002</span> 用户登录失败-密码错误 <span class="order-controls"><button class="order-btn" onclick="moveItem(this,-1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button><button class="order-btn" onclick="moveItem(this,1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button></span></div>
+          <div class="check-item"><input type="checkbox"><span class="case-id">UI-TC-003</span> 商品搜索功能验证 <span class="order-controls"><button class="order-btn" onclick="moveItem(this,-1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button><button class="order-btn" onclick="moveItem(this,1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button></span></div>
+          <div class="check-item"><input type="checkbox" checked><span class="case-id">UI-TC-004</span> 添加商品至购物车 <span class="order-controls"><button class="order-btn" onclick="moveItem(this,-1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button><button class="order-btn" onclick="moveItem(this,1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button></span></div>
+          <div class="check-item"><input type="checkbox"><span class="case-id">UI-TC-005</span> 购物车结算流程 <span class="order-controls"><button class="order-btn" onclick="moveItem(this,-1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button><button class="order-btn" onclick="moveItem(this,1)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2v6M2 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="alert('套件已保存（模拟）');closeModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateTime(){const n=new Date();document.getElementById('currentTime').textContent=n.toLocaleString('zh-CN',{hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+  updateTime();setInterval(updateTime,10000);
+
+  function openModal(edit){document.getElementById('suiteModalTitle').textContent=edit?'编辑测试套件':'新建测试套件';document.getElementById('suiteModal').classList.add('show');}
+  function closeModal(){document.getElementById('suiteModal').classList.remove('show');}
+  document.getElementById('suiteModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+  function filterSuites(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('#suiteTable tbody tr').forEach(r=>{
+      r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
+    });
+  }
+
+  function moveItem(btn,dir){
+    const item=btn.closest('.check-item');
+    const list=document.getElementById('caseChecklist');
+    if(dir===-1&&item.previousElementSibling){list.insertBefore(item,item.previousElementSibling);}
+    else if(dir===1&&item.nextElementSibling){list.insertBefore(item.nextElementSibling,item);}
+  }
+</script>
+</body>
+</html>

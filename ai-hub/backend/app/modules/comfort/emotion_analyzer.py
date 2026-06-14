@@ -3,7 +3,7 @@
 import json
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from app.shared.core.llm_factory import LLMFactory
+from app.common.core.llm_factory import LLMFactory
 from app.modules.comfort.domain import EmotionResult
 
 

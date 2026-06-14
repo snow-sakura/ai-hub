@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI自动化看板 - AI-HUB</title>
+<style>
+  /* ===== 全局重置与主题变量 ===== */
+  :root {
+    --primary:#C67B5C;
+    --primary-light:#D49472;
+    --primary-dark:#A86545;
+    --accent:#D4A574;
+    --bg:#FBF7F0;
+    --card-bg:#FFFDF9;
+    --sidebar-bg:#F6F0E7;
+    --text:#3D2E1F;
+    --text-secondary:#5C4A38;
+    --text-muted:#8B7355;
+    --border:1px solid rgba(180,150,120,0.12);
+    --radius:8px;
+    --radius-lg:12px;
+    --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --shadow: 0 1px 3px rgba(60,45,30,0.06), 0 1px 2px rgba(60,45,30,0.04);
+    --shadow-md: 0 4px 12px rgba(60,45,30,0.08);
+    --sidebar-width: 220px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  /* ===== 滚动条 ===== */
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:rgba(180,150,120,0.25); border-radius:10px; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    width:var(--sidebar-width);
+    background:var(--sidebar-bg);
+    border-right:var(--border);
+    display:flex;
+    flex-direction:column;
+    position:fixed;
+    top:0; left:0; bottom:0;
+    z-index:100;
+  }
+  .sidebar-logo {
+    padding:20px 18px 14px;
+    border-bottom:var(--border);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .sidebar-logo svg { flex-shrink:0; }
+  .sidebar-logo span {
+    font-size:16px;
+    font-weight:600;
+    color:var(--text);
+    letter-spacing:0.5px;
+  }
+  .sidebar-logo small {
+    display:block;
+    font-size:10px;
+    color:var(--text-muted);
+    font-weight:400;
+    letter-spacing:1px;
+  }
+  .sidebar-nav { flex:1; padding:12px 10px; overflow-y:auto; }
+  .nav-section { margin-bottom:4px; }
+  .nav-section-title {
+    font-size:11px;
+    color:var(--text-muted);
+    padding:8px 12px 4px;
+    letter-spacing:0.8px;
+    font-weight:500;
+  }
+  .nav-item {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 12px;
+    border-radius:var(--radius);
+    color:var(--text-secondary);
+    text-decoration:none;
+    font-size:13px;
+    cursor:pointer;
+    transition:all 0.15s;
+    margin-bottom:1px;
+  }
+  .nav-item:hover { background:rgba(200,170,140,0.15); color:var(--text); }
+  .nav-item.active {
+    background:var(--primary);
+    color:#fff;
+    font-weight:500;
+  }
+  .nav-item svg { flex-shrink:0; opacity:0.7; }
+  .nav-item.active svg { opacity:1; }
+  .nav-item .badge {
+    margin-left:auto;
+    background:rgba(200,170,140,0.2);
+    color:var(--text-muted);
+    font-size:11px;
+    padding:0 8px;
+    border-radius:10px;
+    line-height:18px;
+  }
+  .nav-item.active .badge { background:rgba(255,255,255,0.2); color:#fff; }
+
+  /* ===== 主区域 ===== */
+  .main { margin-left:var(--sidebar-width); flex:1; min-height:100vh; }
+  .header {
+    height:56px;
+    background:var(--card-bg);
+    border-bottom:var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 28px;
+    position:sticky;
+    top:0; z-index:50;
+  }
+  .header-left { display:flex; align-items:center; gap:12px; }
+  .header-left h1 {
+    font-size:17px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .header-left .breadcrumb {
+    font-size:12px;
+    color:var(--text-muted);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .header-left .breadcrumb span { color:var(--text-secondary); }
+  .header-right { display:flex; align-items:center; gap:16px; }
+  .header-right .time {
+    font-size:12px;
+    color:var(--text-muted);
+  }
+  .avatar {
+    width:32px; height:32px;
+    border-radius:50%;
+    background:var(--primary-light);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+  }
+
+  .content { padding:24px 28px; }
+
+  /* ===== 统计卡片 ===== */
+  .stats-grid {
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:14px;
+    margin-bottom:24px;
+  }
+  .stat-card {
+    background:var(--card-bg);
+    border:var(--border);
+    border-radius:var(--radius-lg);
+    padding:18px 16px;
+    transition:all 0.2s;
+    cursor:pointer;
+  }
+  .stat-card:hover {
+    box-shadow:var(--shadow-md);
+    transform:translateY(-2px);
+  }
+  .stat-card .stat-icon { margin-bottom:8px; }
+  .stat-card .stat-number {
+    font-size:26px;
+    font-weight:700;
+    color:var(--text);
+    line-height:1.2;
+  }
+  .stat-card .stat-label {
+    font-size:12px;
+    color:var(--text-muted);
+    margin-top:2px;
+  }
+  .stat-card:nth-child(1) .stat-icon svg { color:var(--primary); }
+  .stat-card:nth-child(2) .stat-icon svg { color:var(--accent); }
+  .stat-card:nth-child(3) .stat-icon svg { color:#7BA67C; }
+  .stat-card:nth-child(4) .stat-icon svg { color:#8B7EBD; }
+  .stat-card:nth-child(5) .stat-icon svg { color:#C67B5C; }
+  .stat-card:nth-child(6) .stat-icon svg { color:#D4A574; }
+
+  /* ===== 两栏布局 ===== */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+
+  /* ===== 区块卡片 ===== */
+  .section-card {
+    background:var(--card-bg);
+    border:var(--border);
+    border-radius:var(--radius-lg);
+  }
+  .section-card .card-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 18px;
+    border-bottom:var(--border);
+  }
+  .section-card .card-header h3 {
+    font-size:14px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .section-card .card-header .more {
+    font-size:12px;
+    color:var(--text-muted);
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .section-card .card-header .more:hover { color:var(--primary); }
+
+  /* ===== 活动日志 ===== */
+  .activity-list { padding:6px 0; }
+  .activity-item {
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:10px 18px;
+    border-bottom:var(--border);
+    font-size:13px;
+  }
+  .activity-item:last-child { border-bottom:none; }
+  .activity-dot {
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--primary-light);
+    margin-top:5px;
+    flex-shrink:0;
+  }
+  .activity-dot.success { background:#7BA67C; }
+  .activity-dot.warning { background:var(--accent); }
+  .activity-dot.error { background:#C67B5C; }
+  .activity-text { flex:1; }
+  .activity-text .action { color:var(--text); }
+  .activity-text .detail { color:var(--text-muted); font-size:12px; }
+  .activity-time {
+    font-size:11px;
+    color:var(--text-muted);
+    white-space:nowrap;
+  }
+
+  /* ===== 快速操作 ===== */
+  .quick-actions { padding:14px 18px; }
+  .quick-actions-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .quick-action-btn {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 14px;
+    border:var(--border);
+    border-radius:var(--radius);
+    background:var(--bg);
+    cursor:pointer;
+    transition:all 0.15s;
+    font-size:13px;
+    color:var(--text-secondary);
+    text-decoration:none;
+  }
+  .quick-action-btn:hover {
+    border-color:var(--primary-light);
+    background:rgba(198,123,92,0.06);
+    color:var(--text);
+  }
+
+  /* ===== 功能卡片 ===== */
+  .feature-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .feature-card {
+    background:var(--card-bg);
+    border:var(--border);
+    border-radius:var(--radius-lg);
+    padding:22px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:all 0.2s;
+  }
+  .feature-card:hover {
+    box-shadow:var(--shadow-md);
+    transform:translateY(-3px);
+  }
+  .feature-card .feature-icon {
+    width:48px; height:48px;
+    border-radius:12px;
+    margin:0 auto 12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .feature-card:nth-child(1) .feature-icon { background:rgba(198,123,92,0.12); color:var(--primary); }
+  .feature-card:nth-child(2) .feature-icon { background:rgba(212,165,116,0.12); color:var(--accent); }
+  .feature-card:nth-child(3) .feature-icon { background:rgba(123,166,124,0.12); color:#7BA67C; }
+  .feature-card:nth-child(4) .feature-icon { background:rgba(139,126,189,0.12); color:#8B7EBD; }
+  .feature-card h4 { font-size:14px; font-weight:600; margin-bottom:4px; }
+  .feature-card p { font-size:12px; color:var(--text-muted); }
+
+  /* ===== 响应式 ===== */
+  @media(max-width:1200px){ .stats-grid{grid-template-columns:repeat(3,1fr);} .feature-grid{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:768px){
+    .sidebar{width:56px;}
+    .sidebar-logo span,.sidebar-logo small,.nav-item span,.nav-section-title,.nav-item .badge{display:none;}
+    .sidebar-logo{padding:14px;justify-content:center;}
+    .nav-item{justify-content:center;padding:10px;}
+    .main{margin-left:56px;}
+    .stats-grid{grid-template-columns:repeat(2,1fr);}
+    .two-col{grid-template-columns:1fr;}
+    .feature-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 侧边栏 ===== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="6" fill="#C67B5C"/><path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div>
+      <span>AI-HUB</span>
+      <small>测试平台</small>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section"><div class="nav-section-title">导航</div>
+      <a class="nav-item" href="../00-首页仪表盘/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h3l1.5-6 3 12L11 4h3"/></svg><span>首页仪表盘</span></a>
+      <a class="nav-item" href="../01-AI智能测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg><span>AI智能测试</span></a>
+      <a class="nav-item" href="../02-API接口测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4L1 8l3 4M12 4l3 4-3 4M9 1L7 15"/></svg><span>API接口测试</span></a>
+      <a class="nav-item active" href="数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>UI自动化测试</span></a>
+      <a class="nav-item" href="../04-APP自动化测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 12h6"/></svg><span>APP自动化测试</span></a>
+      <a class="nav-item" href="../05-测试管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h2l1-3 2 6 2-5 1 2h2"/></svg><span>测试管理</span></a>
+      <a class="nav-item" href="../06-配置中心/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v1M8 14v1M1 8h1M14 8h1M3.05 3.05l.7.7M12.25 12.25l.7.7M3.05 12.95l.7-.7M12.25 3.75l.7-.7"/></svg><span>配置中心</span></a>
+      <a class="nav-item" href="../07-AI聊天室/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H5l-4 3V3z"/></svg><span>AI聊天室</span></a>
+      <a class="nav-item" href="../08-知识库/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 3v10M2 3a3 3 0 013-3h9v10H5a3 3 0 00-3 3M14 3v10"/></svg><span>知识库</span></a>
+      <a class="nav-item" href="../09-系统管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M6 6h4M6 9h4"/></svg><span>系统管理</span></a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ===== 主内容 ===== -->
+<div class="main">
+  <header class="header">
+    <div class="header-left">
+      <div class="breadcrumb">AI-HUB / <span>UI自动化测试</span> / <span>看板</span></div>
+    </div>
+    <div class="header-right">
+      <span class="time" id="currentTime"></span>
+      <div class="avatar">管</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4h16M4 4v14h12V4M7 8h2M11 8h2M7 11h2M11 11h2"/></svg></div>
+        <div class="stat-number">12</div>
+        <div class="stat-label">项目总数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M7 6h6M7 9h6M7 12h4"/></svg></div>
+        <div class="stat-number">368</div>
+        <div class="stat-label">页面元素数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 10h3l1-3 3 7 2-5 2 3h1"/><circle cx="16" cy="10" r="3"/></svg></div>
+        <div class="stat-number">156</div>
+        <div class="stat-label">测试用例数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 17l2-2 3 3L17 6"/></svg></div>
+        <div class="stat-number">89</div>
+        <div class="stat-label">自动化脚本数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 5h16M2 5l2-3h12l2 3M2 5v12a1 1 0 001 1h14a1 1 0 001-1V5"/></svg></div>
+        <div class="stat-number">24</div>
+        <div class="stat-label">测试套件数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg></div>
+        <div class="stat-number">1,286</div>
+        <div class="stat-label">执行记录数</div>
+      </div>
+    </div>
+
+    <!-- 两栏：活动日志 + 快速操作 -->
+    <div class="two-col">
+      <div class="section-card">
+        <div class="card-header"><h3>最近活动</h3><a class="more" href="#">查看全部</a></div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-dot success"></div>
+            <div class="activity-text"><span class="action">登录页面 测试套件</span> 执行完成，通过率 100% <div class="detail">3个用例全部通过</div></div>
+            <div class="activity-time">2分钟前</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot warning"></div>
+            <div class="activity-text"><span class="action">搜索功能测试</span> 录制完成 <div class="detail">已添加8个步骤</div></div>
+            <div class="activity-time">15分钟前</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot"></div>
+            <div class="activity-text"><span class="action">购物车页面</span> 元素已更新 <div class="detail">更新了3个定位器</div></div>
+            <div class="activity-time">1小时前</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot error"></div>
+            <div class="activity-text"><span class="action">用户注册 测试套件</span> 执行失败 <div class="detail">2个用例未通过</div></div>
+            <div class="activity-time">2小时前</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot success"></div>
+            <div class="activity-text"><span class="action">脚本生成：登录测试</span> 已完成 <div class="detail">Python + Playwright</div></div>
+            <div class="activity-time">3小时前</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="card-header"><h3>快速操作</h3></div>
+        <div class="quick-actions">
+          <div class="quick-actions-grid">
+            <a class="quick-action-btn" href="项目管理.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 4h16M4 4v14h12V4M7 8h2M11 8h2M7 11h2M11 11h2"/></svg>项目管理</a>
+            <a class="quick-action-btn" href="元素管理.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M7 6h6M7 9h6M7 12h4"/></svg>元素管理</a>
+            <a class="quick-action-btn" href="用例管理.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 10h3l1-3 3 7 2-5 2 3h1"/><circle cx="16" cy="10" r="3"/></svg>用例管理</a>
+            <a class="quick-action-btn" href="脚本生成.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4L1 8l3 4M12 4l3 4-3 4M9 1L7 15"/></svg>脚本生成</a>
+            <a class="quick-action-btn" href="套件管理.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 5h16M2 5l2-3h12l2 3M2 5v12a1 1 0 001 1h14a1 1 0 001-1V5"/></svg>套件管理</a>
+            <a class="quick-action-btn" href="执行记录.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>执行记录</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 功能卡片 -->
+    <div class="feature-grid">
+      <div class="feature-card" onclick="location.href='元素管理.html'">
+        <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></div>
+        <h4>元素管理</h4>
+        <p>管理页面元素定位器，支持XPath/CSS/ID多种方式</p>
+      </div>
+      <div class="feature-card" onclick="location.href='用例管理.html'">
+        <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg></div>
+        <h4>用例录制</h4>
+        <p>通过录制浏览器操作自动生成测试用例步骤</p>
+      </div>
+      <div class="feature-card" onclick="location.href='套件管理.html'">
+        <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 7l2-4h12l2 4M4 7v12a2 2 0 002 2h12a2 2 0 002-2V7"/></svg></div>
+        <h4>套件管理</h4>
+        <p>组织用例成测试套件，设置执行策略与顺序</p>
+      </div>
+      <div class="feature-card" onclick="location.href='测试报告.html'">
+        <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+        <h4>测试报告</h4>
+        <p>查看详细的执行报告，含截图附件与日志</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 实时时间
+  function updateTime() {
+    const now = new Date();
+    document.getElementById('currentTime').textContent =
+      now.toLocaleString('zh-CN', { hour12: false, year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit' });
+  }
+  updateTime();
+  setInterval(updateTime, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI智能模式配置 - AI智能测试</title>
+<style>
+  :root {
+    --primary:#C67B5C; --primary-light:#D49472; --accent:#D4A574;
+    --bg:#FBF7F0; --card-bg:#FFFDF9; --sidebar-bg:#F6F0E7;
+    --text:#3D2E1F; --text-secondary:#5C4A38; --text-muted:#8B7355;
+    --border:1px solid rgba(180,150,120,0.12);
+    --radius:8px; --radius-lg:12px;
+    --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:var(--font); background:var(--bg); color:var(--text);
+    display:flex; min-height:100vh;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width:240px; background:var(--sidebar-bg); border-right:var(--border);
+    display:flex; flex-direction:column; position:fixed; top:0; left:0;
+    height:100vh; z-index:100;
+  }
+  .sidebar-logo {
+    padding:20px 24px; border-bottom:var(--border);
+    display:flex; align-items:center; gap:10px;
+  }
+  .sidebar-logo h1 {
+    font-size:16px; font-weight:600; color:var(--text); letter-spacing:0.5px;
+  }
+  .sidebar-logo span {
+    font-size:11px; color:var(--text-muted); display:block;
+  }
+  .sidebar-nav { flex:1; padding:12px 0; overflow-y:auto; }
+  .nav-section {
+    padding:8px 24px 4px; font-size:11px; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:1px; font-weight:500;
+  }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 24px;
+    color:var(--text-secondary); text-decoration:none; font-size:14px;
+    cursor:pointer; transition:all 0.2s; border-left:3px solid transparent;
+  }
+  .nav-item:hover { background:rgba(180,150,120,0.08); color:var(--text); }
+  .nav-item.active {
+    background:rgba(198,123,92,0.1); color:var(--primary);
+    border-left-color:var(--primary); font-weight:500;
+  }
+  .nav-item svg { flex-shrink:0; opacity:0.7; }
+  .nav-item.active svg { opacity:1; }
+  .sidebar-footer {
+    padding:16px 24px; border-top:var(--border);
+    font-size:12px; color:var(--text-muted);
+  }
+
+  /* ===== Main ===== */
+  .main { margin-left:240px; flex:1; min-height:100vh; }
+  .topbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 32px; background:var(--card-bg);
+    border-bottom:var(--border); position:sticky; top:0; z-index:50;
+  }
+  .topbar h2 { font-size:18px; font-weight:600; }
+  .topbar-right { display:flex; align-items:center; gap:16px; }
+  .topbar-right .user-info {
+    display:flex; align-items:center; gap:8px; font-size:13px;
+    color:var(--text-secondary);
+  }
+  .avatar {
+    width:32px; height:32px; border-radius:50%;
+    background:linear-gradient(135deg,var(--primary),var(--accent));
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:13px; font-weight:500;
+  }
+
+  /* ===== Content ===== */
+  .content { padding:24px 32px; max-width:880px; }
+
+  /* ===== Card ===== */
+  .card {
+    background:var(--card-bg); border-radius:var(--radius-lg);
+    border:var(--border); padding:24px;
+  }
+  .card-title {
+    font-size:15px; font-weight:600; margin-bottom:20px;
+    display:flex; align-items:center; gap:8px;
+  }
+
+  /* ===== Tab ===== */
+  .tab-bar {
+    display:flex; gap:0; margin-bottom:24px;
+    border-bottom:var(--border);
+  }
+  .tab {
+    padding:12px 24px; font-size:14px; font-weight:500;
+    color:var(--text-secondary); cursor:pointer; transition:all 0.2s;
+    border-bottom:2px solid transparent; background:none;
+    font-family:var(--font); position:relative;
+  }
+  .tab:hover { color:var(--text); }
+  .tab.active {
+    color:var(--primary); border-bottom-color:var(--primary);
+  }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* ===== Form ===== */
+  .form-group { margin-bottom:20px; }
+  .form-label {
+    display:block; font-size:13px; font-weight:500;
+    color:var(--text-secondary); margin-bottom:6px;
+  }
+  .form-label .hint {
+    font-weight:400; color:var(--text-muted); font-size:12px;
+    margin-left:6px;
+  }
+  .form-select, .form-input, .form-textarea {
+    width:100%; padding:9px 12px; font-size:14px; font-family:var(--font);
+    background:var(--bg); border:var(--border); border-radius:var(--radius);
+    color:var(--text); transition:all 0.2s; outline:none;
+  }
+  .form-select:focus, .form-input:focus, .form-textarea:focus {
+    border-color:var(--primary); box-shadow:0 0 0 3px rgba(198,123,92,0.1);
+  }
+  .form-textarea {
+    resize:vertical; min-height:80px;
+  }
+  .form-row {
+    display:grid; grid-template-columns:1fr 1fr; gap:16px;
+  }
+  .form-hint {
+    font-size:12px; color:var(--text-muted); margin-top:4px;
+  }
+
+  /* ===== Toggle Switch ===== */
+  .toggle-wrap {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 0; border-bottom:1px solid rgba(180,150,120,0.08);
+  }
+  .toggle-wrap:last-child { border-bottom:none; }
+  .toggle-info { flex:1; }
+  .toggle-info .toggle-label { font-size:14px; font-weight:500; }
+  .toggle-info .toggle-desc { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .toggle {
+    position:relative; width:44px; height:24px; flex-shrink:0; cursor:pointer;
+  }
+  .toggle input { opacity:0; width:0; height:0; }
+  .toggle .slider {
+    position:absolute; inset:0; background:rgba(180,150,120,0.25);
+    border-radius:12px; transition:all 0.3s;
+  }
+  .toggle .slider::before {
+    content:''; position:absolute; width:18px; height:18px;
+    left:3px; bottom:3px; background:#fff; border-radius:50%;
+    transition:all 0.3s; box-shadow:0 1px 3px rgba(0,0,0,0.15);
+  }
+  .toggle input:checked + .slider { background:var(--primary); }
+  .toggle input:checked + .slider::before { transform:translateX(20px); }
+
+  /* ===== Button ===== */
+  .btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    gap:6px; padding:9px 20px; font-size:14px; font-family:var(--font);
+    border:none; border-radius:var(--radius); cursor:pointer;
+    transition:all 0.2s; font-weight:500; white-space:nowrap;
+  }
+  .btn-primary {
+    background:var(--primary); color:#fff;
+  }
+  .btn-primary:hover { background:var(--primary-light); transform:translateY(-1px); box-shadow:0 4px 12px rgba(198,123,92,0.25); }
+  .btn-outline {
+    background:transparent; color:var(--primary);
+    border:1px solid var(--primary);
+  }
+  .btn-outline:hover { background:rgba(198,123,92,0.06); }
+  .btn-group { display:flex; gap:12px; margin-top:24px; padding-top:20px; border-top:var(--border); }
+  .btn-success {
+    background:#27ae60; color:#fff;
+  }
+  .btn-success:hover { background:#2ecc71; }
+
+  /* ===== API Key ===== */
+  .api-key-wrap {
+    display:flex; gap:8px;
+  }
+  .api-key-wrap input { flex:1; }
+  .api-key-wrap .btn { flex-shrink:0; }
+
+  /* ===== Slider ===== */
+  .slider-wrap { display:flex; align-items:center; gap:16px; }
+  .slider-wrap input[type="range"] {
+    flex:1; -webkit-appearance:none; height:4px;
+    background:rgba(180,150,120,0.2); border-radius:2px;
+    outline:none; transition:background 0.2s;
+  }
+  .slider-wrap input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:18px; height:18px;
+    background:var(--primary); border-radius:50%; cursor:pointer;
+    box-shadow:0 1px 4px rgba(198,123,92,0.3); transition:all 0.15s;
+  }
+  .slider-wrap input[type="range"]::-webkit-slider-thumb:hover {
+    transform:scale(1.15);
+  }
+  .slider-value {
+    min-width:48px; text-align:center; font-size:14px; font-weight:600;
+    color:var(--primary); background:rgba(198,123,92,0.08);
+    padding:4px 10px; border-radius:var(--radius);
+  }
+
+  /* ===== Select card ===== */
+  .provider-group { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .provider-card {
+    border:var(--border); border-radius:var(--radius); padding:16px;
+    text-align:center; cursor:pointer; transition:all 0.2s;
+  }
+  .provider-card:hover { border-color:rgba(198,123,92,0.3); }
+  .provider-card.active {
+    border-color:var(--primary);
+    background:rgba(198,123,92,0.04);
+    box-shadow:0 0 0 2px rgba(198,123,92,0.15);
+  }
+  .provider-card .provider-icon {
+    width:40px; height:40px; border-radius:10px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; margin-bottom:8px;
+  }
+  .provider-card .provider-name { font-size:13px; font-weight:500; }
+  .provider-card .provider-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+  /* ===== Save Toast ===== */
+  .save-toast {
+    display:none; position:fixed; bottom:32px; right:32px;
+    background:#27ae60; color:#fff; padding:12px 24px;
+    border-radius:var(--radius); font-size:14px;
+    box-shadow:0 4px 16px rgba(39,174,96,0.3);
+    align-items:center; gap:8px; z-index:200;
+    animation:slideUp 0.3s ease;
+  }
+  .save-toast.show { display:flex; }
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  /* ===== Divider ===== */
+  .section-divider {
+    height:1px; background:rgba(180,150,120,0.1); margin:20px 0;
+  }
+
+  /* ===== Scrollbar ===== */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:rgba(180,150,120,0.25); border-radius:3px; }
+
+  /* ===== Responsive ===== */
+  @media (max-width:768px) {
+    .sidebar { width:60px; }
+    .sidebar-logo h1, .sidebar-logo span, .nav-item span, .nav-section, .sidebar-footer { display:none; }
+    .nav-item { justify-content:center; padding:12px; border-left:none; }
+    .nav-item.active { border-left:none; background:rgba(198,123,92,0.1); }
+    .sidebar-logo { padding:12px; justify-content:center; }
+    .main { margin-left:60px; }
+    .content { padding:16px; }
+    .topbar { padding:12px 16px; }
+    .form-row { grid-template-columns:1fr; }
+    .provider-group { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="6" fill="url(#logoGrad)"/>
+      <path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <defs><linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#C67B5C"/><stop offset="1" stop-color="#D4A574"/></linearGradient></defs>
+    </svg>
+    <div>
+      <h1>AI-HUB</h1>
+      <span>智能测试平台</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">导航菜单</div>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="14" height="14" rx="2"/><path d="M6 2v14M12 2v14M2 6h14M2 12h14"/></svg>
+      <span>控制台</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l7-3 7 3v8l-7 3-7-3V5z"/><path d="M2 5l7 3M9 2v11"/><path d="M16 5l-7 3"/></svg>
+      <span>测试用例</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l3 2"/></svg>
+      <span>测试执行</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14l3-3 2 2 5-5"/><circle cx="9" cy="9" r="7"/></svg>
+      <span>测试报告</span>
+    </a>
+    <div class="nav-section" style="padding-top:16px;">AI 智能测试</div>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v14M2 9h14"/><circle cx="9" cy="9" r="6"/></svg>
+      <span>AI 用例生成</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2a7 7 0 017 7M9 2a7 7 0 00-7 7M9 2v14M9 16a7 7 0 007-7M9 16a7 7 0 01-7-7M2 9h14"/></svg>
+      <span>AI 评测师</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h14M2 9h14M2 13h14"/><rect x="2" y="3" width="14" height="12" rx="1.5"/></svg>
+      <span>AI 测试报告</span>
+    </a>
+    <a class="nav-item active" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="2"/><path d="M9 1v3M9 14v3M1 9h3M14 9h3M3.5 3.5l2 2M12.5 12.5l2 2M3.5 14.5l2-2M12.5 5.5l2-2"/></svg>
+      <span>智能配置</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0 · 智能测试</div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <h2>AI 智能模式配置</h2>
+    <div class="topbar-right">
+      <span class="user-info">
+        <span>管理员</span>
+        <div class="avatar">管</div>
+      </span>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab active" data-tab="tab-basic" onclick="switchConfigTab(this)">基础配置</button>
+      <button class="tab" data-tab="tab-model" onclick="switchConfigTab(this)">模型配置</button>
+      <button class="tab" data-tab="tab-advanced" onclick="switchConfigTab(this)">高级配置</button>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card">
+
+      <!-- Tab: Basic -->
+      <div class="tab-content active" id="tab-basic">
+
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M6 6h4M6 9h4"/></svg>
+          基础设置
+        </div>
+
+        <div class="toggle-wrap">
+          <div class="toggle-info">
+            <div class="toggle-label">启用 AI 智能测试模式</div>
+            <div class="toggle-desc">开启后，系统将自动调用 AI 模型进行用例生成、智能评测和报告分析</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-wrap">
+          <div class="toggle-info">
+            <div class="toggle-label">需求变更自动触发生成</div>
+            <div class="toggle-desc">当需求文档发生变更时，自动触发 AI 重新生成测试用例</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-wrap">
+          <div class="toggle-info">
+            <div class="toggle-label">测试执行后自动生成报告</div>
+            <div class="toggle-desc">测试执行完成后，自动调用 AI 生成测试报告并通知相关人员</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-wrap">
+          <div class="toggle-info">
+            <div class="toggle-label">失败用例自动重测</div>
+            <div class="toggle-desc">对于失败的测试用例，AI 自动分析原因并尝试重新执行</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- 通知设置 -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:14px;font-weight:500;margin-bottom:12px;">通知设置</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">通知方式</label>
+              <select class="form-select">
+                <option>站内消息</option>
+                <option>邮件通知</option>
+                <option>企业微信</option>
+                <option>钉钉通知</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">通知频率</label>
+              <select class="form-select">
+                <option>实时通知</option>
+                <option>每日汇总</option>
+                <option>每周汇总</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">通知接收人 <span class="hint">多个邮箱用逗号分隔</span></label>
+            <input class="form-input" type="text" value="admin@aihub.com, test-lead@aihub.com">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab: Model -->
+      <div class="tab-content" id="tab-model">
+
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.5 3.5l2 2M10.5 10.5l2 2M3.5 12.5l2-2M10.5 5.5l2-2"/></svg>
+          AI 提供商与模型
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">选择 AI 提供商</label>
+          <div class="provider-group">
+            <div class="provider-card active" onclick="selectProvider(this)">
+              <div class="provider-icon" style="background:rgba(198,123,92,0.1);color:var(--primary);">G</div>
+              <div class="provider-name">OpenAI</div>
+              <div class="provider-desc">GPT-4o / GPT-4o-mini</div>
+            </div>
+            <div class="provider-card" onclick="selectProvider(this)">
+              <div class="provider-icon" style="background:rgba(39,174,96,0.1);color:#27ae60;">C</div>
+              <div class="provider-name">Anthropic</div>
+              <div class="provider-desc">Claude 3.5 / Claude 4</div>
+            </div>
+            <div class="provider-card" onclick="selectProvider(this)">
+              <div class="provider-icon" style="background:rgba(230,126,34,0.1);color:#e67e22;">D</div>
+              <div class="provider-name">DeepSeek</div>
+              <div class="provider-desc">DeepSeek V3 / R1</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <div class="api-key-wrap">
+            <input class="form-input" type="password" value="sk-orv2-xxxxxxxxxxxxx...xxxxx" id="apiKeyInput">
+            <button class="btn btn-outline" onclick="toggleApiKey()">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4z"/><circle cx="7" cy="7" r="2"/></svg>
+              显示
+            </button>
+            <button class="btn btn-outline">测试连接</button>
+          </div>
+          <div class="form-hint">API Key 加密存储，仅用于调用 AI 服务</div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">模型选择</label>
+            <select class="form-select">
+              <option>GPT-4o（推荐）</option>
+              <option>GPT-4o-mini</option>
+              <option>GPT-4 Turbo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">部署区域</label>
+            <select class="form-select">
+              <option>自动选择</option>
+              <option>美国东部</option>
+              <option>欧洲</option>
+              <option>亚太</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            温度参数 (Temperature)
+            <span class="hint">控制输出的随机性和创造性，值越低越确定</span>
+          </label>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="100" value="30" oninput="updateSlider(this, 'tempVal')">
+            <span class="slider-value" id="tempVal">0.3</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            上下文窗口
+            <span class="hint">单次请求处理的 Token 数量上限</span>
+          </label>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="128" value="32" oninput="updateSlider(this, 'ctxVal', 'K')">
+            <span class="slider-value" id="ctxVal">32K</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab: Advanced -->
+      <div class="tab-content" id="tab-advanced">
+
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2 2"/></svg>
+          高级参数配置
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">最大输出 Token 数</label>
+            <select class="form-select">
+              <option>4096（推荐）</option>
+              <option>8192</option>
+              <option>16384</option>
+              <option>32768</option>
+            </select>
+            <div class="form-hint">单次请求 AI 返回的最大 Token 数量</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">最大输入 Token 数</label>
+            <select class="form-select">
+              <option>32768</option>
+              <option>65536</option>
+              <option>131072（推荐）</option>
+              <option>262144</option>
+            </select>
+            <div class="form-hint">单次请求发送给 AI 的最大 Token 数量</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">请求重试次数</label>
+            <select class="form-select">
+              <option>0 次（不重试）</option>
+              <option>1 次</option>
+              <option selected>2 次（推荐）</option>
+              <option>3 次</option>
+              <option>5 次</option>
+            </select>
+            <div class="form-hint">AI 请求失败后的自动重试次数</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">请求超时时间</label>
+            <select class="form-select">
+              <option>30 秒</option>
+              <option selected>60 秒（推荐）</option>
+              <option>120 秒</option>
+              <option>300 秒</option>
+            </select>
+            <div class="form-hint">等待 AI 响应的最大时间</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">并发请求数</label>
+            <select class="form-select">
+              <option>1（串行）</option>
+              <option selected>3</option>
+              <option>5</option>
+              <option>10</option>
+              <option>20</option>
+            </select>
+            <div class="form-hint">同时发送的 AI 请求数量上限</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">速率限制 (RPM)</label>
+            <select class="form-select">
+              <option>10 次/分钟</option>
+              <option selected>30 次/分钟</option>
+              <option>60 次/分钟</option>
+              <option>100 次/分钟</option>
+            </select>
+            <div class="form-hint">每分钟允许的最大请求次数</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">自定义 Prompt 模板 <span class="hint">可选，不填则使用系统默认模板</span></label>
+          <textarea class="form-textarea" placeholder="输入自定义的 AI 提示词模板，支持 {{变量}} 占位符...
+例如：
+请根据以下需求生成测试用例：
+需求：{{requirement}}
+覆盖功能测试、边界测试、异常测试等场景。">请根据以下需求生成测试用例，覆盖功能测试、边界测试和异常测试场景：
+
+需求描述：{{requirement}}
+
+请严格按照表格格式输出测试用例信息。每个用例包含：用例ID、所属模块、用例标题、前置条件、测试步骤、预期结果、优先级。</textarea>
+        </div>
+
+      </div>
+
+      <!-- Save Button -->
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="saveConfig()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v9H3V2h7l3 3z"/><path d="M6 10h4M8 8v4"/></svg>
+          保存配置
+        </button>
+        <button class="btn btn-outline">恢复默认</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="save-toast" id="saveToast">
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l3 3 5-5"/></svg>
+  配置已保存成功
+</div>
+
+<script>
+function switchConfigTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.getElementById(el.dataset.tab).classList.add('active');
+}
+
+function selectProvider(el) {
+  document.querySelectorAll('.provider-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleApiKey() {
+  const input = document.getElementById('apiKeyInput');
+  const btn = event.target.closest('.btn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4z"/><line x1="1" y1="1" x2="13" y2="13"/></svg> 隐藏`;
+  } else {
+    input.type = 'password';
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4z"/><circle cx="7" cy="7" r="2"/></svg> 显示`;
+  }
+}
+
+function updateSlider(el, targetId, suffix) {
+  const val = el.value;
+  const display = document.getElementById(targetId);
+  if (suffix === 'K') {
+    display.textContent = val + 'K';
+  } else if (suffix === 's') {
+    display.textContent = val + 's';
+  } else {
+    display.textContent = (val / 100).toFixed(2);
+  }
+}
+
+function saveConfig() {
+  const toast = document.getElementById('saveToast');
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+</script>
+
+</body>
+</html>

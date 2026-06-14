@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据看板 · AI-HUB 智能工作台</title>
+<style>
+/* ═══════════════════════════════════════════
+   拍立得暖色设计系统 · Polaroid Warm
+   设计主色: #C67B5C 焦糖棕
+   页面底色: #FBF7F0 暖米白
+   卡片底色: #FFFDF9 暖白
+   侧栏底色: #F6F0E7 暖灰褐
+   ═══════════════════════════════════════════ */
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --info: #5B8DEF; --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* === 侧栏 === */
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+
+/* === 主内容 === */
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;height:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px;flex:1}
+
+/* === 问候 === */
+.greeting{font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+.greeting-sub{font-size:13px;color:var(--text-muted);margin-bottom:24px}
+
+/* === 统计卡片 === */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card-bg);border-radius:12px;border:var(--border);padding:18px 20px;position:relative;overflow:hidden;transition:all 0.2s}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.stat-card .icon-bg{position:absolute;top:-8px;right:-8px;width:64px;height:64px;border-radius:50%;opacity:0.08}
+.stat-card .label{font-size:13px;color:var(--text-muted);margin-bottom:6px;position:relative}
+.stat-card .value{font-size:26px;font-weight:700;position:relative;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.stat-card .trend{font-size:12px;margin-top:4px;display:flex;align-items:center;gap:4px;position:relative}
+.trend-up{color:var(--success)}
+.trend-down{color:var(--danger)}
+
+/* === 图表行 === */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:var(--card-bg);border-radius:12px;border:var(--border);padding:18px 20px}
+.chart-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.chart-title .period{font-size:12px;color:var(--text-muted);font-weight:400}
+
+/* 折线图 SVG */
+.chart-svg{width:100%;height:160px}
+.chart-svg polyline{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.chart-svg .grid-line{stroke:rgba(180,150,120,0.08);stroke-width:1}
+.chart-x-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:4px;padding:0 8px}
+
+/* 环形图 */
+.donut-wrap{display:flex;align-items:center;justify-content:center;gap:24px;height:160px}
+.donut-svg{width:140px;height:140px;transform:rotate(-90deg)}
+.donut-svg circle{fill:none;stroke-width:28;cx:70;cy:70;r:42}
+.donut-legend{display:flex;flex-direction:column;gap:8px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-item .val{font-weight:600;color:var(--text);margin-left:auto}
+
+/* === 底部行 === */
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.section-card{background:var(--card-bg);border-radius:12px;border:var(--border);padding:18px 20px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.section-title{font-size:15px;font-weight:600}
+.section-link{font-size:12px;color:var(--primary);cursor:pointer;text-decoration:none}
+.section-link:hover{text-decoration:underline}
+
+/* 执行表格 */
+.exec-table{width:100%;border-collapse:collapse;font-size:13px}
+.exec-table th{padding:8px 10px;text-align:left;font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;border-bottom:var(--border);letter-spacing:0.5px}
+.exec-table td{padding:8px 10px;border-bottom:var(--border);color:var(--text-secondary);font-size:12px}
+.exec-table tr:hover td{background:var(--primary-bg)}
+.badge-pass{color:var(--success);font-weight:600}
+.badge-fail{color:var(--danger);font-weight:600}
+.badge-running{color:var(--info);font-weight:600}
+.badge-pending{color:var(--text-muted);font-weight:500}
+
+/* 待办列表 */
+.todo-list{display:flex;flex-direction:column;gap:6px}
+.todo-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--sidebar-bg);border-radius:var(--radius);font-size:13px;cursor:pointer;transition:all 0.2s}
+.todo-item:hover{background:var(--primary-bg)}
+.todo-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.todo-dot.caramel{background:var(--primary)}
+.todo-dot.blue{background:var(--info)}
+.todo-dot.green{background:var(--success)}
+.todo-text{flex:1;color:var(--text)}
+.todo-count{font-size:12px;color:var(--text-muted);background:var(--card-bg);padding:2px 10px;border-radius:10px}
+
+/* 快捷操作 */
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.quick-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;background:var(--sidebar-bg);color:var(--text-secondary)}
+.quick-btn:hover{background:var(--primary-bg);color:var(--primary)}
+.quick-btn.primary{background:var(--primary);color:#fff}
+.quick-btn.primary:hover{background:var(--primary-light)}
+
+/* === Toast === */
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:8px;padding:10px 18px;font-size:13px;color:var(--text);box-shadow:0 4px 16px rgba(60,40,20,0.1);display:none;align-items:center;gap:8px;animation:slideIn 0.3s ease}
+.toast.show{display:flex}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+/* === 响应式 === */
+@media(max-width:768px){
+  .sidebar{width:60px}
+  .sidebar-logo span,.menu-group-title,.menu-item .label,.sidebar-footer{display:none}
+  .sidebar-logo{justify-content:center;padding:14px 0}
+  .menu-item{justify-content:center;padding:10px 0;border-left:none}
+  .main{margin-left:60px}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .charts-row{grid-template-columns:1fr}
+  .bottom-row{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 侧栏 ===== -->
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">📋</div><span>测试管理</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group">
+      <div class="menu-group-title">测试管理</div>
+      <a class="menu-item" href="56-测试管理模块.html"><span class="icon">📊</span><span class="label">模块概览</span></a>
+      <a class="menu-item active" href="01-仪表盘看板.html"><span class="icon">📊</span><span class="label">数据看板</span></a>
+      <a class="menu-item" href="56-项目管理.html"><span class="icon">📁</span><span class="label">项目管理</span></a>
+      <a class="menu-item" href="56-版本管理.html"><span class="icon">🏷️</span><span class="label">版本管理</span></a>
+      <a class="menu-item" href="56-成员管理.html"><span class="icon">👥</span><span class="label">成员管理</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+
+<!-- ===== 主内容 ===== -->
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb">测试管理 / <span>数据看板</span></div>
+    <div class="topbar-right">
+      <button class="topbar-btn" onclick="showToast('已刷新')">🔄</button>
+      <button class="topbar-btn">🔔</button>
+      <div class="avatar-sm">张</div>
+    </div>
+  </div>
+  <div class="content">
+    <!-- 问候 -->
+    <div class="greeting">早上好，张明</div>
+    <div class="greeting-sub">2026 年 6 月 12 日 · 有 3 项待办待处理</div>
+
+    <!-- 统计行 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="icon-bg" style="background:var(--primary)"></div>
+        <div class="label">总项目数</div>
+        <div class="value">24</div>
+        <div class="trend trend-up">📁 较上月 +3</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon-bg" style="background:var(--info)"></div>
+        <div class="label">总用例数</div>
+        <div class="value">1,284</div>
+        <div class="trend trend-up">📋 较上月 +56</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon-bg" style="background:var(--accent)"></div>
+        <div class="label">API 接口数</div>
+        <div class="value">328</div>
+        <div class="trend trend-up">🔌 较上月 +12</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon-bg" style="background:var(--success)"></div>
+        <div class="label">执行通过率</div>
+        <div class="value">92.3%</div>
+        <div class="trend trend-up">✅ 较上月 +2.1%</div>
+      </div>
+    </div>
+
+    <!-- 图表行 -->
+    <div class="charts-row">
+      <!-- 折线图 -->
+      <div class="chart-card">
+        <div class="chart-title">用例趋势 <span class="period">近 6 个月</span></div>
+        <svg class="chart-svg" viewBox="0 0 340 160">
+          <line class="grid-line" x1="30" y1="130" x2="330" y2="130"></line>
+          <line class="grid-line" x1="30" y1="100" x2="330" y2="100"></line>
+          <line class="grid-line" x1="30" y1="70" x2="330" y2="70"></line>
+          <line class="grid-line" x1="30" y1="40" x2="330" y2="40"></line>
+          <line class="grid-line" x1="30" y1="10" x2="330" y2="10"></line>
+          <polygon points="40,130 80,110 125,115 170,90 215,70 260,60 310,50 310,130" fill="rgba(198,123,92,0.06)"></polygon>
+          <polyline points="40,130 80,110 125,115 170,90 215,70 260,60 310,50" stroke="var(--primary)"></polyline>
+          <circle cx="40" cy="130" r="3" fill="var(--primary)"></circle>
+          <circle cx="80" cy="110" r="3" fill="var(--primary)"></circle>
+          <circle cx="125" cy="115" r="3" fill="var(--primary)"></circle>
+          <circle cx="170" cy="90" r="3" fill="var(--primary)"></circle>
+          <circle cx="215" cy="70" r="3" fill="var(--primary)"></circle>
+          <circle cx="260" cy="60" r="3" fill="var(--primary)"></circle>
+          <circle cx="310" cy="50" r="4" fill="var(--primary)" stroke="#fff" stroke-width="2"></circle>
+        </svg>
+        <div class="chart-x-labels">
+          <span>1月</span><span>2月</span><span>3月</span><span>4月</span><span>5月</span><span>6月</span>
+        </div>
+      </div>
+      <!-- 环形图 -->
+      <div class="chart-card">
+        <div class="chart-title">用例类型分布</div>
+        <div class="donut-wrap">
+          <svg class="donut-svg" viewBox="0 0 140 140">
+            <circle stroke="rgba(180,150,120,0.1)" stroke-dasharray="264"></circle>
+            <circle stroke="#C67B5C" stroke-dasharray="118.8 145.2" stroke-dashoffset="0"></circle>
+            <circle stroke="#5B8DEF" stroke-dasharray="66 198" stroke-dashoffset="-118.8"></circle>
+            <circle stroke="#7BA87D" stroke-dasharray="47.5 216.5" stroke-dashoffset="-184.8"></circle>
+            <circle stroke="#D4A574" stroke-dasharray="31.7 232.3" stroke-dashoffset="-232.3"></circle>
+          </svg>
+          <div class="donut-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#C67B5C"></span>功能测试 <span class="val">45%</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#5B8DEF"></span>性能测试 <span class="val">25%</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#7BA87D"></span>安全测试 <span class="val">18%</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#D4A574"></span>兼容性 <span class="val">12%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部行 -->
+    <div class="bottom-row">
+      <!-- 最近执行 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">最近执行</div>
+          <a class="section-link">查看更多 →</a>
+        </div>
+        <table class="exec-table">
+          <thead><tr><th>套件名称</th><th>结果</th><th>通过率</th><th>耗时</th></tr></thead>
+          <tbody>
+            <tr><td>电商回归测试套件</td><td class="badge-pass">✓ 通过</td><td>95.8%</td><td>3m 24s</td></tr>
+            <tr><td>金融风控安全套件</td><td class="badge-pass">✓ 通过</td><td>100%</td><td>2m 10s</td></tr>
+            <tr><td>移动端兼容性套件</td><td class="badge-fail">✗ 失败</td><td>78.6%</td><td>4m 05s</td></tr>
+            <tr><td>CRM 冒烟测试套件</td><td class="badge-pass">✓ 通过</td><td>100%</td><td>1m 30s</td></tr>
+            <tr><td>性能压测高并发套件</td><td class="badge-running">◌ 运行中</td><td>—</td><td>2m 15s</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- 待办 + 快捷 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">待办事项</div>
+          <a class="section-link">全部 →</a>
+        </div>
+        <div class="todo-list">
+          <div class="todo-item"><span class="todo-dot caramel"></span><span class="todo-text">待评审的用例</span><span class="todo-count">3</span></div>
+          <div class="todo-item"><span class="todo-dot blue"></span><span class="todo-text">待执行的测试套件</span><span class="todo-count">2</span></div>
+          <div class="todo-item"><span class="todo-dot green"></span><span class="todo-text">待修复的失败用例</span><span class="todo-count">5</span></div>
+        </div>
+        <div class="quick-actions">
+          <button class="quick-btn primary" onclick="window.location.href='02-ai-generate.html'">🤖 AI 生成用例</button>
+          <button class="quick-btn">📋 新建用例</button>
+          <button class="quick-btn">▶ 执行套件</button>
+          <button class="quick-btn">📊 查看报告</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent='✓ '+msg;
+  t.className='toast show';
+  setTimeout(function(){t.className='toast'},2000);
+}
+</script>
+</body>
+</html>

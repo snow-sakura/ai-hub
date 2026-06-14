@@ -80,7 +80,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useVersionStore } from '@/modules/ai_testing/stores/version'
-import type { ProjectVersion } from '@/modules/ai_testing/types/version'
+import type { ProjectVersion, VersionStatus } from '@/modules/ai_testing/types/version'
 
 const props = defineProps<{ projectId: string }>()
 
@@ -124,10 +124,10 @@ async function handleSave() {
       await versionStore.update(editingVersion.value.id, {
         name: formData.name,
         description: formData.description,
-        status: formData.status as any,
+        status: formData.status as VersionStatus,
       })
     } else {
-      await versionStore.create(props.projectId, {
+      await versionStore.createWithProject(props.projectId, {
         name: formData.name,
         description: formData.description,
         status: 'active',

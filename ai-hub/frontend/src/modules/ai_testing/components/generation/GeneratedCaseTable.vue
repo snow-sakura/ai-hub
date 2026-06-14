@@ -91,7 +91,7 @@ const props = defineProps<{
   total: number
   page: number
   pageSize: number
-  selectedIds: Set<string>
+  selectedIds: string[]
 }>()
 
 const emit = defineEmits<{
@@ -106,11 +106,11 @@ const emit = defineEmits<{
   changePageSize: [size: number]
 }>()
 
-const selectedCount = computed(() => props.selectedIds.size)
+const selectedCount = computed(() => props.selectedIds.length)
 const isAllSelected = computed(() => props.cases.length > 0 && selectedCount.value === props.cases.length)
 
 function isSelected(id: string): boolean {
-  return props.selectedIds.has(id)
+  return props.selectedIds.includes(id)
 }
 
 function toggle(id: string) {

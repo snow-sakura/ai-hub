@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP执行记录 · AI-HUB 智能工作台</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--danger:#D4745C;--info:#5B8DEF;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;--font-mono:ui-monospace,'SF Mono','Fira Code','Consolas',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px;cursor:pointer}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+.main{margin-left:240px;flex:1}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s;height:32px}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:24px;font-weight:700;color:var(--text)}.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.15s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-light);box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:var(--border)}.btn-secondary:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid rgba(180,150,120,0.15)}.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-xs{height:24px;padding:0 8px;font-size:11px}
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:16px 20px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);white-space:nowrap;background:var(--sidebar-bg);font-size:12px}
+td{padding:10px 12px;border-bottom:var(--border);color:var(--text)}
+tr:nth-child(even) td{background:rgba(180,150,120,0.03)}
+tr:hover td{background:var(--primary-bg)}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.tag-pass{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-fail{background:rgba(212,116,92,0.12);color:var(--danger)}
+.tag-running{background:rgba(91,141,239,0.12);color:var(--info)}
+.drawer-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(30,20,10,0.35);z-index:200;align-items:center;justify-content:flex-end}
+.drawer-overlay.active{display:flex}
+.drawer{background:var(--card-bg);width:520px;max-width:100%;height:100vh;overflow-y:auto;box-shadow:-4px 0 30px rgba(30,20,10,0.12);animation:drawerIn 0.2s ease}
+@keyframes drawerIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border);position:sticky;top:0;background:var(--card-bg);z-index:10}
+.drawer-head h3{font-size:16px;font-weight:600}
+.drawer-close{width:28px;height:28px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:16px}
+.drawer-close:hover{background:var(--primary-bg);color:var(--text)}
+.drawer-body{padding:20px}
+.log-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(180,150,120,0.06)}
+.log-time{font-size:11px;color:var(--text-muted);font-family:var(--font-mono);width:60px;flex-shrink:0;padding-top:2px}
+.log-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+.log-content{font-size:13px;color:var(--text);flex:1}
+.log-content .fail{color:var(--danger)}.log-content .pass{color:var(--success)}
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:10px;padding:12px 20px;box-shadow:0 8px 30px rgba(30,20,10,0.12);display:flex;align-items:center;gap:10px;font-size:13px;animation:slideIn 0.25s ease;max-width:360px}
+.toast-success{border-left:4px solid var(--success)}.toast-info{border-left:4px solid var(--info)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}.sidebar-logo span,.menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}.sidebar-logo{padding:14px 0;justify-content:center}.menu-item{justify-content:center;padding:9px 0}.main{margin-left:60px}.drawer{width:100%}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">📱</div><span>APP 自动化</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">APP 自动化</div>
+    <a class="menu-item" href="53-APP自动化模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="24-APP仪表盘.html"><span class="icon">📊</span><span>数据看板</span></a>
+    <a class="menu-item" href="25-APP用例管理.html"><span class="icon">📋</span><span>测试用例</span></a>
+    <a class="menu-item" href="26-APP元素管理.html"><span class="icon">🔧</span><span>元素管理</span></a>
+    <a class="menu-item" href="27-APP录制器.html"><span class="icon">⏺️</span><span>用例录制</span></a>
+    <a class="menu-item" href="28-APP测试套件.html"><span class="icon">📦</span><span>测试套件</span></a>
+    <a class="menu-item active" href="29-APP执行记录.html"><span class="icon">▶️</span><span>执行记录</span></a>
+    <a class="menu-item" href="30-APP测试报告.html"><span class="icon">📈</span><span>测试报告</span></a>
+    <a class="menu-item" href="33-APP设备管理.html"><span class="icon">📱</span><span>设备管理</span></a>
+    <a class="menu-item" href="31-APP定时任务.html"><span class="icon">⏰</span><span>定时任务</span></a>
+    <a class="menu-item" href="34-APP通知.html"><span class="icon">🔔</span><span>通知配置</span></a>
+    <a class="menu-item" href="32-APP环境管理.html"><span class="icon">🌐</span><span>测试环境</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">APP 自动化 / <span>执行记录</span></div>
+    <div class="topbar-right"><button class="topbar-btn" onclick="showToast('页面已刷新','info')" title="刷新">⟳</button><button class="topbar-btn" onclick="showToast('暂无新通知','info')" title="通知">🔔</button><div class="avatar-sm">张</div></div>
+  </header>
+  <div class="content">
+    <div class="page-header fade-in">
+      <div><h1 class="page-title">APP 执行记录</h1><p class="page-sub">查看移动端自动化测试执行历史</p></div>
+      <div class="header-actions"><select style="height:34px;border:var(--border);border-radius:6px;padding:0 12px;font-size:13px;outline:none;background:var(--card-bg)"><option>全部套件</option><option>登录模块回归</option><option>支付流程验证</option><option>搜索功能验证</option></select></div>
+    </div>
+    <div class="card fade-in"><div class="card-body" style="padding:0">
+      <div class="table-wrap"><table><thead><tr><th>套件名称</th><th>设备</th><th>系统</th><th>总数</th><th>通过</th><th>失败</th><th>耗时</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">登录模块回归</td><td>iPhone 15</td><td>iOS 17</td><td>12</td><td>11</td><td>1</td><td>2m18s</td><td><span class="tag tag-pass">通过</span></td><td><button class="btn btn-ghost btn-xs" onclick="showDrawer()">📋 日志</button><button class="btn btn-ghost btn-xs" onclick="location.href='30-app-report.html'">📊 报告</button></td></tr>
+          <tr><td style="font-weight:600">支付流程验证</td><td>Pixel 7</td><td>Android 14</td><td>8</td><td>7</td><td>1</td><td>1m45s</td><td><span class="tag tag-pass">通过</span></td><td><button class="btn btn-ghost btn-xs" onclick="showDrawer()">📋 日志</button><button class="btn btn-ghost btn-xs" onclick="location.href='30-app-report.html'">📊 报告</button></td></tr>
+          <tr><td style="font-weight:600">注册流程冒烟</td><td>Galaxy S23</td><td>Android 13</td><td>6</td><td>6</td><td>0</td><td>58s</td><td><span class="tag tag-pass">通过</span></td><td><button class="btn btn-ghost btn-xs" onclick="showDrawer()">📋 日志</button><button class="btn btn-ghost btn-xs" onclick="location.href='30-app-report.html'">📊 报告</button></td></tr>
+          <tr><td style="font-weight:600">首页加载性能</td><td>iPhone 15</td><td>iOS 17</td><td>5</td><td>3</td><td>2</td><td>3m12s</td><td><span class="tag tag-fail">失败</span></td><td><button class="btn btn-ghost btn-xs" onclick="showDrawer()">📋 日志</button><button class="btn btn-ghost btn-xs" onclick="location.href='30-app-report.html'">📊 报告</button></td></tr>
+          <tr><td style="font-weight:600">搜索功能验证</td><td>Pixel 7</td><td>Android 14</td><td>10</td><td>9</td><td>1</td><td>2m05s</td><td><span class="tag tag-pass">通过</span></td><td><button class="btn btn-ghost btn-xs" onclick="showDrawer()">📋 日志</button><button class="btn btn-ghost btn-xs" onclick="location.href='30-app-report.html'">📊 报告</button></td></tr>
+        </tbody></table>
+      </div>
+    </div></div>
+  </div>
+</div>
+<div class="drawer-overlay" id="logDrawer">
+  <div class="drawer">
+    <div class="drawer-head"><h3>📋 执行日志</h3><button class="drawer-close" onclick="hideDrawer()">✕</button></div>
+    <div class="drawer-body">
+      <div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--primary-bg);border-radius:8px;font-size:13px">
+        <span style="font-weight:600">登录模块回归</span><span class="tag tag-pass">通过</span><span style="color:var(--text-muted)">iPhone 15 · iOS 17 · 2m18s</span>
+      </div>
+      <div class="log-item"><span class="log-time">14:00:01</span><span class="log-icon">📱</span><span class="log-content">启动 APP — 电商APP</span></div>
+      <div class="log-item"><span class="log-time">14:00:05</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 点击"我的"Tab (0.8s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:08</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 输入用户名 (1.2s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:11</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 输入密码 (0.9s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:14</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 点击登录按钮 (1.5s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:18</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 验证个人中心显示 (2.1s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:22</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 验证用户名匹配 (0.5s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:25</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 验证头像加载 (1.3s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:28</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 验证订单数量 (0.7s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:31</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 验证退出登录按钮 (0.6s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:34</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 验证设置入口 (1.0s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:37</span><span class="log-icon">✅</span><span class="log-content"><span class="pass">通过</span> 验证通知开关 (0.8s)</span></div>
+      <div class="log-item"><span class="log-time">14:00:40</span><span class="log-icon">❌</span><span class="log-content"><span class="fail">失败</span> 验证客服入口 — 元素未找到: content-desc="customer_service" (3.0s) <span style="color:var(--danger);font-size:12px;display:block;margin-top:4px;background:rgba(212,116,92,0.06);padding:6px 8px;border-radius:4px">NoSuchElementError: An element could not be located on the page using the given search parameters.</span></span></div>
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="showToast('重新执行','info')">🔄 重新执行</button>
+        <button class="btn btn-ghost btn-sm" onclick="showToast('调试模式','info')">🔧 调试</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function showDrawer(){document.getElementById('logDrawer').classList.add('active')}
+function hideDrawer(){document.getElementById('logDrawer').classList.remove('active')}
+document.getElementById('logDrawer').addEventListener('click',function(e){if(e.target===this)hideDrawer()});
+function showToast(msg,type){type=type||'success';var t=document.createElement('div');t.className='toast toast-'+type;t.innerHTML=(type==='success'?'✅ ':'ℹ️ ')+msg;document.body.appendChild(t);setTimeout(function(){t.remove()},2500);}
+</script>
+</body>
+</html>

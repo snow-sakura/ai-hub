@@ -6,6 +6,19 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./backend/data:/app/data
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  backend-dev:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
       - ./backend:/app
       - ./backend/data:/app/data
     env_file:
@@ -13,6 +26,8 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    profiles:
+      - dev
 
   frontend:
     build: ./frontend
@@ -24,3 +39,15 @@ services:
     depends_on:
       - backend
     command: npm run dev
+    profiles:
+      - dev
+
+  frontend-prod:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -334,21 +334,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 0;
-
-  :deep(.el-form-item) {
-    margin-right: 16px;
-    margin-bottom: 12px;
-  }
-
-  :deep(.el-select) {
-    width: 240px;
-  }
-}
-
 .priority-tag {
   &.low { color: #67c23a; }
   &.medium { color: #e6a23c; }

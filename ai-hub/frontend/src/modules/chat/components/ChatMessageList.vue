@@ -51,7 +51,9 @@
 
     <!-- 空状态 -->
     <div v-if="chatStore.messages.length === 0 && !streamState.isStreaming" class="empty-state">
-      <div class="empty-icon">🤖</div>
+      <div class="empty-icon-card">
+        <div class="empty-icon">🤖</div>
+      </div>
       <h3>AI聊天室</h3>
       <p>发送消息开始对话，支持工具调用、文件上传、联网搜索等功能</p>
     </div>
@@ -154,7 +156,7 @@ onUnmounted(() => {
 .message-list {
   flex: 1;
   overflow-y: auto;
-  padding: 48px 24px 24px;
+  padding: 32px 24px 24px;
 }
 
 @media (max-width: 768px) {
@@ -208,6 +210,12 @@ onUnmounted(() => {
   min-height: calc(100vh - 200px);
   color: var(--text-muted);
   gap: 12px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 40px 24px;
+  margin: 24px;
 }
 
 .empty-icon {
@@ -215,10 +223,23 @@ onUnmounted(() => {
   opacity: 0.7;
 }
 
+.empty-icon-card {
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-bg), var(--warm-bg));
+  border: 1px solid rgba(198, 123, 92, 0.2);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 8px;
+}
+
 .empty-state h3 {
   font-size: 22px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--accent);
 }
 
 .empty-state p {
@@ -245,6 +266,8 @@ onUnmounted(() => {
 
 .load-more:hover .load-more-text {
   color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .load-more--loading {

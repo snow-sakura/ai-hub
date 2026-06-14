@@ -390,21 +390,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 0;
-
-  :deep(.el-form-item) {
-    margin-right: 16px;
-    margin-bottom: 12px;
-  }
-
-  :deep(.el-select) {
-    width: 240px;
-  }
-}
-
 .templates-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));

@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 用例生成 - 任务详情</title>
+<style>
+:root {
+  --primary: #C67B5C;
+  --primary-light: #D49472;
+  --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574;
+  --bg: #FBF7F0;
+  --card-bg: #FFFDF9;
+  --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F;
+  --text-secondary: #5C4A38;
+  --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12);
+  --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D;
+  --danger: #D4745C;
+  --warning: #D4A574;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, PingFang SC, Helvetica Neue, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(180,150,120,0.2); border-radius: 3px; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: var(--sidebar-bg);
+  border-right: var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: var(--border);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  gap: 8px;
+}
+.sidebar-logo svg { flex-shrink: 0; }
+.sidebar-menu { padding: 8px 0; flex: 1; }
+.menu-group { margin-bottom: 4px; }
+.menu-group-title {
+  padding: 8px 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 9px 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+}
+.menu-item:hover { background: rgba(198,123,92,0.06); color: var(--text); }
+.menu-item.active {
+  background: var(--primary-bg);
+  color: var(--primary);
+  border-left-color: var(--primary);
+  font-weight: 600;
+}
+.menu-item svg { margin-right: 10px; flex-shrink: 0; opacity: 0.7; }
+.menu-item.active svg { opacity: 1; }
+.menu-item .badge {
+  margin-left: auto;
+  background: var(--primary-bg);
+  color: var(--primary);
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* ===== MAIN ===== */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+  padding: 16px 24px;
+  background: var(--card-bg);
+  border-bottom: var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.page-header-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+.page-header-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.page-header-subtitle { font-size: 13px; color: var(--text-muted); }
+.page-header-actions { display: flex; gap: 8px; }
+.back-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 6px;
+  background: transparent; border: var(--border); cursor: pointer;
+  color: var(--text-secondary); font-size: 16px; transition: all 0.15s;
+}
+.back-btn:hover { background: var(--primary-bg); color: var(--primary); }
+
+/* ===== CONTENT ===== */
+.content {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ===== LOADING SKELETON ===== */
+.skeleton-wrapper { display: none; flex-direction: column; gap: 16px; }
+.skeleton-wrapper.show { display: flex; }
+.skeleton-card {
+  background: var(--card-bg);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.skeleton-line {
+  height: 14px;
+  background: linear-gradient(90deg, rgba(180,150,120,0.06) 25%, rgba(180,150,120,0.15) 50%, rgba(180,150,120,0.06) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+.skeleton-line.w60 { width: 60%; }
+.skeleton-line.w40 { width: 40%; }
+.skeleton-line.w80 { width: 80%; }
+.skeleton-line.h20 { height: 20px; }
+.skeleton-line.h40 { height: 40px; }
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ===== CARDS ===== */
+.main-content { display: none; }
+.main-content.show { display: flex; flex-direction: column; gap: 16px; }
+.card {
+  background: var(--card-bg);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+/* Card collapsible header */
+.card-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.card-header .chevron {
+  margin-left: auto;
+  transition: transform 0.2s;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.card-header .chevron.collapsed { transform: rotate(-90deg); }
+.card-body { transition: all 0.2s; }
+.card-body.hidden { display: none; }
+
+/* ===== DESCRIPTIONS (bordered, 3-column) ===== */
+.descriptions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.desc-item {
+  display: flex;
+  border-bottom: var(--border);
+  border-right: var(--border);
+}
+.desc-item:nth-child(3n) { border-right: none; }
+.desc-item:nth-last-child(-n+3) { border-bottom: none; }
+.desc-label {
+  padding: 8px 12px;
+  background: rgba(180,150,120,0.04);
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 80px;
+  border-right: var(--border);
+}
+.desc-value {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+}
+
+/* ===== TAGS ===== */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+.tag-success { background: rgba(123,168,125,0.12); color: var(--success); }
+.tag-info { background: var(--primary-bg); color: var(--primary); }
+.tag-error { background: rgba(212,116,92,0.12); color: var(--danger); }
+.tag-default { background: rgba(180,150,120,0.1); color: var(--text-muted); }
+
+.tag-p0 { background: rgba(212,116,92,0.15); color: #C95A3E; font-weight: 600; }
+.tag-p1 { background: rgba(212,165,116,0.2); color: #B8863C; font-weight: 600; }
+.tag-p2 { background: rgba(98,151,200,0.15); color: #4A7DB4; font-weight: 600; }
+.tag-p3 { background: rgba(123,168,125,0.15); color: #5A8D5C; font-weight: 600; }
+
+.tag-adopted { background: rgba(123,168,125,0.12); color: var(--success); }
+.tag-pending { background: rgba(180,150,120,0.1); color: var(--text-muted); }
+
+/* ===== REQUIREMENT ===== */
+.requirement-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+.requirement-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ===== BATCH BAR ===== */
+.batch-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--primary-bg);
+  border-radius: var(--radius-sm);
+}
+.batch-bar.show { display: flex; }
+.batch-bar-text { font-size: 13px; color: var(--text-secondary); }
+.batch-bar-text strong { color: var(--text); }
+
+/* ===== GRID TABLE ===== */
+.case-grid {
+  display: flex;
+  flex-direction: column;
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.grid-row {
+  display: grid;
+  grid-template-columns: 40px 50px 1fr 80px 95px 1fr 80px 105px;
+  align-items: center;
+  border-bottom: 1px solid #f0eeec;
+}
+.grid-row:last-child { border-bottom: none; }
+.grid-header {
+  background: #faf8f6;
+  font-weight: 600;
+  font-size: 12px;
+  color: #7A6855;
+}
+.grid-data:hover { background: #faf8f6; }
+.grid-data.selected { background: #f5f0ec; }
+.grid-cell {
+  padding: 8px 6px;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cell-check { display: flex; justify-content: center; }
+.cell-check input[type="checkbox"] {
+  width: 14px; height: 14px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.cell-title, .cell-steps { cursor: default; }
+.cell-actions { display: flex; gap: 4px; }
+.grid-empty {
+  grid-column: 1 / -1;
+  padding: 40px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.grid-pagination {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #faf8f6;
+}
+.pagination-total { font-size: 12px; color: var(--text-muted); }
+.pagination-controls { display: flex; align-items: center; gap: 4px; }
+.page-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; height: 28px; padding: 0 6px;
+  border: var(--border); border-radius: 4px;
+  background: var(--card-bg); font-size: 12px; color: var(--text-secondary);
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.page-btn:hover { background: var(--primary-bg); color: var(--primary); }
+.page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-size-select {
+  padding: 4px 8px; border: var(--border); border-radius: 4px;
+  font-size: 12px; color: var(--text-secondary); background: var(--card-bg);
+  cursor: pointer; font-family: inherit;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-outline { background: transparent; border: 1px solid rgba(198,123,92,0.3); color: var(--primary); }
+.btn-outline:hover { background: var(--primary-bg); }
+.btn-ghost { background: transparent; color: var(--text-secondary); padding: 6px 12px; }
+.btn-ghost:hover { background: rgba(0,0,0,0.04); }
+.btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 4px; }
+.btn-tiny { padding: 2px 10px; font-size: 11px; border-radius: 4px; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { opacity: 0.9; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(60,40,20,0.15);
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.modal-close {
+  margin-left: auto;
+  background: none; border: none; font-size: 18px;
+  cursor: pointer; color: var(--text-muted); padding: 4px;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+.detail-item {
+  margin-bottom: 14px;
+}
+.detail-item:last-child { margin-bottom: 0; }
+.detail-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.detail-value {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.detail-value pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: rgba(180,150,120,0.04);
+  padding: 8px;
+  border-radius: 6px;
+}
+.tag-group { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .grid-row { grid-template-columns: 36px 40px 1fr 70px; }
+  .cell-type, .cell-steps, .cell-status, .cell-actions { display: none; }
+  .descriptions { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    <span>TestHub</span>
+  </div>
+  <nav class="sidebar-menu">
+    <div class="menu-group">
+      <div class="menu-group-title">测试中心</div>
+      <a class="menu-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>仪表盘</a>
+      <a class="menu-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>需求管理</a>
+      <a class="menu-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>用例管理</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">AI 智能</div>
+      <a class="menu-item active" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>AI 用例生成</a>
+      <a class="menu-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>AI 评测师</a>
+      <a class="menu-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>AI 测试报告</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">自动化</div>
+      <a class="menu-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>API 测试</a>
+      <a class="menu-item" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="17"/></svg>UI 自动化</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <div class="page-header-title">
+        📋 生成任务详情
+      </div>
+      <div class="page-header-subtitle">任务 ID: TASK-2025-00128</div>
+    </div>
+    <div class="page-header-actions">
+      <button class="btn btn-outline btn-sm" onclick="handleSaveToLibrary()">保存到用例库</button>
+      <button class="btn btn-ghost btn-sm" onclick="handleRetry()">重新生成</button>
+      <button class="btn btn-ghost btn-sm" onclick="handleExport()">导出 Excel</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ===== LOADING STATE ===== -->
+    <div class="skeleton-wrapper show" id="skeletonWrapper">
+      <div class="skeleton-card">
+        <div class="skeleton-line w60 h20"></div>
+        <div class="skeleton-grid">
+          <div><div class="skeleton-line w80"></div><div class="skeleton-line w40"></div></div>
+          <div><div class="skeleton-line w80"></div><div class="skeleton-line w40"></div></div>
+          <div><div class="skeleton-line w80"></div><div class="skeleton-line w40"></div></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-line w40 h20"></div>
+        <div class="skeleton-line w80"></div>
+        <div class="skeleton-line h40"></div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-line w50 h20"></div>
+        <div class="skeleton-line w100 h40"></div>
+        <div class="skeleton-line w100 h40"></div>
+      </div>
+    </div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content show" id="mainContent">
+
+      <!-- 1. Task Info Card -->
+      <div class="card">
+        <div class="card-header" onclick="toggleCollapse('taskInfoBody', this)">
+          任务信息
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body" id="taskInfoBody">
+          <div class="descriptions">
+            <div class="desc-item">
+              <span class="desc-label">状态</span>
+              <span class="desc-value"><span class="tag tag-success">已完成</span></span>
+            </div>
+            <div class="desc-item">
+              <span class="desc-label">模型</span>
+              <span class="desc-value">deepseek: chat</span>
+            </div>
+            <div class="desc-item">
+              <span class="desc-label">生成用例数</span>
+              <span class="desc-value">27</span>
+            </div>
+            <div class="desc-item">
+              <span class="desc-label">创建时间</span>
+              <span class="desc-value">2025-06-12 14:32</span>
+            </div>
+            <div class="desc-item">
+              <span class="desc-label">更新时间</span>
+              <span class="desc-value">2025-06-12 14:35</span>
+            </div>
+            <div class="desc-item">
+              <span class="desc-label">所属项目</span>
+              <span class="desc-value">用户登录模块</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Requirement Card (default collapsed) -->
+      <div class="card">
+        <div class="card-header" onclick="toggleCollapse('reqBody', this)">
+          📄 原始需求
+          <span class="chevron collapsed">▼</span>
+        </div>
+        <div class="card-body hidden" id="reqBody">
+          <div class="requirement-title">用户登录功能</div>
+          <pre class="requirement-text">用户登录功能的原始需求：
+
+1. 用户可以通过用户名+密码方式进行登录
+2. 用户可以通过手机验证码进行登录
+3. 支持微信扫码登录
+4. 登录失败时需给出明确错误提示
+5. 连续5次登录失败后锁定账号30分钟
+6. 登录成功后跳转到首页
+7. 支持记住密码功能（有效期7天）
+8. 支持退出登录
+9. 登录态有效期24小时，过期需重新登录
+10. 同一账号同一时间只允许一个设备在线
+
+边界条件：
+- 用户名最大长度32字符，最小长度2字符
+- 密码最长64字符，最短8字符，需包含字母和数字
+- 验证码有效期5分钟
+- 验证码每天最多发送10次
+- Token 过期时间为24小时，使用 JWT 实现</pre>
+        </div>
+      </div>
+
+      <!-- 3. Generated Cases Card -->
+      <div class="card">
+        <div class="card-header" style="cursor:default;margin-bottom:0;padding-bottom:14px;border-bottom:var(--border);">
+          ✅ 生成的用例
+        </div>
+        <div style="padding-top:14px;">
+
+          <!-- Batch Bar -->
+          <div class="batch-bar" id="batchBar">
+            <span class="batch-bar-text">已选 <strong id="selectedCount">0</strong> 条</span>
+            <button class="btn btn-success btn-tiny" onclick="batchAdopt()">批量采用</button>
+            <button class="btn btn-danger btn-tiny" onclick="batchDiscard()">批量丢弃</button>
+            <button class="btn btn-ghost btn-tiny" onclick="clearSelection()">取消选择</button>
+          </div>
+
+          <!-- Grid Table -->
+          <div class="case-grid">
+            <div class="grid-row grid-header">
+              <div class="grid-cell cell-check"><input type="checkbox" id="selectAll" onchange="toggleAll(this)"></div>
+              <div class="grid-cell cell-id">序号</div>
+              <div class="grid-cell cell-title">标题</div>
+              <div class="grid-cell cell-priority">优先级</div>
+              <div class="grid-cell cell-type">类型</div>
+              <div class="grid-cell cell-steps">步骤</div>
+              <div class="grid-cell cell-status">状态</div>
+              <div class="grid-cell cell-actions">操作</div>
+            </div>
+            <div id="caseGridBody"></div>
+            <div class="grid-pagination">
+              <span class="pagination-total">共 <strong id="totalCases">0</strong> 条</span>
+              <select class="page-size-select" id="pageSizeSelect">
+                <option value="10">10条/页</option>
+                <option value="20">20条/页</option>
+                <option value="50">50条/页</option>
+              </select>
+              <div class="pagination-controls" id="paginationControls"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      用例详情
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <div class="detail-item">
+        <div class="detail-label">标题</div>
+        <div class="detail-value" id="modalTitle">-</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">优先级</div>
+        <div class="detail-value" id="modalPriority">-</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">类型</div>
+        <div class="detail-value" id="modalType">-</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">前置条件</div>
+        <div class="detail-value"><pre id="modalPreconditions">-</pre></div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">测试步骤</div>
+        <div class="detail-value"><pre id="modalSteps">-</pre></div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">预期结果</div>
+        <div class="detail-value"><pre id="modalResults">-</pre></div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">标签</div>
+        <div class="detail-value tag-group" id="modalTags"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== MOCK DATA =====
+const mockCases = [
+  { id: '1', title: '验证用户名密码登录成功', priority: 'P0', case_type: 'functional', steps: '1. 打开登录页面\n2. 输入有效用户名\n3. 输入正确密码\n4. 点击登录\n5. 验证跳转至首页', preconditions: '已注册有效用户账号', expected_results: '用户成功登录并跳转至首页', status: 'adopted', tags: ['登录', '正向'] },
+  { id: '2', title: '验证手机验证码登录成功', priority: 'P0', case_type: 'functional', steps: '1. 打开登录页\n2. 选择验证码登录\n3. 输入手机号\n4. 获取验证码\n5. 输入正确验证码\n6. 点击登录', preconditions: '手机号已注册', expected_results: '验证码验证通过，登录成功', status: 'adopted', tags: ['登录', '验证码'] },
+  { id: '3', title: '验证微信扫码登录', priority: 'P0', case_type: 'functional', steps: '1. 打开登录页\n2. 选择微信登录\n3. 调出微信二维码\n4. 使用微信扫码\n5. 确认授权', preconditions: '微信已绑定该平台账号', expected_results: '扫码授权后自动登录成功', status: 'adopted', tags: ['登录', '第三方'] },
+  { id: '4', title: '验证使用错误密码登录失败', priority: 'P1', case_type: 'functional', steps: '1. 打开登录页面\n2. 输入有效用户名\n3. 输入错误密码\n4. 点击登录', preconditions: '已注册用户账号', expected_results: '页面提示"用户名或密码错误"，停留在登录页', status: 'pending', tags: ['登录', '异常'] },
+  { id: '5', title: '验证连续5次失败后锁定账号', priority: 'P0', case_type: 'security', steps: '1. 打开登录页\n2. 使用正确用户名\n3. 连续输入错误密码5次\n4. 第6次输入正确密码', preconditions: '账号未锁定', expected_results: '第5次后账号锁定，提示"账号已锁定，请30分钟后重试"', status: 'adopted', tags: ['安全', '锁定'] },
+  { id: '6', title: '验证多设备同时登录同一账号', priority: 'P1', case_type: 'security', steps: '1. 设备A登录账号\n2. 使用同一账号在设备B登录', preconditions: '账号已登录设备A', expected_results: '设备A被踢下线，设备B登录成功', status: 'pending', tags: ['安全', '并发'] },
+  { id: '7', title: '验证记住密码功能有效期', priority: 'P2', case_type: 'functional', steps: '1. 登录时勾选"记住密码"\n2. 关闭浏览器\n3. 7天内重新打开\n4. 检查密码填充', preconditions: '用户已成功登录', expected_results: '密码自动填充，无需重新输入', status: 'pending', tags: ['体验'] },
+  { id: '8', title: '验证Token过期后自动跳转登录', priority: 'P1', case_type: 'functional', steps: '1. 用户登录成功\n2. 等待24小时\n3. 刷新页面', preconditions: '用户已登录', expected_results: '登录态失效，自动跳转至登录页', status: 'adopted', tags: ['Token', '安全'] },
+  { id: '9', title: '验证密码强度校验（8-64位含字母数字）', priority: 'P2', case_type: 'functional', steps: '1. 打开注册页\n2. 输入7位纯字母密码\n3. 输入65位密码\n4. 输入8位纯数字', preconditions: '进入注册页面', expected_results: '弱密码提示，必须至少8位且包含字母和数字', status: 'pending', tags: ['校验'] },
+  { id: '10', title: '高并发登录场景压力测试', priority: 'P3', case_type: 'performance', steps: '1. 准备测试工具\n2. 模拟1000用户并发登录\n3. 记录响应时间\n4. 检查系统资源使用', preconditions: '已准备JMeter压测脚本', expected_results: '平均响应时间<2s，成功率>99.5%', status: 'pending', tags: ['性能', '压力'] },
+];
+
+// ===== STATE =====
+let currentPage = 1;
+let pageSize = 10;
+let selectedIds = new Set();
+let cases = [...mockCases];
+
+function paginate(arr, page, size) {
+  const start = (page - 1) * size;
+  return arr.slice(start, start + size);
+}
+
+function totalPages() { return Math.ceil(cases.length / pageSize); }
+
+// ===== PRIORITY TAG =====
+function priorityHtml(p) {
+  const cls = 'tag-' + p.toLowerCase();
+  return `<span class="tag ${cls}">${p}</span>`;
+}
+
+// ===== TYPE TAG =====
+function typeLabel(t) {
+  const map = { functional: '功能', performance: '性能', security: '安全', compatibility: '兼容' };
+  return map[t] || t;
+}
+
+// ===== STATUS TAG =====
+function statusHtml(s) {
+  if (s === 'adopted') return `<span class="tag tag-adopted">已采用</span>`;
+  return `<span class="tag tag-pending">待定</span>`;
+}
+
+// ===== TRUNCATE =====
+function truncate(s, max) {
+  return s && s.length > max ? s.slice(0, max) + '...' : (s || '');
+}
+
+// ===== RENDER TABLE =====
+function renderTable() {
+  const body = document.getElementById('caseGridBody');
+  const paged = paginate(cases, currentPage, pageSize);
+  const allSelected = paged.length > 0 && paged.every(c => selectedIds.has(c.id));
+
+  document.getElementById('selectAll').checked = allSelected;
+
+  if (paged.length === 0) {
+    body.innerHTML = `<div class="grid-empty">暂无生成用例</div>`;
+    document.getElementById('totalCases').textContent = '0';
+    return;
+  }
+
+  let html = '';
+  paged.forEach((c, i) => {
+    const seq = (currentPage - 1) * pageSize + i + 1;
+    const sel = selectedIds.has(c.id) ? 'selected' : '';
+    html += `
+      <div class="grid-row grid-data ${sel}">
+        <div class="grid-cell cell-check">
+          <input type="checkbox" ${sel ? 'checked' : ''} onchange="toggleSelect('${c.id}')">
+        </div>
+        <div class="grid-cell cell-id">${seq}</div>
+        <div class="grid-cell cell-title" title="${c.title}">${truncate(c.title, 40)}</div>
+        <div class="grid-cell cell-priority">${priorityHtml(c.priority)}</div>
+        <div class="grid-cell cell-type"><span class="tag tag-default">${typeLabel(c.case_type)}</span></div>
+        <div class="grid-cell cell-steps" title="${c.steps}">${truncate(c.steps, 30)}</div>
+        <div class="grid-cell cell-status">${statusHtml(c.status)}</div>
+        <div class="grid-cell cell-actions">
+          <button class="btn btn-ghost btn-tiny" onclick="openPreview('${c.id}')">查看</button>
+          <button class="btn btn-outline btn-tiny" onclick="adoptSingle('${c.id}')" ${c.status === 'adopted' ? 'disabled' : ''}>采用</button>
+        </div>
+      </div>`;
+  });
+  body.innerHTML = html;
+  document.getElementById('totalCases').textContent = cases.length;
+  updateBatchBar();
+  renderPagination();
+}
+
+// ===== RENDER PAGINATION =====
+function renderPagination() {
+  const tp = totalPages();
+  const ctrl = document.getElementById('paginationControls');
+  if (tp <= 1) { ctrl.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+  const start = Math.max(1, currentPage - 2);
+  const end = Math.min(tp, currentPage + 2);
+  if (start > 1) html += `<button class="page-btn" onclick="goPage(1)">1</button>${start > 2 ? '<span class="page-btn" style="border:none;background:none;cursor:default;">…</span>' : ''}`;
+  for (let p = start; p <= end; p++) {
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  if (end < tp) html += `${end < tp - 1 ? '<span class="page-btn" style="border:none;background:none;cursor:default;">…</span>' : ''}<button class="page-btn" onclick="goPage(${tp})">${tp}</button>`;
+  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === tp ? 'disabled' : ''}>›</button>`;
+  ctrl.innerHTML = html;
+}
+
+// ===== PAGE NAVIGATION =====
+function goPage(p) {
+  if (p < 1 || p > totalPages()) return;
+  currentPage = p;
+  renderTable();
+}
+
+// ===== PAGE SIZE CHANGE =====
+document.getElementById('pageSizeSelect').addEventListener('change', function() {
+  pageSize = parseInt(this.value);
+  currentPage = 1;
+  renderTable();
+});
+
+// ===== SELECTION =====
+function toggleSelect(id) {
+  if (selectedIds.has(id)) { selectedIds.delete(id); }
+  else { selectedIds.add(id); }
+  renderTable();
+}
+
+function toggleAll(el) {
+  const paged = paginate(cases, currentPage, pageSize);
+  if (el.checked) {
+    paged.forEach(c => selectedIds.add(c.id));
+  } else {
+    paged.forEach(c => selectedIds.delete(c.id));
+  }
+  renderTable();
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  renderTable();
+}
+
+function updateBatchBar() {
+  const bar = document.getElementById('batchBar');
+  const count = document.getElementById('selectedCount');
+  count.textContent = selectedIds.size;
+  if (selectedIds.size > 0) {
+    bar.classList.add('show');
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+// ===== ACTIONS =====
+function adoptSingle(id) {
+  const c = cases.find(x => x.id === id);
+  if (c) { c.status = 'adopted'; }
+  selectedIds.delete(id);
+  renderTable();
+}
+
+function batchAdopt() {
+  selectedIds.forEach(id => {
+    const c = cases.find(x => x.id === id);
+    if (c) c.status = 'adopted';
+  });
+  selectedIds.clear();
+  renderTable();
+}
+
+function batchDiscard() {
+  if (!confirm('确定丢弃选中的 ' + selectedIds.size + ' 条用例吗？')) return;
+  selectedIds.forEach(id => {
+    const c = cases.find(x => x.id === id);
+    if (c) c.status = 'discarded';
+  });
+  selectedIds.clear();
+  renderTable();
+}
+
+function handleSaveToLibrary() {
+  const adopted = cases.filter(c => c.status === 'adopted').length;
+  if (adopted === 0) {
+    alert('没有可保存的用例，请先采用用例');
+    return;
+  }
+  alert('已保存 ' + adopted + ' 条用例到用例库');
+}
+
+function handleRetry() {
+  alert('重新生成任务');
+}
+
+function handleExport() {
+  alert('已下载 Excel');
+}
+
+// ===== MODAL =====
+function openPreview(id) {
+  const c = cases.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('modalTitle').textContent = c.title;
+  document.getElementById('modalPriority').textContent = c.priority;
+  document.getElementById('modalType').textContent = typeLabel(c.case_type);
+  document.getElementById('modalPreconditions').textContent = c.preconditions || '-';
+  document.getElementById('modalSteps').textContent = c.steps || '-';
+  document.getElementById('modalResults').textContent = c.expected_results || '-';
+  const tagsEl = document.getElementById('modalTags');
+  if (c.tags && c.tags.length > 0) {
+    tagsEl.innerHTML = c.tags.map(t => `<span class="tag tag-default">${t}</span>`).join('');
+  } else {
+    tagsEl.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">-</span>';
+  }
+  document.getElementById('previewModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('previewModal').classList.remove('show');
+}
+
+// Close modal on overlay click
+document.getElementById('previewModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ===== COLLAPSE =====
+function toggleCollapse(id, headerEl) {
+  const body = document.getElementById(id);
+  body.classList.toggle('hidden');
+  const chevron = headerEl.querySelector('.chevron');
+  if (chevron) chevron.classList.toggle('collapsed');
+}
+
+// ===== LOADING SIMULATION =====
+function init() {
+  // Show loading
+  document.getElementById('skeletonWrapper').classList.add('show');
+  document.getElementById('mainContent').classList.remove('show');
+
+  // Simulate 1.5s loading
+  setTimeout(function() {
+    document.getElementById('skeletonWrapper').classList.remove('show');
+    document.getElementById('mainContent').classList.add('show');
+    renderTable();
+  }, 1500);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

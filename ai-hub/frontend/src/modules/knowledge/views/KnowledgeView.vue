@@ -35,7 +35,7 @@
             size="small"
             quaternary
             @click="handleRebuild"
-            :disabled="knowledgeStore.documents.length === 0"
+            :disabled="docs.length === 0"
             class="rebuild-btn"
           >
             重建索引
@@ -134,25 +134,30 @@
           <span class="col-action">操作</span>
         </div>
 
-        <!-- 数据行 -->
-        <div
-          v-for="doc in filteredDocuments"
-          :key="doc.id"
-          class="doc-table-row"
-        >
-          <span class="col-name" :title="doc.filename">
-            <span class="file-icon">{{ getFileIcon(doc.fileType) }}</span>
-            <span class="file-name">{{ doc.filename }}</span>
-          </span>
-          <span class="col-type">
-            <span class="type-badge">{{ getFileTypeLabel(doc.fileType) }}</span>
-          </span>
-          <span class="col-size">{{ formatFileSize(doc.fileSize) }}</span>
-          <span class="col-chunks">{{ doc.chunkCount }}</span>
-          <span class="col-date">{{ formatDate(doc.createdAt) }}</span>
-          <span class="col-action">
-            <button class="delete-btn" @click="confirmDelete(doc)" title="删除文档">🗑️</button>
-          </span>
+        <!-- 虚拟滚动数据行 -->
+        <div ref="scrollRef" class="doc-table-body">
+          <div :style="{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }">
+            <div
+              v-for="vrow in virtualizer.getVirtualItems()"
+              :key="String(vrow.key)"
+              :style="{ transform: `translateY(${vrow.start}px)` }"
+              class="doc-table-row"
+            >
+              <span class="col-name" :title="filteredDocuments[vrow.index].filename">
+                <span class="file-icon">{{ getFileIcon(filteredDocuments[vrow.index].fileType) }}</span>
+                <span class="file-name">{{ filteredDocuments[vrow.index].filename }}</span>
+              </span>
+              <span class="col-type">
+                <span class="type-badge">{{ getFileTypeLabel(filteredDocuments[vrow.index].fileType) }}</span>
+              </span>
+              <span class="col-size">{{ formatFileSize(filteredDocuments[vrow.index].fileSize) }}</span>
+              <span class="col-chunks">{{ filteredDocuments[vrow.index].chunkCount }}</span>
+              <span class="col-date">{{ formatDate(filteredDocuments[vrow.index].createdAt) }}</span>
+              <span class="col-action">
+                <button class="delete-btn" @click="confirmDelete(filteredDocuments[vrow.index])" title="删除文档">🗑️</button>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -161,6 +166,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useRouter } from 'vue-router'
 import { useKnowledgeStore } from '@/modules/knowledge/stores/knowledge'
 import { useDialog } from 'naive-ui'
@@ -177,6 +183,49 @@ const searchQuery = ref('')
 const isDragging = ref(false)
 let dragCounter = 0  // 防闪烁计数器
 
+/* ---------- 安全访问 documents（防止 Pinia 初始化未完成时崩溃） ---------- */
+const docs = computed(() => knowledgeStore?.documents ?? [])
+
+/* ---------- 统计计算 ---------- */
+const totalDocs = computed(() => docs.value.length)
+
+const totalChunks = computed(() =>
+  docs.value.reduce((sum, d) => sum + d.chunkCount, 0)
+)
+
+const fileTypeBreakdown = computed(() => {
+  const map = new Map<string, { icon: string; label: string; count: number }>()
+  for (const doc of docs.value) {
+    const key = doc.fileType.toLowerCase()
+    const existing = map.get(key)
+    if (existing) {
+      existing.count++
+    } else {
+      const { icon, label } = getFileTypeMeta(key)
+      map.set(key, { icon, label, count: 1 })
+    }
+  }
+  return Array.from(map.values())
+})
+
+/* ---------- 搜索过滤 ---------- */
+const filteredDocuments = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return docs.value
+  return docs.value.filter(d =>
+    d.filename.toLowerCase().includes(q)
+  )
+})
+
+/* ---------- 虚拟滚动（必须在所有 computed 之后，避免 TDZ 引用） ---------- */
+const scrollRef = ref<HTMLDivElement>()
+const virtualizer = useVirtualizer({
+  get count() { return filteredDocuments.value.length },
+  getScrollElement: () => scrollRef.value ?? null,
+  estimateSize: () => 44,
+  overscan: 5,
+})
+
 /* ---------- 生命周期 ---------- */
 onMounted(async () => {
   await loadDocuments()
@@ -187,35 +236,6 @@ async function loadDocuments() {
   await knowledgeStore.fetchDocuments()
   loading.value = false
 }
-
-/* ---------- 统计计算 ---------- */
-const totalDocs = computed(() => knowledgeStore.documents.length)
-
-const totalChunks = computed(() =>
-  knowledgeStore.documents.reduce((sum, d) => sum + d.chunkCount, 0)
-)
-
-const fileTypeBreakdown = computed(() => {
-  const map = new Map<string, { icon: string; label: string; count: number }>()
-  for (const doc of knowledgeStore.documents) {
-    const key = doc.fileType.toLowerCase()
-    if (!map.has(key)) {
-      const { icon, label } = getFileTypeMeta(key)
-      map.set(key, { icon, label, count: 0 })
-    }
-    map.get(key)!.count++
-  }
-  return Array.from(map.values())
-})
-
-/* ---------- 搜索过滤 ---------- */
-const filteredDocuments = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return knowledgeStore.documents
-  return knowledgeStore.documents.filter(d =>
-    d.filename.toLowerCase().includes(q)
-  )
-})
 
 /* ---------- 文件类型工具 ---------- */
 const FILE_TYPE_MAP: Record<string, { icon: string; label: string }> = {
@@ -349,7 +369,7 @@ async function handleRebuild() {
   inset: 0;
   z-index: 1000;
   background: rgba(198, 123, 92, 0.06);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -364,6 +384,7 @@ async function handleRebuild() {
   border: 2px dashed var(--accent);
   border-radius: 20px;
   background: rgba(255, 253, 249, 0.95);
+  animation: borderPulse 2s ease-in-out infinite;
 }
 
 .drag-icon {
@@ -459,7 +480,7 @@ async function handleRebuild() {
 /* ===== 统计卡片 ===== */
 .stats-row {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
@@ -470,7 +491,7 @@ async function handleRebuild() {
   background: var(--bg-card);
   border: 1px solid rgba(180, 150, 120, 0.1);
   border-radius: 12px;
-  padding: 16px 20px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -520,6 +541,7 @@ async function handleRebuild() {
 
 .search-bar:focus-within {
   border-color: rgba(198, 123, 92, 0.35);
+  box-shadow: 0 0 0 3px rgba(198, 123, 92, 0.08);
 }
 
 .search-icon {
@@ -549,6 +571,10 @@ async function handleRebuild() {
   justify-content: center;
   gap: 12px;
   padding: 64px 24px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: var(--border);
+  margin: 24px 0;
   color: var(--text-muted);
 }
 
@@ -557,11 +583,11 @@ async function handleRebuild() {
 }
 
 .state-icon {
-  font-size: 36px;
+  font-size: 40px;
 }
 
 .state-text {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* ===== 文档表格 ===== */
@@ -577,24 +603,37 @@ async function handleRebuild() {
   align-items: center;
   padding: 10px 16px;
   background: var(--bg-secondary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
+/* 虚拟滚动容器 */
+.doc-table-body {
+  overflow: auto;
+  max-height: 60vh;
+}
+
+.doc-table-body .doc-table-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
 .doc-table-row {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  border-top: 1px solid rgba(180, 150, 120, 0.06);
+  border-top: var(--border);
   transition: background 0.12s;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .doc-table-row:hover {
-  background: rgba(198, 123, 92, 0.03);
+  background: var(--accent-bg);
 }
 
 .col-name {
@@ -701,5 +740,11 @@ async function handleRebuild() {
   .col-size {
     display: none;
   }
+}
+
+/* ===== 边框脉冲动画 ===== */
+@keyframes borderPulse {
+  0%, 100% { border-color: var(--accent); }
+  50% { border-color: rgba(198, 123, 92, 0.3); }
 }
 </style>

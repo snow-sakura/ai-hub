@@ -48,6 +48,11 @@ class MemberCreate(BaseModel):
   role: str = Field(default="tester", pattern=r"^(owner|tester|viewer)$")
 
 
+class MemberUpdate(BaseModel):
+  """更新成员角色请求"""
+  role: str = Field(pattern=r"^(owner|tester|viewer)$")
+
+
 class MemberResponse(BaseModel):
   """成员响应"""
   id: str
@@ -160,11 +165,10 @@ class DocumentUploadResponse(BaseModel):
 # ─── 用例附件 ───────────────────────────────────────
 
 class AttachmentResponse(BaseModel):
-  """附件响应"""
+  """附件响应（不返回 file_path，防止服务端路径泄露）"""
   id: str
   case_id: str
   file_name: str
-  file_path: str
   file_size: int = 0
   file_type: str = ""
   uploaded_by: str = ""
@@ -210,10 +214,11 @@ class OperationLogResponse(BaseModel):
 # ─── 项目版本 ────────────────────────────────────────
 
 class VersionCreate(BaseModel):
-  """创建版本请求"""
+  """创建版本请求（独立模块，无 project_id）"""
   name: str = Field(min_length=1, max_length=200)
   description: str = ""
   status: str = Field(default="active", pattern=r"^(active|released|archived)$")
+  pass_rate: float | None = None
 
 
 class VersionUpdate(BaseModel):
@@ -221,17 +226,35 @@ class VersionUpdate(BaseModel):
   name: str | None = Field(default=None, min_length=1, max_length=200)
   description: str | None = None
   status: str | None = Field(default=None, pattern=r"^(active|released|archived)$")
+  pass_rate: float | None = None
 
 
 class VersionResponse(BaseModel):
   """版本响应"""
   id: str
-  project_id: str
   name: str
   description: str = ""
   status: str = "active"
+  pass_rate: float = 0.0
   created_at: str = ""
   updated_at: str = ""
+
+
+class LinkProjectRequest(BaseModel):
+  """关联项目请求"""
+  project_id: str
+
+
+class DashboardStatsResponse(BaseModel):
+  """仪表盘统计数据"""
+  project_count: int = 0
+  total_cases: int = 0
+  member_count: int = 0
+  active_versions: int = 0
+  case_by_priority: dict[str, int] = {}
+  case_by_type: dict[str, int] = {}
+  case_by_status: dict[str, int] = {}
+  recent_activities: list[dict] = []
 
 
 # ─── 配置检查 ─────────────────────────────────────────
@@ -262,6 +285,7 @@ class GenerateTaskResponse(BaseModel):
   status: str = "pending"
   generated_count: int = 0
   error_message: str | None = None
+  has_saved_cases: bool = False
   created_at: str = ""
   updated_at: str = ""
 
@@ -311,6 +335,15 @@ class ConfigDefaultsResponse(BaseModel):
   """配置默认值响应"""
   prompts: dict[str, str] = {}
   models: list[dict[str, str]] = []
+  base_urls: dict[str, str] = {}
+
+
+class TestConnectionRequest(BaseModel):
+  """测试连接请求"""
+  provider: str
+  model_name: str = ""
+  api_key: str = ""
+  base_url: str = ""
 
 
 # ─── 生成用例项 ─────────────────────────────────────────
@@ -343,3 +376,160 @@ class GenerationStatsResponse(BaseModel):
   completed_tasks: int = 0
   total_cases: int = 0
   avg_score: float = 0.0
+
+
+# ─── 用例评审 ────────────────────────────────────────
+
+class ReviewCreate(BaseModel):
+  """创建评审请求"""
+  project_id: str | None = None
+  title: str = Field(min_length=1, max_length=500)
+  description: str = ""
+  priority: str = Field(default="P1", pattern=r"^(P0|P1|P2|P3)$")
+  due_date: str | None = None
+  case_ids: list[str] = []
+  reviewer_ids: list[str] = []
+
+
+class ReviewUpdate(BaseModel):
+  """更新评审请求"""
+  title: str | None = Field(default=None, min_length=1, max_length=500)
+  description: str | None = None
+  priority: str | None = Field(default=None, pattern=r"^(P0|P1|P2|P3)$")
+  status: str | None = Field(default=None, pattern=r"^(pending|in_progress|approved|rejected|cancelled)$")
+  progress: int | None = Field(default=None, ge=0, le=100)
+  due_date: str | None = None
+  case_ids: list[str] | None = None
+  reviewer_ids: list[str] | None = None
+
+
+class ReviewResponse(BaseModel):
+  """评审响应"""
+  id: str
+  project_id: str | None = None
+  project_name: str | None = None
+  title: str
+  description: str = ""
+  priority: str = "P1"
+  status: str = "pending"
+  progress: int = 0
+  due_date: str = ""
+  creator: str = ""
+  case_count: int = 0
+  reviewer_count: int = 0
+  created_at: str = ""
+  updated_at: str = ""
+
+
+class ReviewListResponse(BaseModel):
+  """评审列表分页响应"""
+  items: list[ReviewResponse]
+  total: int
+  page: int
+  page_size: int
+
+
+class ReviewCaseUpdate(BaseModel):
+  """更新评审用例状态请求"""
+  status: str = Field(pattern=r"^(approved|rejected|pending)$")
+  comment: str = ""
+
+
+class ReviewStatsResponse(BaseModel):
+  """评审统计响应"""
+  pending: int = 0
+  in_progress: int = 0
+  approved: int = 0
+  rejected: int = 0
+
+
+# ─── AI 评测师 ──────────────────────────────────────
+
+class AITesterSessionCreate(BaseModel):
+  """创建会话请求"""
+  name: str = "新会话"
+  model: str = ""
+
+
+class AITesterSessionUpdate(BaseModel):
+  """更新会话名称请求"""
+  name: str = Field(min_length=1, max_length=200)
+
+
+class AITesterSessionResponse(BaseModel):
+  """会话响应"""
+  id: str
+  name: str = ""
+  model: str = ""
+  message_count: int = 0
+  created_at: str = ""
+  updated_at: str = ""
+
+
+class AITesterMessageSend(BaseModel):
+  """发送消息请求"""
+  session_id: str
+  content: str = Field(min_length=1, max_length=10000)
+  model: str = ""  # 选择的模型 provider，为空则使用默认 deepseek
+
+
+class AITesterMessageBody(BaseModel):
+  """发送消息请求体（session_id 来自路径参数）"""
+  content: str = Field(min_length=1, max_length=10000)
+  model: str = ""  # 选择的模型 provider，为空则使用默认 deepseek
+
+
+class AITesterMessageResponse(BaseModel):
+  """消息响应"""
+  id: str
+  session_id: str
+  role: str
+  content: str
+  rating: str | None = None
+  created_at: str = ""
+
+
+class AITesterMessageRatingUpdate(BaseModel):
+  """消息评分更新请求"""
+  rating: str | None = Field(default=None, description="'up' 或 'down'，null 清除评分")
+
+
+# ─── 测试报告 ────────────────────────────────────────
+
+class ReportSummaryResponse(BaseModel):
+  """报告摘要响应"""
+  total_cases: int = 0
+  total_suites: int = 0
+  total_reviews: int = 0
+  passed_cases: int = 0
+  failed_cases: int = 0
+  pass_rate: float = 0.0
+  active_reviews: int = 0
+
+
+# ─── 定时任务 ────────────────────────────────────────
+
+class ScheduledTaskCreate(BaseModel):
+  """创建定时任务请求"""
+  name: str = Field(min_length=1, max_length=255)
+  module: str = Field(default="api", pattern=r"^(api|ui|app)$")
+  suite_id: str | None = None
+  suite_name: str = ""
+  cron_expr: str = Field(default="0 8 * * *", max_length=100)
+
+
+class ScheduledTaskUpdate(BaseModel):
+  """更新定时任务请求"""
+  name: str | None = Field(default=None, min_length=1, max_length=255)
+  module: str | None = Field(default=None, pattern=r"^(api|ui|app)$")
+  suite_id: str | None = None
+  suite_name: str | None = None
+  cron_expr: str | None = Field(default=None, max_length=100)
+  enabled: bool | None = None
+
+
+# ─── 修订请求 ────────────────────────────────────────
+
+class ReviseRequest(BaseModel):
+  """修订生成请求：复用已有分析/草稿，仅重新执行评审+修订"""
+  custom_suggestions: list[str] = Field(default_factory=list, description="用户选中的改进建议列表")

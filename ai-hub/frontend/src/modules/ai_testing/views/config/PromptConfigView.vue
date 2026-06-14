@@ -215,4 +215,10 @@ onMounted(() => loadData())
   gap: 12px;
   margin-top: 8px;
 }
+
+@media (max-width: 768px) {
+  .prompt-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

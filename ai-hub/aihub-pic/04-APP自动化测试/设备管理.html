@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP自动化测试 - 设备管理</title>
+<style>
+:root {
+  --primary:#C67B5C; --primary-light:#D49472; --accent:#D4A574;
+  --bg:#FBF7F0; --card-bg:#FFFDF9; --sidebar-bg:#F6F0E7;
+  --text:#3D2E1F; --text-secondary:#5C4A38; --text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);
+  --radius:8px; --radius-lg:12px;
+  --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+.sidebar { width:220px; background:var(--sidebar-bg); border-right:var(--border); padding:24px 0; flex-shrink:0; }
+.logo { padding:0 20px 24px; border-bottom:var(--border); margin-bottom:16px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--text-secondary); text-decoration:none; font-size:14px; transition:all .2s; border-right:3px solid transparent; }
+.nav-item:hover { background:rgba(198,123,92,0.06); color:var(--text); }
+.nav-item.active { background:rgba(198,123,92,0.1); color:var(--primary); border-right-color:var(--primary); font-weight:600; }
+.nav-item svg { flex-shrink:0; }
+.nav-section { font-size:11px; color:var(--text-muted); padding:16px 20px 6px; text-transform:uppercase; letter-spacing:.5px; }
+.main { flex:1; overflow-y:auto; }
+.topbar { display:flex; justify-content:space-between; align-items:center; padding:16px 32px; border-bottom:var(--border); background:var(--card-bg); }
+.page-title { font-size:20px; font-weight:600; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.notif-btn { position:relative; background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px; }
+.notif-dot { position:absolute; top:0; right:0; width:8px; height:8px; background:#E8735A; border-radius:50%; border:2px solid var(--card-bg); }
+.avatar { width:32px; height:32px; border-radius:50%; background:var(--primary-light); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; }
+.content { padding:24px 32px; }
+.section-title { font-size:15px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+
+.toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.search-box { display:flex; align-items:center; background:var(--card-bg); border:var(--border); border-radius:var(--radius); padding:8px 12px; width:280px; }
+.search-box input { border:none; outline:none; background:transparent; margin-left:8px; flex:1; font-size:13px; color:var(--text); }
+.search-box input::placeholder { color:var(--text-muted); }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:var(--radius); font-size:13px; cursor:pointer; border:none; font-weight:500; transition:all .2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-light); }
+.btn-sm { padding:5px 12px; font-size:12px; }
+.btn-outline { background:transparent; border:var(--border); color:var(--text-secondary); }
+
+.filter-bar { display:flex; gap:8px; margin-bottom:16px; }
+.filter-tag { padding:5px 12px; border-radius:20px; font-size:12px; cursor:pointer; border:var(--border); background:var(--card-bg); color:var(--text-secondary); transition:all .2s; }
+.filter-tag.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+.device-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.device-card { background:var(--card-bg); border:var(--border); border-radius:var(--radius-lg); padding:20px; transition:all .2s; }
+.device-card:hover { box-shadow:0 2px 12px rgba(198,123,92,0.08); }
+.device-card .dheader { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.device-card .dicon { width:40px; height:40px; border-radius:var(--radius); display:flex; align-items:center; justify-content:center; background:var(--sidebar-bg); color:var(--text); }
+.device-card .dname { font-size:15px; font-weight:600; }
+.device-card .dmodel { font-size:12px; color:var(--text-muted); }
+.device-card .dinfo { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.device-card .dinfo-item { font-size:12px; color:var(--text-secondary); }
+.device-card .dinfo-item span { display:block; font-size:11px; color:var(--text-muted); margin-bottom:2px; }
+.status-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; }
+.status-idle { background:#E8F5E9; color:#2E7D32; }
+.status-busy { background:#FFF3E0; color:#E65100; }
+.status-offline { background:#F5F5F5; color:#9E9E9E; }
+.conn-badge { font-size:10px; padding:2px 6px; border-radius:3px; background:var(--sidebar-bg); color:var(--text-muted); }
+.device-card .dactions { display:flex; gap:6px; padding-top:12px; border-top:var(--border); }
+.device-card .dactions button { flex:1; }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C67B5C"/><path d="M8 12h16v2H8zm0 6h12v2H8zm0-3h16v2H8z" fill="#FFFDF9"/></svg></div>
+  <div class="nav-section">测试模块</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> UI自动化</a>
+  <a href="#" class="nav-item active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> APP自动化</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> API自动化</a>
+  <div class="nav-section">平台管理</div>
+  <a href="#" class="nav-item active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设备管理</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 通知列表</a>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <h1 class="page-title">APP设备管理</h1>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="alert('通知列表')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <div class="avatar">张</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="搜索设备名称或型号...">
+      </div>
+      <button class="btn btn-primary" onclick="alert('连接新设备')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15"/></svg>
+        连接新设备
+      </button>
+    </div>
+
+    <div class="filter-bar">
+      <span class="filter-tag active">全部 (8)</span>
+      <span class="filter-tag" onclick="this.classList.toggle('active')">空闲 (4)</span>
+      <span class="filter-tag" onclick="this.classList.toggle('active')">占用 (2)</span>
+      <span class="filter-tag" onclick="this.classList.toggle('active')">离线 (2)</span>
+      <span class="filter-tag" onclick="this.classList.toggle('active')">iOS (5)</span>
+      <span class="filter-tag" onclick="this.classList.toggle('active')">Android (3)</span>
+    </div>
+
+    <div class="device-grid">
+      <!-- 设备 1 -->
+      <div class="device-card">
+        <div class="dheader">
+          <div class="dicon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          <div>
+            <div class="dname">iPhone 15 Pro</div>
+            <div class="dmodel">Apple A17 Pro</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span class="status-badge status-idle">
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="#2E7D32"><circle cx="4" cy="4" r="4"/></svg> 空闲
+            </span>
+          </div>
+        </div>
+        <div class="dinfo">
+          <div class="dinfo-item"><span>系统版本</span>iOS 17.3</div>
+          <div class="dinfo-item"><span>分辨率</span>2556 x 1179</div>
+          <div class="dinfo-item"><span>连接方式</span><span class="conn-badge">USB</span></div>
+          <div class="dinfo-item"><span>可用空间</span>128GB / 256GB</div>
+        </div>
+        <div class="dactions">
+          <button class="btn btn-primary btn-sm" onclick="alert('开始使用设备 iPhone 15 Pro')">使用设备</button>
+          <button class="btn btn-outline btn-sm" onclick="alert('查看设备详情')">详情</button>
+        </div>
+      </div>
+
+      <!-- 设备 2 -->
+      <div class="device-card">
+        <div class="dheader">
+          <div class="dicon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+          </div>
+          <div>
+            <div class="dname">Samsung Galaxy S24</div>
+            <div class="dmodel">Snapdragon 8 Gen 3</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span class="status-badge status-busy">
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="#E65100"><circle cx="4" cy="4" r="4"/></svg> 占用
+            </span>
+          </div>
+        </div>
+        <div class="dinfo">
+          <div class="dinfo-item"><span>系统版本</span>Android 14</div>
+          <div class="dinfo-item"><span>分辨率</span>2340 x 1080</div>
+          <div class="dinfo-item"><span>连接方式</span><span class="conn-badge">WiFi</span></div>
+          <div class="dinfo-item"><span>可用空间</span>256GB / 512GB</div>
+        </div>
+        <div class="dactions">
+          <button class="btn btn-primary btn-sm" style="background:var(--accent);" onclick="alert('排队等待设备')">排队等待</button>
+          <button class="btn btn-outline btn-sm" onclick="alert('查看设备详情')">详情</button>
+        </div>
+      </div>
+
+      <!-- 设备 3 -->
+      <div class="device-card">
+        <div class="dheader">
+          <div class="dicon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          <div>
+            <div class="dname">iPad Pro 12.9"</div>
+            <div class="dmodel">Apple M2</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span class="status-badge status-idle">
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="#2E7D32"><circle cx="4" cy="4" r="4"/></svg> 空闲
+            </span>
+          </div>
+        </div>
+        <div class="dinfo">
+          <div class="dinfo-item"><span>系统版本</span>iPadOS 17.3</div>
+          <div class="dinfo-item"><span>分辨率</span>2732 x 2048</div>
+          <div class="dinfo-item"><span>连接方式</span><span class="conn-badge">WiFi</span></div>
+          <div class="dinfo-item"><span>可用空间</span>512GB / 1TB</div>
+        </div>
+        <div class="dactions">
+          <button class="btn btn-primary btn-sm" onclick="alert('开始使用设备 iPad Pro')">使用设备</button>
+          <button class="btn btn-outline btn-sm" onclick="alert('查看设备详情')">详情</button>
+        </div>
+      </div>
+
+      <!-- 设备 4 -->
+      <div class="device-card">
+        <div class="dheader">
+          <div class="dicon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+          </div>
+          <div>
+            <div class="dname">Xiaomi 14 Pro</div>
+            <div class="dmodel">Snapdragon 8 Gen 3</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span class="status-badge status-busy">
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="#E65100"><circle cx="4" cy="4" r="4"/></svg> 占用
+            </span>
+          </div>
+        </div>
+        <div class="dinfo">
+          <div class="dinfo-item"><span>系统版本</span>HyperOS 1.0</div>
+          <div class="dinfo-item"><span>分辨率</span>3200 x 1440</div>
+          <div class="dinfo-item"><span>连接方式</span><span class="conn-badge">USB</span></div>
+          <div class="dinfo-item"><span>可用空间</span>128GB / 256GB</div>
+        </div>
+        <div class="dactions">
+          <button class="btn btn-primary btn-sm" style="background:var(--accent);" onclick="alert('排队等待设备')">排队等待</button>
+          <button class="btn btn-outline btn-sm" onclick="alert('查看设备详情')">详情</button>
+        </div>
+      </div>
+
+      <!-- 设备 5 -->
+      <div class="device-card">
+        <div class="dheader">
+          <div class="dicon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          <div>
+            <div class="dname">iPhone SE (3rd gen)</div>
+            <div class="dmodel">Apple A15</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span class="status-badge status-idle">
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="#2E7D32"><circle cx="4" cy="4" r="4"/></svg> 空闲
+            </span>
+          </div>
+        </div>
+        <div class="dinfo">
+          <div class="dinfo-item"><span>系统版本</span>iOS 17.2</div>
+          <div class="dinfo-item"><span>分辨率</span>1334 x 750</div>
+          <div class="dinfo-item"><span>连接方式</span><span class="conn-badge">USB</span></div>
+          <div class="dinfo-item"><span>可用空间</span>64GB / 128GB</div>
+        </div>
+        <div class="dactions">
+          <button class="btn btn-primary btn-sm" onclick="alert('开始使用设备 iPhone SE')">使用设备</button>
+          <button class="btn btn-outline btn-sm" onclick="alert('查看设备详情')">详情</button>
+        </div>
+      </div>
+
+      <!-- 设备 6 -->
+      <div class="device-card">
+        <div class="dheader">
+          <div class="dicon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+          </div>
+          <div>
+            <div class="dname">OPPO Find X7</div>
+            <div class="dmodel">Dimensity 9300</div>
+          </div>
+          <div style="margin-left:auto;">
+            <span class="status-badge status-offline">
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="#9E9E9E"><circle cx="4" cy="4" r="4"/></svg> 离线
+            </span>
+          </div>
+        </div>
+        <div class="dinfo">
+          <div class="dinfo-item"><span>系统版本</span>ColorOS 14</div>
+          <div class="dinfo-item"><span>分辨率</span>3168 x 1440</div>
+          <div class="dinfo-item"><span>连接方式</span><span class="conn-badge">USB</span></div>
+          <div class="dinfo-item"><span>可用空间</span>256GB / 512GB</div>
+        </div>
+        <div class="dactions">
+          <button class="btn btn-outline btn-sm" style="width:100%;" onclick="alert('重新连接设备')">重新连接</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

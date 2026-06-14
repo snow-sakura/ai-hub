@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配置中心 - 定时任务</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,PingFang SC,sans-serif}
+body{background:#FBF7F0;color:#3D2E1F;height:100vh;overflow:hidden}
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--danger:#D4745C;--warning:#D4A574;--radius:8px}
+.app{display:flex;height:100vh}
+.sidebar{width:240px;background:#F6F0E7;border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{height:48px;display:flex;align-items:center;padding:0 20px;border-bottom:var(--border);gap:10px}
+.sidebar-header .logo{width:24px;height:24px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.sidebar-header span{font-weight:600;font-size:15px;color:var(--text)}
+.sidebar-nav{padding:12px 0;flex:1;overflow-y:auto}
+.nav-section{margin-bottom:4px}
+.nav-section-title{padding:8px 16px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13px;color:var(--text-secondary);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(198,123,92,0.06);color:var(--text)}
+.nav-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.nav-item .icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:48px;background:#fff;border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-left h1{font-size:16px;font-weight:600;color:var(--text)}
+.topbar-left .breadcrumb{font-size:12px;color:var(--text-muted)}
+.topbar-left .breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--primary-bg);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer}
+.content{padding:20px 28px;overflow-y:auto;flex:1}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-track{background:transparent}
+.content::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:2px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-header-left h2{font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px}
+.section-header-left p{font-size:12px;color:var(--text-muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:6px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all 0.2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light)}
+.btn-outline{background:transparent;color:var(--text-secondary);border:var(--border)}
+.btn-outline:hover{background:var(--primary-bg);color:var(--primary);border-color:var(--primary)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-text{background:transparent;color:var(--primary);border:none;padding:4px 8px;font-size:12px}
+.btn-text:hover{background:var(--primary-bg)}
+.btn-text.danger{color:var(--danger)}
+.btn-text.danger:hover{background:rgba(212,116,92,0.08)}
+/* tabs */
+.tabs{display:flex;gap:0;margin-bottom:16px;background:var(--card-bg);border-radius:8px;padding:3px;box-shadow:var(--shadow);width:fit-content}
+.tab{padding:7px 16px;font-size:12px;color:var(--text-secondary);cursor:pointer;border-radius:6px;transition:all 0.2s;border:none;background:transparent;white-space:nowrap}
+.tab.active{background:var(--primary);color:#fff;font-weight:500}
+.tab:hover:not(.active){background:var(--primary-bg)}
+/* table */
+.table-wrap{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:#FBF7F0}
+th{padding:12px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:12px;border-bottom:var(--border)}
+td{padding:12px 14px;border-bottom:var(--border);color:var(--text)}
+tbody tr:hover{background:var(--primary-bg)}
+.module-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.module-tag.api{background:rgba(78,120,200,0.1);color:#4E78C8}
+.module-tag.ui{background:rgba(198,123,92,0.1);color:var(--primary)}
+.module-tag.app{background:rgba(123,168,125,0.1);color:var(--success)}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:500}
+.status-badge.on{background:rgba(123,168,125,0.12);color:var(--success)}
+.status-badge.off{background:rgba(139,115,85,0.1);color:var(--text-muted)}
+.cron-text{font-family:'SF Mono','Menlo','Monaco','Courier New',monospace;font-size:11px;color:var(--text-muted)}
+.expand-btn{font-size:10px;color:var(--text-muted);cursor:pointer;background:none;border:none;padding:2px 6px;border-radius:4px;transition:all 0.2s}
+.expand-btn:hover{background:var(--primary-bg);color:var(--primary)}
+.expand-btn.open{transform:rotate(180deg)}
+/* expanded sub table */
+.sub-table-wrap{display:none}
+.sub-table-wrap.open{display:table-row}
+.sub-table-wrap td{padding:0;background:#FAF7F2}
+.sub-table{width:100%;border-collapse:collapse}
+.sub-table th{background:#F3EDE4;padding:8px 14px;font-size:11px;font-weight:600;color:var(--text-muted);border-bottom:var(--border)}
+.sub-table td{padding:8px 14px;font-size:12px;border-bottom:1px solid rgba(180,150,120,0.06);background:transparent}
+.sub-table tbody tr:hover{background:rgba(198,123,92,0.04)}
+.sub-table tbody tr:last-child td{border-bottom:none}
+.sub-inner{padding:0 14px 14px 14px;background:#FAF7F2}
+.sub-inner table{background:transparent}
+.sub-inner thead th{border-top:none}
+/* new task form area */
+.task-form{background:var(--card-bg);border-radius:12px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px;display:none}
+.task-form.open{display:block}
+.task-form h4{font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px}
+.form-row{display:flex;gap:12px;margin-bottom:12px}
+.form-row .form-group{flex:1}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px}
+.form-input{width:100%;padding:8px 12px;border:var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--card-bg);outline:none}
+.form-input:focus{border-color:var(--primary)}
+.form-select{width:100%;padding:8px 12px;border:var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--card-bg);outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238B7355'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.form-select:focus{border-color:var(--primary)}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">C</div>
+      <span>TestHub 配置中心</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-title">配置管理</div>
+        <div class="nav-item"><span class="icon">📋</span><span>配置总览</span></div>
+      </div>
+      <div class="nav-section"><div class="nav-section-title">AI 配置</div>
+        <div class="nav-item"><span class="icon">🤖</span><span>AI 模型配置</span></div>
+        <div class="nav-item"><span class="icon">💬</span><span>提示词配置</span></div>
+        <div class="nav-item"><span class="icon">⚙️</span><span>生成行为配置</span></div>
+        <div class="nav-item"><span class="icon">🔍</span><span>AI 评测师配置</span></div>
+        <div class="nav-item"><span class="icon">🧠</span><span>AI 智能模式配置</span></div>
+      </div>
+      <div class="nav-section"><div class="nav-section-title">运行环境</div>
+        <div class="nav-item"><span class="icon">🌐</span><span>UI 环境配置</span></div>
+        <div class="nav-item"><span class="icon">📱</span><span>APP 环境配置</span></div>
+      </div>
+      <div class="nav-section"><div class="nav-section-title">任务管理</div>
+        <div class="nav-item active"><span class="icon">⏰</span><span>定时任务</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>定时任务</h1>
+        <span class="breadcrumb">配置中心 / <span>定时任务</span></span>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar">AD</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="section-header">
+        <div class="section-header-left">
+          <h2>定时任务管理</h2>
+          <p>统一管理所有模块的定时执行任务，支持 Cron 表达式与手动触发</p>
+        </div>
+        <button class="btn btn-primary" onclick="toggleForm()">➕ 新建任务</button>
+      </div>
+
+      <!-- Module Filter Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="filterTab(this,'all')">全部</button>
+        <button class="tab" onclick="filterTab(this,'api')">API 测试</button>
+        <button class="tab" onclick="filterTab(this,'ui')">UI 自动化</button>
+        <button class="tab" onclick="filterTab(this,'app')">APP 自动化</button>
+      </div>
+
+      <!-- New Task Form -->
+      <div class="task-form" id="taskForm">
+        <h4>📝 新建定时任务</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">任务名称</label>
+            <input class="form-input" placeholder="如：每日回归测试">
+          </div>
+          <div class="form-group">
+            <label class="form-label">所属模块</label>
+            <select class="form-select">
+              <option>API 测试</option>
+              <option>UI 自动化</option>
+              <option>APP 自动化</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">关联套件</label>
+            <select class="form-select">
+              <option>全量回归测试套件</option>
+              <option>核心功能测试套件</option>
+              <option>冒烟测试套件</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cron 表达式</label>
+            <input class="form-input" value="0 0 2 * * ?" placeholder="如：0 0 2 * * ?">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cron 描述</label>
+            <input class="form-input" value="每天凌晨 2:00 执行" readonly style="color:var(--text-muted)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">触发方式</label>
+            <select class="form-select">
+              <option>自动触发</option>
+              <option>手动触发</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-outline" onclick="toggleForm()">取消</button>
+          <button class="btn btn-primary">✅ 确认创建</button>
+        </div>
+      </div>
+
+      <!-- Task Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:24px"></th>
+              <th>任务名称</th>
+              <th>所属模块</th>
+              <th>关联套件/用例</th>
+              <th>Cron 表达式</th>
+              <th>触发方式</th>
+              <th>上次执行</th>
+              <th>下次执行</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-module="api">
+              <td><button class="expand-btn" onclick="toggleExpand(this)">▸</button></td>
+              <td><strong>API 全量回归测试</strong></td>
+              <td><span class="module-tag api">API</span></td>
+              <td style="font-size:12px">全量回归套件</td>
+              <td><span class="cron-text">0 0 2 * * ?</span><br><span style="font-size:11px;color:var(--text-muted)">每天 02:00</span></td>
+              <td>自动</td>
+              <td style="font-size:12px">2026-06-12 02:00</td>
+              <td style="font-size:12px">2026-06-13 02:00</td>
+              <td><span class="status-badge on">● 启用</span></td>
+              <td>
+                <button class="btn btn-text btn-sm">编辑</button>
+                <button class="btn btn-text btn-sm" onclick="toggleTaskStatus(this)">暂停</button>
+                <button class="btn btn-text btn-sm">▶ 执行</button>
+                <button class="btn btn-text btn-sm danger">删除</button>
+              </td>
+            </tr>
+            <tr class="sub-table-wrap" data-module="api">
+              <td colspan="10">
+                <div class="sub-inner">
+                  <table class="sub-table">
+                    <thead><tr><th>执行时间</th><th>执行状态</th><th>通过率</th><th>耗时</th><th>报告</th></tr></thead>
+                    <tbody>
+                      <tr><td>2026-06-12 02:00:15</td><td style="color:var(--success)">✅ 完成</td><td>98.5%</td><td>3m 42s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-11 02:00:10</td><td style="color:var(--success)">✅ 完成</td><td>97.2%</td><td>3m 55s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-10 02:00:08</td><td style="color:var(--success)">✅ 完成</td><td>96.8%</td><td>4m 01s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-09 02:00:12</td><td style="color:var(--danger)">❌ 失败</td><td>—</td><td>1m 23s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-08 02:00:05</td><td style="color:var(--success)">✅ 完成</td><td>99.1%</td><td>3m 38s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+            <tr data-module="api">
+              <td><button class="expand-btn" onclick="toggleExpand(this)">▸</button></td>
+              <td><strong>API 冒烟测试</strong></td>
+              <td><span class="module-tag api">API</span></td>
+              <td style="font-size:12px">冒烟测试套件</td>
+              <td><span class="cron-text">0 */30 * * * ?</span><br><span style="font-size:11px;color:var(--text-muted)">每 30 分钟</span></td>
+              <td>自动</td>
+              <td style="font-size:12px">2026-06-12 14:00</td>
+              <td style="font-size:12px">2026-06-12 14:30</td>
+              <td><span class="status-badge on">● 启用</span></td>
+              <td>
+                <button class="btn btn-text btn-sm">编辑</button>
+                <button class="btn btn-text btn-sm" onclick="toggleTaskStatus(this)">暂停</button>
+                <button class="btn btn-text btn-sm">▶ 执行</button>
+                <button class="btn btn-text btn-sm danger">删除</button>
+              </td>
+            </tr>
+            <tr class="sub-table-wrap" data-module="api">
+              <td colspan="10">
+                <div class="sub-inner">
+                  <table class="sub-table">
+                    <thead><tr><th>执行时间</th><th>执行状态</th><th>通过率</th><th>耗时</th><th>报告</th></tr></thead>
+                    <tbody>
+                      <tr><td>2026-06-12 14:00:05</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>42s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-12 13:30:02</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>38s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-12 13:00:08</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>45s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-12 12:30:03</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>40s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-12 12:00:07</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>44s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+            <tr data-module="ui">
+              <td><button class="expand-btn" onclick="toggleExpand(this)">▸</button></td>
+              <td><strong>UI 核心功能巡检</strong></td>
+              <td><span class="module-tag ui">UI</span></td>
+              <td style="font-size:12px">核心功能测试套件</td>
+              <td><span class="cron-text">0 0 8,20 * * ?</span><br><span style="font-size:11px;color:var(--text-muted)">每天 08:00 / 20:00</span></td>
+              <td>自动</td>
+              <td style="font-size:12px">2026-06-12 08:00</td>
+              <td style="font-size:12px">2026-06-12 20:00</td>
+              <td><span class="status-badge on">● 启用</span></td>
+              <td>
+                <button class="btn btn-text btn-sm">编辑</button>
+                <button class="btn btn-text btn-sm" onclick="toggleTaskStatus(this)">暂停</button>
+                <button class="btn btn-text btn-sm">▶ 执行</button>
+                <button class="btn btn-text btn-sm danger">删除</button>
+              </td>
+            </tr>
+            <tr class="sub-table-wrap" data-module="ui">
+              <td colspan="10">
+                <div class="sub-inner">
+                  <table class="sub-table">
+                    <thead><tr><th>执行时间</th><th>执行状态</th><th>通过率</th><th>耗时</th><th>报告</th></tr></thead>
+                    <tbody>
+                      <tr><td>2026-06-12 08:00:12</td><td style="color:var(--success)">✅ 完成</td><td>94.7%</td><td>5m 12s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-11 20:00:08</td><td style="color:var(--success)">✅ 完成</td><td>95.5%</td><td>4m 58s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-11 08:00:10</td><td style="color:var(--warning)">⚠️ 部分失败</td><td>89.3%</td><td>5m 35s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-10 20:00:05</td><td style="color:var(--success)">✅ 完成</td><td>96.2%</td><td>5m 02s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-10 08:00:09</td><td style="color:var(--success)">✅ 完成</td><td>97.8%</td><td>4m 48s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+            <tr data-module="app">
+              <td><button class="expand-btn" onclick="toggleExpand(this)">▸</button></td>
+              <td><strong>APP 全量回归测试</strong></td>
+              <td><span class="module-tag app">APP</span></td>
+              <td style="font-size:12px">APP 全量回归套件</td>
+              <td><span class="cron-text">0 0 3 * * ?</span><br><span style="font-size:11px;color:var(--text-muted)">每天 03:00</span></td>
+              <td>自动</td>
+              <td style="font-size:12px">2026-06-12 03:00</td>
+              <td style="font-size:12px">2026-06-13 03:00</td>
+              <td><span class="status-badge off">● 暂停</span></td>
+              <td>
+                <button class="btn btn-text btn-sm">编辑</button>
+                <button class="btn btn-text btn-sm" onclick="toggleTaskStatus(this)">启用</button>
+                <button class="btn btn-text btn-sm">▶ 执行</button>
+                <button class="btn btn-text btn-sm danger">删除</button>
+              </td>
+            </tr>
+            <tr class="sub-table-wrap" data-module="app">
+              <td colspan="10">
+                <div class="sub-inner">
+                  <table class="sub-table">
+                    <thead><tr><th>执行时间</th><th>执行状态</th><th>通过率</th><th>耗时</th><th>报告</th></tr></thead>
+                    <tbody>
+                      <tr><td>2026-06-11 03:00:18</td><td style="color:var(--success)">✅ 完成</td><td>92.3%</td><td>8m 22s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-10 03:00:05</td><td style="color:var(--danger)">❌ 失败</td><td>—</td><td>2m 05s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-09 03:00:12</td><td style="color:var(--success)">✅ 完成</td><td>93.1%</td><td>8m 45s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-08 03:00:08</td><td style="color:var(--success)">✅ 完成</td><td>94.6%</td><td>8m 12s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-07 03:00:10</td><td style="color:var(--warning)">⚠️ 部分失败</td><td>85.2%</td><td>9m 01s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+            <tr data-module="ui">
+              <td><button class="expand-btn" onclick="toggleExpand(this)">▸</button></td>
+              <td><strong>UI 页面元素巡检</strong></td>
+              <td><span class="module-tag ui">UI</span></td>
+              <td style="font-size:12px">元素覆盖率检查</td>
+              <td><span class="cron-text">0 0 10 * * 1</span><br><span style="font-size:11px;color:var(--text-muted)">每周一 10:00</span></td>
+              <td>手动</td>
+              <td style="font-size:12px">2026-06-08 10:00</td>
+              <td style="font-size:12px">2026-06-15 10:00</td>
+              <td><span class="status-badge on">● 启用</span></td>
+              <td>
+                <button class="btn btn-text btn-sm">编辑</button>
+                <button class="btn btn-text btn-sm" onclick="toggleTaskStatus(this)">暂停</button>
+                <button class="btn btn-text btn-sm">▶ 执行</button>
+                <button class="btn btn-text btn-sm danger">删除</button>
+              </td>
+            </tr>
+            <tr class="sub-table-wrap" data-module="ui">
+              <td colspan="10">
+                <div class="sub-inner">
+                  <table class="sub-table">
+                    <thead><tr><th>执行时间</th><th>执行状态</th><th>通过率</th><th>耗时</th><th>报告</th></tr></thead>
+                    <tbody>
+                      <tr><td>2026-06-08 10:00:03</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>1m 12s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-06-01 10:00:08</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>1m 08s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-05-25 10:00:05</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>1m 15s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                      <tr><td>2026-05-18 10:00:10</td><td style="color:var(--success)">✅ 完成</td><td>100%</td><td>1m 10s</td><td><button class="btn btn-text btn-sm">查看报告</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleForm(){document.getElementById('taskForm').classList.toggle('open')}
+function toggleExpand(btn){
+  btn.classList.toggle('open');
+  btn.textContent=btn.classList.contains('open')?'▾':'▸';
+  let row=btn.closest('tr');
+  let next=row.nextElementSibling;
+  while(next&&next.classList.contains('sub-table-wrap')){
+    next.classList.toggle('open');
+    next=next.nextElementSibling;
+  }
+}
+function toggleTaskStatus(btn){
+  let badge=btn.closest('tr').querySelector('.status-badge');
+  let isOn=badge.classList.contains('on');
+  if(isOn){
+    badge.className='status-badge off';
+    badge.textContent='● 暂停';
+    btn.textContent='启用';
+  }else{
+    badge.className='status-badge on';
+    badge.textContent='● 启用';
+    btn.textContent='暂停';
+  }
+}
+function filterTab(el,module){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('tbody > tr[data-module]').forEach(r=>{
+    if(module==='all')r.style.display='';
+    else r.style.display=r.getAttribute('data-module')===module?'':'none';
+  });
+  document.querySelectorAll('tbody > tr.sub-table-wrap').forEach(r=>{
+    if(module==='all')r.style.display='';
+    else r.style.display=r.getAttribute('data-module')===module?'':'none';
+    if(r.style.display!=='none')r.classList.remove('open');
+  });
+}
+</script>
+</body>
+</html>

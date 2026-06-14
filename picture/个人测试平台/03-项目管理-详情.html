@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目详情 - AI测试平台</title>
+<style>
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --radius: 8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,PingFang SC,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100}
+.sidebar-logo{padding:16px 20px;font-size:18px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo::before{content:"🧪";font-size:22px}
+.sidebar-menu{padding:12px 0}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:8px 20px;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.menu-item{display:flex;align-items:center;padding:10px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;transition:all .2s;border-left:3px solid transparent;text-decoration:none;gap:10px}
+.menu-item:hover{background:rgba(198,123,92,0.06);color:var(--text)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:20px;text-align:center;font-size:16px}
+
+.main{margin-left:240px;flex:1;min-height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+.breadcrumb span.current{color:var(--primary);font-weight:500}
+
+.content{padding:24px}
+.page-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.back-btn{cursor:pointer;font-size:18px;padding:6px 10px;border-radius:var(--radius);background:var(--card-bg);border:var(--border);color:var(--text-secondary);transition:all .2s}
+.back-btn:hover{background:var(--sidebar-bg);color:var(--primary)}
+.page-title{font-size:22px;font-weight:700;color:var(--text);flex:1}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:var(--border);margin-bottom:20px}
+.tab{padding:10px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--primary)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+
+/* Right Action Panel */
+.page-layout{display:flex;gap:20px}
+.main-area{flex:1}
+.side-panel{width:200px;flex-shrink:0}
+.action-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);border:var(--border);padding:16px}
+.action-card h4{font-size:14px;color:var(--text);margin-bottom:12px;padding-bottom:8px;border-bottom:var(--border)}
+.action-card .btn{width:100%;margin-bottom:8px;padding:8px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;border:none;display:block;text-align:center}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light)}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary)}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger{background:transparent;border:1px solid rgba(212,116,92,0.3);color:var(--danger)}
+.btn-danger:hover{background:rgba(212,116,92,0.06)}
+
+/* Info Form */
+.info-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);border:var(--border);padding:20px}
+.form-row{display:flex;margin-bottom:16px;align-items:flex-start}
+.form-row .label{width:120px;font-size:13px;color:var(--text-muted);padding-top:8px;flex-shrink:0}
+.form-row .value{font-size:14px;color:var(--text);flex:1}
+.form-row .value p{line-height:1.6;margin-bottom:4px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.badge-active{background:rgba(123,168,125,0.12);color:var(--success)}
+
+/* Version Table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--sidebar-bg)}
+th{padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:12px}
+td{padding:10px 14px;border-bottom:var(--border);color:var(--text)}
+tbody tr:hover{background:var(--primary-bg)}
+
+/* Members Grid */
+.members-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.member-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);border:var(--border);padding:16px;text-align:center}
+.member-avatar{width:48px;height:48px;border-radius:50%;background:var(--primary-bg);color:var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:18px;font-weight:600}
+.member-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.member-role{font-size:12px;color:var(--text-muted)}
+.add-member{display:flex;align-items:center;justify-content:center;border:2px dashed rgba(180,150,120,0.25);border-radius:12px;padding:16px;cursor:pointer;color:var(--text-muted);font-size:13px;transition:all .2s;min-height:120px}
+.add-member:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-bg)}
+.btn-text{background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:13px;padding:4px 8px}
+.btn-text:hover{color:var(--primary)}
+.btn-sm{padding:5px 12px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">AI测试平台</div>
+  <div class="sidebar-menu">
+    <div class="menu-group">
+      <a class="menu-item" href="01-首页-数据看板.html"><span class="icon">📊</span>数据看板</a>
+      <a class="menu-item active" href="02-项目管理-列表.html"><span class="icon">📁</span>项目管理</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">测试管理</div>
+      <a class="menu-item" href="04-用例管理-列表.html"><span class="icon">📋</span>用例管理</a>
+      <a class="menu-item" href="06-用例评审-管理.html"><span class="icon">✅</span>用例评审</a>
+      <a class="menu-item" href="07-测试套件-管理.html"><span class="icon">📦</span>测试套件</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">AI能力</div>
+      <a class="menu-item" href="#"><span class="icon">🤖</span>AI用例生成</a>
+      <a class="menu-item" href="#"><span class="icon">🔍</span>AI评测师</a>
+      <a class="menu-item" href="#"><span class="icon">🧠</span>智能模式</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">自动化</div>
+      <a class="menu-item" href="#"><span class="icon">🔌</span>API测试</a>
+      <a class="menu-item" href="#"><span class="icon">🖥</span>UI自动化</a>
+      <a class="menu-item" href="#"><span class="icon">📱</span>APP自动化</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">系统</div>
+      <a class="menu-item" href="#"><span class="icon">⚙️</span>配置中心</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb">首页 / <span>测试管理</span> / <span>项目管理</span> / <span class="current">项目详情</span></div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <div class="page-title">电商平台V3.0</div>
+      <span class="badge badge-active">进行中</span>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active">项目信息</div>
+      <div class="tab">版本管理</div>
+      <div class="tab">项目成员</div>
+      <div class="tab">统计分析</div>
+    </div>
+
+    <div class="page-layout">
+      <div class="main-area">
+        <!-- Tab1: 项目信息 -->
+        <div class="info-card">
+          <div class="form-row">
+            <div class="label">项目名称</div>
+            <div class="value">电商平台V3.0</div>
+          </div>
+          <div class="form-row">
+            <div class="label">项目描述</div>
+            <div class="value"><p>电商平台全链路回归测试项目，覆盖用户注册、商品浏览、下单支付、物流追踪等核心业务流程。包含Web端、移动端和小程序端三端兼容性测试。</p></div>
+          </div>
+          <div class="form-row">
+            <div class="label">负责人</div>
+            <div class="value">张明</div>
+          </div>
+          <div class="form-row">
+            <div class="label">创建时间</div>
+            <div class="value">2026-05-10 14:30</div>
+          </div>
+          <div class="form-row">
+            <div class="label">截止日期</div>
+            <div class="value">2026-07-15</div>
+          </div>
+          <div class="form-row">
+            <div class="label">项目状态</div>
+            <div class="value"><span class="badge badge-active">进行中</span></div>
+          </div>
+          <div class="form-row">
+            <div class="label">关联测试</div>
+            <div class="value">用例数: 156 个 · 套件数: 8 个 · API接口: 42 个</div>
+          </div>
+        </div>
+
+        <!-- Tab2: 版本管理 (hidden) -->
+        <div class="info-card" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h4 style="font-size:15px;">版本列表</h4>
+            <button class="btn btn-primary">＋ 新建版本</button>
+          </div>
+          <table>
+            <thead><tr><th>版本号</th><th>描述</th><th>创建人</th><th>创建时间</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr><td>v3.0.0</td><td>全链路回归</td><td>张明</td><td>2026-05-10</td><td><span class="badge badge-active">进行中</span></td></tr>
+              <tr><td>v2.1.0</td><td>支付模块优化</td><td>李华</td><td>2026-04-15</td><td><span class="badge badge-completed" style="background:rgba(91,141,239,0.12);color:#5B8DEF;">已完成</span></td></tr>
+              <tr><td>v2.0.0</td><td>首页改版</td><td>王丽</td><td>2026-03-01</td><td><span class="badge badge-completed" style="background:rgba(91,141,239,0.12);color:#5B8DEF;">已完成</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tab3: 项目成员 (hidden) -->
+        <div class="info-card" style="display:none;">
+          <div class="members-grid">
+            <div class="member-card"><div class="member-avatar">张</div><div class="member-name">张明</div><div class="member-role">负责人 · 高级测试</div></div>
+            <div class="member-card"><div class="member-avatar">李</div><div class="member-name">李华</div><div class="member-role">测试工程师</div></div>
+            <div class="member-card"><div class="member-avatar">王</div><div class="member-name">王丽</div><div class="member-role">测试工程师</div></div>
+            <div class="member-card"><div class="member-avatar">赵</div><div class="member-name">赵雪</div><div class="member-role">自动化测试</div></div>
+            <div class="member-card"><div class="member-avatar">陈</div><div class="member-name">陈晨</div><div class="member-role">性能测试</div></div>
+            <div class="add-member">＋ 添加成员</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="action-card">
+          <h4>项目操作</h4>
+          <button class="btn btn-primary">✏️ 编辑项目</button>
+          <button class="btn btn-outline">📋 查看用例</button>
+          <button class="btn btn-outline">📊 执行报告</button>
+          <button class="btn btn-outline" style="border-color:rgba(212,165,116,0.3);color:var(--warning);">📁 归档项目</button>
+          <button class="btn btn-danger">🗑 删除项目</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    const panes = document.querySelectorAll('.info-card');
+    panes.forEach(p => p.style.display='none');
+    const idx = Array.from(document.querySelectorAll('.tab')).indexOf(this);
+    panes[idx].style.display='block';
+  });
+});
+</script>
+</body>
+</html>

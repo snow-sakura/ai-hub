@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 用例助手 - AI-HUB 测试平台</title>
+<style>
+  /* ========== 基础重置 ========== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: #FBF7F0;
+    color: #3D2E1F;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #ccc; }
+
+  /* ========== 布局 ========== */
+  .app-layout { display: flex; min-height: 100vh; }
+
+  /* ========== 侧栏 ========== */
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: #F6F0E7;
+    border-right: 1px solid #e8e0d4;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+  }
+  .sidebar-brand {
+    padding: 20px 20px 16px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #C67B5C;
+    border-bottom: 1px solid #e8e0d4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+  .nav-group { margin-bottom: 8px; }
+  .nav-group-title {
+    padding: 8px 20px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8B7355;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    font-size: 14px;
+    color: #3D2E1F;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: rgba(198,123,92,0.08); color: #C67B5C; }
+  .nav-item.active {
+    background: rgba(198,123,92,0.12);
+    color: #C67B5C;
+    font-weight: 600;
+    border-left-color: #C67B5C;
+  }
+  .nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+  .nav-item .label { flex: 1; }
+
+  /* ========== 主内容区 ========== */
+  .main-content {
+    flex: 1;
+    margin-left: 240px;
+    padding: 32px 24px;
+    min-height: 100vh;
+  }
+  .content-container {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ========== 页面标题 ========== */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .page-header-left { }
+  .page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #3D2E1F;
+  }
+  .page-subtitle {
+    font-size: 13px;
+    color: #8B7355;
+    margin-top: 4px;
+  }
+  .page-header-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .btn-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #e8e0d4;
+    background: #FFFDF9;
+    color: #8B7355;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover { border-color: #C67B5C; color: #C67B5C; background: rgba(198,123,92,0.05); }
+
+  /* ========== 卡片 ========== */
+  .card {
+    background: #FFFDF9;
+    border: 1px solid #e8e0d4;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.2s;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #3D2E1F;
+  }
+  .card-collapse-icon {
+    font-size: 10px;
+    color: #8B7355;
+    transition: transform 0.2s;
+  }
+  .card-body {
+    margin-top: 16px;
+  }
+  .card-body.collapsed { display: none; }
+
+  /* ========== 表单 ========== */
+  .form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .form-label {
+    font-size: 13px;
+    color: #8B7355;
+    min-width: 80px;
+  }
+  select {
+    padding: 6px 12px;
+    border: 1px solid #e8e0d4;
+    border-radius: 8px;
+    background: #FFFDF9;
+    color: #3D2E1F;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    width: 280px;
+  }
+  select:focus { border-color: #C67B5C; }
+  select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ========== 双列输入 ========== */
+  .dual-pane {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    margin-bottom: 12px;
+  }
+  .pane {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .pane-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #8B7355;
+    margin-bottom: 8px;
+  }
+  .pane-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    flex-shrink: 0;
+  }
+  .divider-label {
+    font-size: 13px;
+    color: #8B7355;
+    font-weight: 500;
+    background: #F6F0E7;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e8e0d4;
+    border-radius: 8px;
+    background: #FFFDF9;
+    color: #3D2E1F;
+    font-size: 13px;
+    outline: none;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.6;
+    transition: border-color 0.15s;
+  }
+  textarea:focus { border-color: #C67B5C; }
+  textarea:disabled { opacity: 0.5; cursor: not-allowed; background: #f8f6f2; }
+  .char-count {
+    text-align: right;
+    font-size: 11px;
+    color: #8B7355;
+    margin-top: 4px;
+  }
+
+  /* ========== 上传区域 ========== */
+  .drop-zone {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0,0,0,0.015);
+    padding: 20px;
+    flex: 1;
+  }
+  .drop-zone:hover, .drop-zone.dragging {
+    border-color: #C67B5C;
+    background: rgba(198,123,92,0.04);
+  }
+  .drop-zone.has-file {
+    border-style: solid;
+    border-color: #22a163;
+  }
+  .drop-icon {
+    font-size: 36px;
+    color: #C67B5C;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+  .drop-text {
+    font-size: 14px;
+    color: #3D2E1F;
+    margin-bottom: 4px;
+  }
+  .drop-hint {
+    font-size: 12px;
+    color: #8B7355;
+  }
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .file-name { color: #3D2E1F; }
+  .btn-remove {
+    background: none;
+    border: none;
+    color: #d03050;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .btn-remove:hover { background: rgba(208,48,80,0.08); }
+
+  /* ========== 按钮 ========== */
+  .btn-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #e8e0d4;
+    background: #FFFDF9;
+    color: #3D2E1F;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn:hover { border-color: #C67B5C; color: #C67B5C; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: #C67B5C;
+    color: #fff;
+    border-color: #C67B5C;
+  }
+  .btn-primary:hover { background: #b86a4a; border-color: #b86a4a; color: #fff; }
+  .btn-primary:disabled { background: #d4a08a; border-color: #d4a08a; }
+  .btn-danger {
+    background: #d03050;
+    color: #fff;
+    border-color: #d03050;
+  }
+  .btn-danger:hover { background: #b82840; border-color: #b82840; color: #fff; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-xs { padding: 3px 10px; font-size: 11px; }
+
+  /* ========== Radio ========== */
+  .radio-group {
+    display: inline-flex;
+    border: 1px solid #e8e0d4;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .radio-option {
+    padding: 5px 14px;
+    font-size: 13px;
+    color: #8B7355;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-right: 1px solid #e8e0d4;
+    background: #FFFDF9;
+  }
+  .radio-option:last-child { border-right: none; }
+  .radio-option:hover { background: rgba(198,123,92,0.05); }
+  .radio-option.active { background: #C67B5C; color: #fff; }
+  .radio-option input { display: none; }
+
+  /* ========== 步骤指示器 ========== */
+  .step-indicator {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .step-item {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    position: relative;
+  }
+  .step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    background: #e8e4e0;
+    color: #8B7355;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .step-item.active .step-circle { background: #C67B5C; color: #fff; }
+  .step-item.completed .step-circle { background: #22a163; color: #fff; }
+  .step-item.current .step-circle { box-shadow: 0 0 0 3px rgba(198,123,92,0.3); }
+  .step-content {
+    margin-left: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .step-title { font-size: 13px; font-weight: 600; color: #3D2E1F; white-space: nowrap; }
+  .step-item:not(.active):not(.completed) .step-title { color: #8B7355; }
+  .step-desc { font-size: 11px; color: #8B7355; white-space: nowrap; }
+  .step-connector {
+    flex: 1;
+    height: 2px;
+    background: #e8e4e0;
+    margin: 0 12px;
+    margin-bottom: 16px;
+    transition: background 0.3s;
+  }
+  .step-connector.completed { background: #22a163; }
+  .step-connector.active { background: #C67B5C; }
+
+  /* ========== 进度条 ========== */
+  .progress-bar-wrapper {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .progress-track {
+    height: 8px;
+    background: #e8e4e0;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: #C67B5C;
+    transition: width 0.5s ease;
+    position: relative;
+  }
+  .progress-fill.done { background: #22a163; }
+  .progress-fill.error { background: #d03050; }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #8B7355;
+    margin-top: 4px;
+  }
+
+  /* ========== 阶段网格 ========== */
+  .stage-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stage-card {
+    border: 1px solid #e8e0d4;
+    border-radius: 10px;
+    background: #FFFDF9;
+    overflow: hidden;
+  }
+  .stage-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+  }
+  .stage-card-header.expanded { border-bottom-color: #e8e0d4; }
+  .stage-card-left { display: flex; align-items: center; gap: 6px; }
+  .stage-card-title { font-size: 14px; font-weight: 600; color: #3D2E1F; }
+  .stage-card-right { display: flex; align-items: center; gap: 8px; }
+  .stage-card-body { padding: 12px 14px; }
+  .stage-card-body.hidden { display: none; }
+  .stage-content {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13px;
+    line-height: 1.6;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 0;
+  }
+  .cursor-blink { animation: blink 1s step-end infinite; color: #C67B5C; font-weight: bold; }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+  /* ========== 标签 ========== */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .tag-info { background: rgba(198,123,92,0.12); color: #C67B5C; }
+  .tag-success { background: rgba(34,161,99,0.12); color: #22a163; }
+  .tag-warning { background: rgba(212,135,74,0.12); color: #d4874a; }
+  .tag-error { background: rgba(208,48,80,0.12); color: #d03050; }
+  .tag-default { background: #e8e4e0; color: #8B7355; }
+
+  /* ========== 评审相关 ========== */
+  .dimension-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .dimension-item { display: flex; flex-direction: column; }
+  .dimension-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .dimension-label { font-size: 12px; color: #3D2E1F; font-weight: 500; }
+  .dimension-score { font-size: 12px; font-weight: 600; }
+  .dimension-bar-bg {
+    height: 4px;
+    background: #e8e4e0;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .dimension-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .overall-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e8e4e0;
+    margin-top: 12px;
+  }
+  .overall-label { font-size: 14px; font-weight: 600; color: #3D2E1F; }
+  .overall-score { font-size: 20px; font-weight: 700; }
+  .section-title { font-size: 14px; font-weight: 600; color: #3D2E1F; }
+  .issue-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  .issue-error { background: rgba(208,48,80,0.06); border-left: 3px solid #d03050; }
+  .issue-warning { background: rgba(212,135,74,0.06); border-left: 3px solid #d4874a; }
+  .issue-info { background: rgba(198,123,92,0.06); border-left: 3px solid #C67B5C; }
+  .suggestion-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .suggestion-item input[type="checkbox"] {
+    margin-top: 3px;
+    accent-color: #C67B5C;
+    flex-shrink: 0;
+  }
+
+  /* ========== 最终内容预览 ========== */
+  .final-content-box {
+    border: 1px solid #e8e0d4;
+    border-radius: 8px;
+    background: #FFFDF9;
+    padding: 16px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  .final-content-box pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13px;
+    line-height: 1.6;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    margin: 0;
+  }
+
+  /* ========== Alert ========== */
+  .alert {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 12px;
+  }
+  .alert-error { background: rgba(208,48,80,0.08); border-left: 3px solid #d03050; color: #b82840; }
+  .alert-error .alert-title { font-weight: 600; margin-bottom: 2px; }
+
+  /* ========== 结果操作栏 ========== */
+  .result-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .result-stats .stat-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 28px;
+    background: rgba(34,161,99,0.1);
+    color: #22a163;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 6px;
+    padding: 0 8px;
+  }
+
+  /* ========== 隐藏 ========== */
+  .hidden { display: none !important; }
+
+  /* ========== 分隔线 ========== */
+  .divider { border: none; border-top: 1px solid #e8e0d4; margin: 12px 0; }
+
+  /* ========== 动画 ========== */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeIn 0.3s ease; }
+
+  /* ========== 响应式 ========== */
+  @media (max-width: 768px) {
+    .sidebar { width: 60px; }
+    .sidebar-brand span, .nav-group-title, .nav-item .label { display: none; }
+    .sidebar-brand { justify-content: center; padding: 16px 0; }
+    .nav-item { justify-content: center; padding: 10px 0; border-left: none; }
+    .nav-item .icon { font-size: 18px; width: auto; }
+    .main-content { margin-left: 60px; padding: 20px 12px; }
+    .dual-pane { flex-direction: column; }
+    .pane-divider { width: 100%; height: 32px; }
+    .stage-grid { grid-template-columns: 1fr; }
+    .dimension-grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; gap: 12px; }
+    .step-desc { display: none; }
+    .step-content { margin-left: 6px; }
+    .step-title { font-size: 12px; }
+    .step-connector { margin: 0 6px; }
+    select { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ========== 侧栏导航 ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">🧪 <span>AI-HUB 测试平台</span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-title">测试中心</div>
+        <a class="nav-item" href="#"><span class="icon">📊</span><span class="label">仪表盘</span></a>
+        <a class="nav-item" href="#"><span class="icon">📁</span><span class="label">项目管理</span></a>
+        <a class="nav-item" href="#"><span class="icon">📝</span><span class="label">用例管理</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">AI 智能</div>
+        <a class="nav-item active" href="#"><span class="icon">🤖</span><span class="label">AI 用例生成</span></a>
+        <a class="nav-item" href="#"><span class="icon">⭐</span><span class="label">AI 评测师</span></a>
+        <a class="nav-item" href="#"><span class="icon">📋</span><span class="label">AI 测试报告</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">自动化</div>
+        <a class="nav-item" href="#"><span class="icon">🔗</span><span class="label">API 测试</span></a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ========== 主内容 ========== -->
+  <main class="main-content">
+    <div class="content-container">
+
+      <!-- ===== 页面标题 ===== -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-title">AI 用例助手</div>
+          <div class="page-subtitle">输入需求文档 → AI 自动分析 → 评审 → 修订 → 高质量测试用例</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-icon" title="配置检查">⚙️</button>
+          <button class="btn-icon" title="设置">📋</button>
+        </div>
+      </div>
+
+      <!-- ===== Zone 1: 需求输入 ===== -->
+      <div class="card" id="zone-input">
+        <div class="card-header" onclick="toggleCardBody('input-body')">
+          <div class="card-header-left">
+            <span class="card-collapse-icon" id="input-collapse-icon">▼</span>
+            <span class="card-title">📄 需求输入</span>
+          </div>
+        </div>
+        <div class="card-body" id="input-body">
+          <!-- 项目选择 -->
+          <div class="form-row">
+            <span class="form-label">所属项目</span>
+            <select id="project-select">
+              <option value="">选择项目（可选）</option>
+              <option value="1">项目一 · 电商平台</option>
+              <option value="2">项目二 · 支付系统</option>
+              <option value="3">项目三 · 用户中心</option>
+            </select>
+          </div>
+
+          <!-- 双列并排输入 -->
+          <div class="dual-pane">
+            <!-- 左侧：手动输入 -->
+            <div class="pane">
+              <div class="pane-label">手动输入需求</div>
+              <textarea id="requirement-text" rows="10" placeholder="在此粘贴需求文档内容...
+
+支持 Markdown 格式：
+- **功能点描述**
+- 边界条件
+- 异常场景" maxlength="8000" oninput="updateCharCount()"></textarea>
+              <div class="char-count"><span id="char-count">0</span> / 8000</div>
+            </div>
+
+            <!-- 中间分隔 -->
+            <div class="pane-divider">
+              <span class="divider-label">或</span>
+            </div>
+
+            <!-- 右侧：文件上传 -->
+            <div class="pane">
+              <div class="pane-label">上传需求文档</div>
+              <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.md" style="display:none" onchange="handleFileSelect(event)">
+                <div id="upload-empty">
+                  <div class="drop-icon">📄</div>
+                  <div class="drop-text">点击上传或拖拽文档到此处</div>
+                  <div class="drop-hint">支持 docx / pdf / txt 格式</div>
+                </div>
+                <div id="upload-fileinfo" class="hidden file-info">
+                  <span class="file-name" id="upload-filename"></span>
+                  <button class="btn-remove" onclick="event.stopPropagation();clearFile()">移除</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 操作行 -->
+          <div class="btn-row">
+            <span class="form-label" style="min-width:auto;">输出模式</span>
+            <div class="radio-group">
+              <label class="radio-option active" id="mode-stream">
+                <input type="radio" name="output-mode" value="stream" checked onchange="switchOutputMode('stream')"> 流式输出
+              </label>
+              <label class="radio-option" id="mode-complete">
+                <input type="radio" name="output-mode" value="complete" onchange="switchOutputMode('complete')"> 完整输出
+              </label>
+            </div>
+            <button class="btn btn-primary" id="btn-generate" onclick="startGeneration()">开始生成</button>
+            <button class="btn btn-danger hidden" id="btn-stop" onclick="stopGeneration()">停止</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Zone 2: 生成进度 ===== -->
+      <div class="card hidden" id="zone-progress">
+        <div class="card-header" onclick="toggleCardBody('progress-body')">
+          <div class="card-header-left">
+            <span class="card-collapse-icon" id="progress-collapse-icon">▼</span>
+            <span class="card-title">🚀 生成进度</span>
+          </div>
+        </div>
+        <div class="card-body" id="progress-body">
+          <!-- 任务信息 -->
+          <div class="form-row" style="margin-bottom:16px;">
+            <span style="font-size:12px;color:#8B7355;">任务 ID：</span>
+            <span style="font-size:12px;font-family:monospace;" id="task-id-display">TASK-20240612-001</span>
+            <span class="tag tag-info" id="status-tag">运行中</span>
+          </div>
+
+          <!-- 步骤指示器 -->
+          <div class="step-indicator" id="step-indicator"></div>
+
+          <!-- 进度条 -->
+          <div class="progress-bar-wrapper" id="progress-wrapper">
+            <div class="progress-track">
+              <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+            <div class="progress-info">
+              <span id="progress-message">准备开始...</span>
+              <span id="progress-percent">0%</span>
+            </div>
+          </div>
+
+          <!-- 2×2 阶段内容网格 -->
+          <div class="stage-grid" id="stage-grid"></div>
+
+          <!-- 错误信息 -->
+          <div class="alert alert-error hidden" id="error-info">
+            <div class="alert-title" id="error-code">错误</div>
+            <div id="error-message"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Zone 3: 生成结果 ===== -->
+      <div class="card hidden" id="zone-result">
+        <div class="card-header">
+          <div class="card-header-left">
+            <span class="card-title">✅ 生成完成</span>
+          </div>
+        </div>
+        <div class="card-body" id="result-body">
+          <!-- 统计信息 -->
+          <div class="result-stats">
+            <span>共生成</span>
+            <span class="stat-number" id="result-count">0</span>
+            <span>条测试用例</span>
+            <span class="tag tag-success" id="result-pass-badge">评审通过</span>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="btn-row" style="margin-bottom:16px;">
+            <button class="btn btn-primary btn-sm" onclick="showToast('已保存到用例库')">💾 保存到用例库</button>
+            <button class="btn btn-sm" onclick="showToast('正在下载 Excel...')">📥 下载 Excel</button>
+            <button class="btn btn-sm" onclick="regenerateFull()">🔄 重新生成</button>
+            <button class="btn btn-sm" onclick="resetAll()">重置</button>
+          </div>
+
+          <!-- 评审结果卡片 -->
+          <div class="divider"></div>
+          <div style="font-size:14px;font-weight:600;color:#3D2E1F;margin-bottom:12px;">⭐ AI 评审结果</div>
+          <div id="review-result-area"></div>
+
+          <!-- 最终内容预览 -->
+          <div class="divider"></div>
+          <div style="font-size:14px;font-weight:600;color:#3D2E1F;margin-bottom:8px;">最终输出</div>
+          <div class="final-content-box">
+            <pre id="final-content"></pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<!-- ========== JavaScript ========== -->
+<script>
+// =============================================
+// 状态
+// =============================================
+const STAGES = [
+  { key: 'analyze', label: '🔍 需求分析', icon: '🔍' },
+  { key: 'write',   label: '✍️ 用例编写', icon: '✍️' },
+  { key: 'review',  label: '⭐ AI 评审',   icon: '⭐' },
+  { key: 'revise',  label: '🔧 用例修订', icon: '🔧' },
+];
+const STAGE_ORDER = ['analyze', 'write', 'review', 'revise'];
+const STEP_LABELS = [
+  { label: '需求分析', desc: '提取功能点与场景' },
+  { label: '用例编写', desc: '生成结构化用例'   },
+  { label: 'AI 评审',  desc: '质量评分与反馈'   },
+  { label: '修订完善', desc: '根据反馈优化'     },
+];
+
+let isStreaming = false;
+let isDone = false;
+let stopped = false;
+let currentStageIdx = -1;
+let progressPercent = 0;
+let timerId = null;
+let typewriterTimers = [];
+let collapsedStages = { analyze: false, write: false, review: false, revise: false };
+let collapsedCards = { input: false, progress: false }; // progress always expanded when visible
+
+// 模拟数据
+const SIMULATED = {
+  analyze: `## 需求分析结果
+
+### 功能点提取
+1. **用户注册功能** - 支持邮箱/手机号注册，含验证码校验
+2. **用户登录功能** - 支持密码登录和验证码登录
+3. **用户信息管理** - 支持查看/编辑个人资料
+4. **密码重置** - 通过邮箱验证码重置密码
+
+### 边界条件识别
+- 注册时用户名长度限制（2-20个字符）
+- 密码复杂度要求（8位以上，含大小写字母+数字+特殊字符）
+- 验证码有效期（5分钟）
+- 登录失败次数限制（5次后锁定15分钟）
+
+### 异常场景
+- 网络中断时的超时处理
+- 重复用户名/邮箱注册
+- 无效验证码处理
+- 并发登录冲突`,
+
+  write: `| 标题 | 优先级 | 前置条件 | 测试步骤 | 预期结果 |
+|------|--------|----------|----------|----------|
+| TC-001 正常注册流程 | P0 | 用户未注册，网络正常 | 1.打开注册页面 2.输入有效信息 3.获取验证码 4.提交注册 | 注册成功，跳转至欢迎页 |
+| TC-002 重复邮箱注册 | P1 | 邮箱已被注册 | 1.使用已注册邮箱注册 2.填写其他信息 3.提交 | 提示"邮箱已被注册" |
+| TC-003 密码强度校验 | P1 | 用户输入弱密码 | 1.输入少于8位的密码 2.输入无特殊字符密码 3.输入纯数字密码 | 提示密码不符合复杂度要求 |
+| TC-004 验证码过期 | P2 | 验证码已超5分钟 | 1.获取验证码 2.等待6分钟 3.输入原验证码 | 提示"验证码已过期，请重新获取" |
+
+共生成 **12** 条测试用例（含功能测试8条、边界测试2条、异常测试2条）`,
+
+  review: JSON.stringify({
+    overall_score: 8.9,
+    review_passed: true,
+    summary: '用例整体质量较高，覆盖了主要功能点和边界场景，建议补充部分异常场景和安全用例。',
+    dimensions: {
+      coverage:       { score: 9.0, comment: '功能覆盖全面' },
+      edge_cases:     { score: 8.5, comment: '边界场景覆盖较好' },
+      completeness:   { score: 9.2, comment: '用例结构完整' },
+      clarity:        { score: 8.8, comment: '步骤清晰度良好' },
+    },
+    issues: [
+      { severity: 'warning', description: '缺少SQL注入相关安全测试用例', affected_cases: ['TC-005~TC-010'] },
+      { severity: 'info', description: '部分用例缺少详细的前置条件', affected_cases: ['TC-008', 'TC-009'] },
+    ],
+    improvement_suggestions: [
+      '补充 SQL/XSS 注入安全测试用例（2-3条）',
+      '为 TC-008/TC-009 补充详细前置条件',
+      '增加高并发场景下的性能测试用例',
+      '补充验证码接口防刷场景测试',
+    ],
+  }),
+
+  revise: `| 标题 | 优先级 | 前置条件 | 测试步骤 | 预期结果 | 类型 |
+|------|--------|----------|----------|----------|------|
+| TC-001 正常注册流程 | P0 | 用户未注册，网络正常 | 1.打开注册页面 2.输入有效信息 3.获取验证码 4.提交注册 | 注册成功，跳转至欢迎页 | 功能测试 |
+| TC-002 重复邮箱注册 | P1 | 邮箱已被注册 | 1.使用已注册邮箱注册 2.填写其他信息 3.提交 | 提示"邮箱已被注册" | 功能测试 |
+| TC-003 密码强度校验 | P1 | 用户输入弱密码 | 1.输入少于8位的密码 2.输入无特殊字符密码 3.输入纯数字密码 | 提示密码不符合复杂度要求 | 边界测试 |
+| TC-004 验证码过期 | P2 | 验证码已超5分钟 | 1.获取验证码 2.等待6分钟 3.输入原验证码 | 提示"验证码已过期，请重新获取" | 异常测试 |
+| TC-005 SQL注入防护 | P1 | 功能输入框可用 | 1.在搜索框输入恶意SQL 2.提交 | 请求被拦截，无数据泄露 | 安全测试 |
+| TC-006 高并发注册 | P2 | 负载均衡正常 | 1.使用JMeter模拟100并发注册 2.监控服务器 | 成功率≥95%，响应时间≤3s | 性能测试 |
+
+> 根据 AI 评审建议已补充安全测试和性能测试用例，共计 14 条测试用例`,
+};
+</script>
+
+<script>
+// =============================================
+// 初始化
+// =============================================
+function init() {
+  renderStepIndicator();
+  renderStageGrid();
+}
+init();
+
+// =============================================
+// 步骤指示器
+// =============================================
+function renderStepIndicator() {
+  const container = document.getElementById('step-indicator');
+  container.innerHTML = '';
+  for (let i = 0; i < STEP_LABELS.length; i++) {
+    const s = STEP_LABELS[i];
+    const div = document.createElement('div');
+    div.className = 'step-item';
+    div.id = 'step-' + i;
+    div.innerHTML = `
+      <div class="step-circle" id="step-circle-${i}">${i + 1}</div>
+      <div class="step-content">
+        <div class="step-title">${s.label}</div>
+        <div class="step-desc">${s.desc}</div>
+      </div>
+      ${i < STEP_LABELS.length - 1 ? `<div class="step-connector" id="step-conn-${i}"></div>` : ''}
+    `;
+    container.appendChild(div);
+  }
+}
+
+function updateStepIndicator(idx) {
+  for (let i = 0; i < STEP_LABELS.length; i++) {
+    const item = document.getElementById('step-' + i);
+    const circle = document.getElementById('step-circle-' + i);
+    const conn = document.getElementById('step-conn-' + i);
+    item.classList.remove('active', 'completed', 'current');
+    if (i < idx) {
+      item.classList.add('completed');
+      circle.innerHTML = '✓';
+    } else if (i === idx) {
+      item.classList.add('active', 'current');
+      circle.innerHTML = '' + (i + 1);
+    } else {
+      circle.innerHTML = '' + (i + 1);
+    }
+    if (conn) conn.classList.remove('active', 'completed');
+    if (conn && i < idx) conn.classList.add('completed');
+    if (conn && i === idx) conn.classList.add('active');
+  }
+}
+
+// =============================================
+// 阶段网格
+// =============================================
+function renderStageGrid() {
+  const grid = document.getElementById('stage-grid');
+  grid.innerHTML = '';
+  for (const stage of STAGES) {
+    const card = document.createElement('div');
+    card.className = 'stage-card hidden';
+    card.id = 'stage-card-' + stage.key;
+    card.innerHTML = `
+      <div class="stage-card-header" id="stage-header-${stage.key}" onclick="toggleStageCollapse('${stage.key}')">
+        <div class="stage-card-left">
+          <span class="card-collapse-icon" id="stage-collapse-${stage.key}">▼</span>
+          <span class="stage-card-title">${stage.label}</span>
+        </div>
+        <div class="stage-card-right">
+          <span class="tag tag-info hidden" id="stage-tag-${stage.key}">生成中...</span>
+          <span class="tag tag-success hidden" id="stage-done-${stage.key}">完成</span>
+        </div>
+      </div>
+      <div class="stage-card-body" id="stage-body-${stage.key}">
+        <pre class="stage-content" id="stage-content-${stage.key}"></pre>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+function toggleStageCollapse(key) {
+  collapsedStages[key] = !collapsedStages[key];
+  const body = document.getElementById('stage-body-' + key);
+  const icon = document.getElementById('stage-collapse-' + key);
+  const header = document.getElementById('stage-header-' + key);
+  if (collapsedStages[key]) {
+    body.classList.add('hidden');
+    icon.textContent = '▶';
+    header.classList.remove('expanded');
+  } else {
+    body.classList.remove('hidden');
+    icon.textContent = '▼';
+    header.classList.add('expanded');
+  }
+}
+
+// =============================================
+// 卡片折叠
+// =============================================
+function toggleCardBody(id) {
+  const body = document.getElementById(id);
+  body.classList.toggle('collapsed');
+  const iconId = id === 'input-body' ? 'input-collapse-icon' : 'progress-collapse-icon';
+  const icon = document.getElementById(iconId);
+  icon.textContent = body.classList.contains('collapsed') ? '▶' : '▼';
+}
+
+// =============================================
+// 字数统计
+// =============================================
+function updateCharCount() {
+  const textarea = document.getElementById('requirement-text');
+  document.getElementById('char-count').textContent = textarea.value.length;
+}
+
+// =============================================
+// 输出模式切换
+// =============================================
+function switchOutputMode(mode) {
+  document.getElementById('mode-stream').classList.toggle('active', mode === 'stream');
+  document.getElementById('mode-complete').classList.toggle('active', mode === 'complete');
+}
+
+// =============================================
+// 文件上传
+// =============================================
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) handleFile(file);
+}
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragenter', function(e) { e.preventDefault(); this.classList.add('dragging'); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); });
+dropZone.addEventListener('dragleave', function(e) { e.preventDefault(); this.classList.remove('dragging'); });
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+function handleFile(file) {
+  document.getElementById('upload-empty').classList.add('hidden');
+  const fi = document.getElementById('upload-fileinfo');
+  fi.classList.remove('hidden');
+  document.getElementById('upload-filename').textContent = file.name;
+  dropZone.classList.add('has-file');
+  // 模拟解析
+  setTimeout(function() {
+    const textarea = document.getElementById('requirement-text');
+    const text = '文件「' + file.name + '」已解析完成。\n\n' +
+      '经文档解析引擎处理，已提取以下需求要点：\n' +
+      '- 用户注册功能\n' +
+      '- 用户登录功能\n' +
+      '- 密码重置功能\n' +
+      '- 个人信息管理\n';
+    textarea.value = text;
+    updateCharCount();
+    showToast('文档解析完成');
+  }, 800);
+}
+
+function clearFile() {
+  document.getElementById('upload-empty').classList.remove('hidden');
+  document.getElementById('upload-fileinfo').classList.add('hidden');
+  document.getElementById('file-input').value = '';
+  dropZone.classList.remove('has-file', 'dragging');
+}
+
+// =============================================
+// Toast 提示
+// =============================================
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#3D2E1F;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:fadeIn 0.3s;';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 2000);
+  setTimeout(function() { toast.remove(); }, 2500);
+}
+
+// =============================================
+// Typewriter 打字效果
+// =============================================
+function typewrite(elementId, text, speed, callback) {
+  const el = document.getElementById(elementId);
+  if (!el) { if (callback) callback(); return; }
+  let idx = 0;
+  el.textContent = '';
+  function tick() {
+    if (stopped) { if (callback) callback(); return; }
+    if (idx < text.length) {
+      el.textContent += text[idx];
+      idx++;
+      const delay = text[idx-1] === '\n' ? speed * 3 : speed;
+      const t = setTimeout(tick, delay);
+      typewriterTimers.push(t);
+    } else {
+      if (callback) callback();
+    }
+  }
+  tick();
+}
+
+// =============================================
+// 生成流程
+// =============================================
+function startGeneration() {
+  const text = document.getElementById('requirement-text').value.trim();
+  if (text.length < 5) {
+    showToast('请输入至少 5 个字符的需求内容');
+    return;
+  }
+
+  stopped = false;
+  isStreaming = true;
+  isDone = false;
+  currentStageIdx = -1;
+  progressPercent = 0;
+
+  // 按钮状态
+  document.getElementById('btn-generate').classList.add('hidden');
+  document.getElementById('btn-stop').classList.remove('hidden');
+
+  // 显示进度区
+  document.getElementById('zone-progress').classList.remove('hidden');
+  document.getElementById('zone-progress').classList.add('fade-in');
+  document.getElementById('zone-result').classList.add('hidden');
+
+  // 重置 UI
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('progress-fill').className = 'progress-fill';
+  document.getElementById('progress-message').textContent = '准备开始...';
+  document.getElementById('progress-percent').textContent = '0%';
+  document.getElementById('error-info').classList.add('hidden');
+  document.getElementById('status-tag').className = 'tag tag-info';
+  document.getElementById('status-tag').textContent = '运行中';
+
+  // 重置阶段卡片
+  for (const s of STAGES) {
+    document.getElementById('stage-card-' + s.key).classList.add('hidden');
+    document.getElementById('stage-content-' + s.key).textContent = '';
+    document.getElementById('stage-tag-' + s.key).classList.add('hidden');
+    document.getElementById('stage-done-' + s.key).classList.add('hidden');
+  }
+
+  // 重置步骤指示器
+  updateStepIndicator(-1);
+
+  // 任务 ID
+  const taskId = 'TASK-' + Date.now().toString(36).toUpperCase();
+  document.getElementById('task-id-display').textContent = taskId;
+
+  // 启动阶段
+  currentStageIdx = 0;
+  runStage('analyze');
+}
+
+// =============================================
+// 运行阶段
+// =============================================
+function runStage(stageKey) {
+  if (stopped) return;
+
+  const idx = STAGE_ORDER.indexOf(stageKey);
+  currentStageIdx = idx;
+  updateStepIndicator(idx);
+
+  // 显示阶段卡片
+  const card = document.getElementById('stage-card-' + stageKey);
+  card.classList.remove('hidden');
+  card.classList.add('fade-in');
+
+  // 显示生成中标签
+  document.getElementById('stage-tag-' + stageKey).classList.remove('hidden');
+  document.getElementById('stage-done-' + stageKey).classList.add('hidden');
+
+  // 更新进度
+  const basePercent = (idx / STAGE_ORDER.length) * 100;
+  const messages = {
+    analyze: '正在分析需求文档，提取功能点...',
+    write: '正在编写测试用例...',
+    review: 'AI 正在进行质量评审...',
+    revise: '正在根据评审建议修订用例...',
+  };
+  document.getElementById('progress-message').textContent = messages[stageKey] || '处理中...';
+  animateProgress(basePercent, basePercent + 15);
+
+  const content = SIMULATED[stageKey];
+  if (!content) { completeStage(stageKey); return; }
+
+  const speed = stageKey === 'review' ? 15 : 20;
+
+  if (stageKey === 'review') {
+    // 先解析 JSON 展示评审内容
+    let parsed;
+    try { parsed = JSON.parse(content); } catch(e) { parsed = null; }
+
+    if (parsed) {
+      const el = document.getElementById('stage-content-review');
+      el.textContent = '正在进行 AI 评审分析...\n\n';
+
+      // 模拟逐字显示评审摘要
+      const summaryText = '【评审摘要】\n' + parsed.summary + '\n\n';
+      typewrite('stage-content-review', summaryText, speed, function() {
+        // 追加维度评分
+        const dimText = '\n' + Object.entries(parsed.dimensions).map(function(d) {
+          const labels = { coverage: '功能覆盖度', edge_cases: '边界覆盖度', completeness: '场景完整度', clarity: '步骤清晰度' };
+          return labels[d[0]] + ': ' + d[1].score + '/10 - ' + d[1].comment;
+        }).join('\n') + '\n\n';
+        typewrite('stage-content-review', dimText, speed, function() {
+          setTimeout(function() { completeStage('review'); }, 600);
+        });
+      });
+    } else {
+      typewrite('stage-content-' + stageKey, content, speed, function() {
+        setTimeout(function() { completeStage(stageKey); }, 400);
+      });
+    }
+  } else {
+    typewrite('stage-content-' + stageKey, content, speed, function() {
+      setTimeout(function() { completeStage(stageKey); }, 400);
+    });
+  }
+}
+
+function completeStage(stageKey) {
+  if (stopped) return;
+
+  const idx = STAGE_ORDER.indexOf(stageKey);
+  document.getElementById('stage-tag-' + stageKey).classList.add('hidden');
+  document.getElementById('stage-done-' + stageKey).classList.remove('hidden');
+
+  // 显示闪烁光标结束
+  // 更新进度
+  const basePercent = ((idx + 1) / STAGE_ORDER.length) * 100;
+  animateProgress(basePercent - 10, Math.min(basePercent, 85));
+
+  const nextIdx = idx + 1;
+  if (nextIdx < STAGE_ORDER.length) {
+    document.getElementById('progress-message').textContent = '阶段 ' + (idx + 1) + ' 完成，准备下一步...';
+    setTimeout(function() {
+      if (!stopped) runStage(STAGE_ORDER[nextIdx]);
+    }, 800);
+  } else {
+    finishGeneration();
+  }
+}
+
+// =============================================
+// 动画进度条
+// =============================================
+function animateProgress(from, to) {
+  const start = from || 0;
+  const end = to || 100;
+  const duration = 800;
+  const startTime = Date.now();
+
+  function update() {
+    const elapsed = Date.now() - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const val = start + (end - start) * t;
+    progressPercent = val;
+    document.getElementById('progress-fill').style.width = val + '%';
+    document.getElementById('progress-percent').textContent = Math.round(val) + '%';
+    if (t < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+  requestAnimationFrame(update);
+}
+
+// =============================================
+// 完成生成
+// =============================================
+function finishGeneration() {
+  if (stopped) return;
+  isDone = true;
+  isStreaming = false;
+
+  // 更新 UI
+  document.getElementById('btn-generate').classList.remove('hidden');
+  document.getElementById('btn-stop').classList.add('hidden');
+  document.getElementById('status-tag').className = 'tag tag-success';
+  document.getElementById('status-tag').textContent = '完成';
+
+  updateStepIndicator(4);
+  animateProgress(85, 100);
+  document.getElementById('progress-fill').classList.add('done');
+  document.getElementById('progress-message').textContent = '✅ 生成完成！';
+
+  // 显示结果区
+  setTimeout(function() {
+    document.getElementById('zone-result').classList.remove('hidden');
+    document.getElementById('zone-result').classList.add('fade-in');
+
+    // 设置统计
+    document.getElementById('result-count').textContent = '14';
+    document.getElementById('result-pass-badge').textContent = '✅ 评审通过';
+
+    // 评审结果卡片
+    renderReviewResult();
+
+    // 最终内容
+    document.getElementById('final-content').textContent = SIMULATED.revise;
+
+    // 滚动到结果区
+    document.getElementById('zone-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 600);
+}
+
+// =============================================
+// 评审结果渲染
+// =============================================
+function renderReviewResult() {
+  const area = document.getElementById('review-result-area');
+  const review = JSON.parse(SIMULATED.review);
+
+  let html = '';
+
+  // 摘要
+  if (review.summary) {
+    html += '<div style="font-size:13px;color:#8B7355;margin-bottom:16px;">' + review.summary + '</div>';
+  }
+
+  // 评分维度
+  html += '<div class="dimension-grid">';
+  const dimLabels = { coverage: '功能覆盖度', edge_cases: '边界覆盖度', completeness: '场景完整度', clarity: '步骤清晰度' };
+  for (const [key, dim] of Object.entries(review.dimensions)) {
+    const color = dim.score >= 8 ? '#22a163' : dim.score >= 6 ? '#d4874a' : '#d03050';
+    html += '<div class="dimension-item">';
+    html += '<div class="dimension-header">';
+    html += '<span class="dimension-label">' + (dimLabels[key] || key) + '</span>';
+    html += '<span class="dimension-score" style="color:' + color + '">' + dim.score + '/10</span>';
+    html += '</div>';
+    html += '<div class="dimension-bar-bg"><div class="dimension-bar-fill" style="width:' + (dim.score/10*100) + '%;background:' + color + '"></div></div>';
+    if (dim.comment) {
+      html += '<div style="font-size:11px;color:#8B7355;margin-top:2px;">' + dim.comment + '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // 综合评分
+  html += '<div class="overall-row">';
+  html += '<span class="overall-label">综合评分</span>';
+  const ovColor = review.overall_score >= 8 ? '#22a163' : review.overall_score >= 6 ? '#d4874a' : '#d03050';
+  html += '<span class="overall-score" style="color:' + ovColor + '">' + review.overall_score + '/10</span>';
+  html += '<span class="tag tag-success">✅ 评审通过</span>';
+  html += '</div>';
+
+  // 问题
+  if (review.issues && review.issues.length) {
+    html += '<div class="divider"></div>';
+    html += '<div class="section-title" style="margin-bottom:8px;">发现的问题</div>';
+    for (const issue of review.issues) {
+      const typeClass = issue.severity === 'critical' ? 'issue-error' : issue.severity === 'warning' ? 'issue-warning' : 'issue-info';
+      html += '<div class="issue-item ' + typeClass + '">';
+      html += '<div><strong>' + issue.description + '</strong></div>';
+      if (issue.affected_cases) {
+        html += '<div style="font-size:12px;color:#8B7355;margin-top:2px;">影响用例: ' + issue.affected_cases.join(', ') + '</div>';
+      }
+      html += '</div>';
+    }
+  }
+
+  // 改进建议
+  if (review.improvement_suggestions && review.improvement_suggestions.length) {
+    html += '<div class="divider"></div>';
+    html += '<div class="section-title" style="margin-bottom:8px;">改进建议</div>';
+    for (let i = 0; i < review.improvement_suggestions.length; i++) {
+      html += '<label class="suggestion-item">';
+      html += '<input type="checkbox" onchange="updateRegenBtn()">';
+      html += '<span>' + review.improvement_suggestions[i] + '</span>';
+      html += '</label>';
+    }
+    html += '<button class="btn btn-sm" style="margin-top:8px;border-color:#d4874a;color:#d4874a;" id="regen-suggest-btn" onclick="regenerateWithSuggestions()" disabled>按建议重新生成（已选 0 条）</button>';
+  }
+
+  area.innerHTML = html;
+}
+
+function updateRegenBtn() {
+  const checkboxes = document.querySelectorAll('#review-result-area .suggestion-item input:checked');
+  const btn = document.getElementById('regen-suggest-btn');
+  if (btn) {
+    btn.disabled = checkboxes.length === 0;
+    btn.textContent = '按建议重新生成（已选 ' + checkboxes.length + ' 条）';
+  }
+}
+
+// =============================================
+// 停止生成
+// =============================================
+function stopGeneration() {
+  stopped = true;
+  isStreaming = false;
+  document.getElementById('btn-generate').classList.remove('hidden');
+  document.getElementById('btn-stop').classList.add('hidden');
+  document.getElementById('status-tag').className = 'tag tag-warning';
+  document.getElementById('status-tag').textContent = '已停止';
+  document.getElementById('progress-fill').classList.add('error');
+  document.getElementById('progress-message').textContent = '⏹ 已手动停止';
+
+  // 清除打字机定时器
+  for (const t of typewriterTimers) { clearTimeout(t); }
+
+  // 显示错误
+  document.getElementById('error-info').classList.remove('hidden');
+  document.getElementById('error-code').textContent = '用户中断';
+  document.getElementById('error-message').textContent = '生成已被用户手动停止。您可以修改需求后重新生成。';
+}
+
+// =============================================
+// 重新生成
+// =============================================
+function regenerateWithSuggestions() {
+  const checked = document.querySelectorAll('#review-result-area .suggestion-item input:checked');
+  const count = checked.length;
+  showToast('正在按 ' + count + ' 条建议重新生成...');
+  startGeneration();
+}
+
+function regenerateFull() {
+  showToast('正在重新生成...');
+  startGeneration();
+}
+
+// =============================================
+// 重置
+// =============================================
+function resetAll() {
+  isStreaming = false;
+  isDone = false;
+  stopped = false;
+  currentStageIdx = -1;
+  progressPercent = 0;
+
+  document.getElementById('btn-generate').classList.remove('hidden');
+  document.getElementById('btn-stop').classList.add('hidden');
+  document.getElementById('zone-progress').classList.add('hidden');
+  document.getElementById('zone-result').classList.add('hidden');
+
+  for (const s of STAGES) {
+    document.getElementById('stage-card-' + s.key).classList.add('hidden');
+    document.getElementById('stage-content-' + s.key).textContent = '';
+    document.getElementById('stage-tag-' + s.key).classList.add('hidden');
+    document.getElementById('stage-done-' + s.key).classList.add('hidden');
+  }
+
+  updateStepIndicator(-1);
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('progress-fill').className = 'progress-fill';
+  document.getElementById('progress-message').textContent = '准备开始...';
+  document.getElementById('progress-percent').textContent = '0%';
+  document.getElementById('error-info').classList.add('hidden');
+
+  // 清除打字机
+  for (const t of typewriterTimers) { clearTimeout(t); }
+  typewriterTimers = [];
+
+  showToast('已重置，可以重新开始');
+}
+
+// =============================================
+// 拖拽上传：防止拖拽打开新页面
+// =============================================
+document.addEventListener('dragover', function(e) { if (!e.target.closest('.drop-zone')) return; });
+document.addEventListener('drop', function(e) { if (!e.target.closest('.drop-zone')) return; });
+</script>
+
+</body>
+</html>

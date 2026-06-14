@@ -4,6 +4,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
+import viteCompression from 'vite-plugin-compression'
 
 export default defineConfig({
   resolve: {
@@ -26,6 +27,13 @@ export default defineConfig({
       resolvers: [NaiveUiResolver()],
       dts: 'src/components.d.ts',
     }),
+    // 生产环境启用 brotli 预压缩（现代浏览器均支持，比率优于 gzip）
+    viteCompression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+      threshold: 10240,
+      deleteOriginFile: false,
+    }),
   ],
   server: {
     port: 5173,
@@ -37,8 +45,8 @@ export default defineConfig({
     },
   },
   build: {
-    // 提高代码分割警告阈值（优化后 500KB 即可发现异常大 chunk）
-    chunkSizeWarningLimit: 500,
+    // Naive UI 体积较大，提高阈值避免误报
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
         // 手动配置代码分割策略（仅针对 node_modules）
@@ -49,9 +57,19 @@ export default defineConfig({
               return 'vendor-ui'
             }
 
-            // Markdown 相关库
-            if (id.includes('markdown-it') || id.includes('highlight.js') || id.includes('dompurify') || id.includes('md-editor-v3')) {
-              return 'vendor-md'
+            // Markdown 编辑器（最大，独立分包）
+            if (id.includes('md-editor-v3')) {
+              return 'vendor-md-editor'
+            }
+
+            // 代码高亮（体积大，独立分包）
+            if (id.includes('highlight.js')) {
+              return 'vendor-highlight'
+            }
+
+            // Markdown 渲染 + 净化
+            if (id.includes('markdown-it') || id.includes('dompurify')) {
+              return 'vendor-md-render'
             }
 
             // Vue 生态（核心框架）

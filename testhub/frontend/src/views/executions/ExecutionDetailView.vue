@@ -201,7 +201,7 @@ import {
   Delete, Clock, Document, CircleCheck, CircleClose,
   WarningFilled, QuestionFilled, Stamp, FolderOpened
 } from '@element-plus/icons-vue'
-import api from '@/utils/api'
+import axios from 'axios'
 
 const { t } = useI18n()
 
@@ -218,7 +218,7 @@ const tableRef = ref(null)
 const fetchTestPlan = async () => {
   try {
     const planId = route.params.id
-    const response = await api.get(`/executions/plans/${planId}/`)
+    const response = await axios.get(`/api/executions/plans/${planId}/`)
     testPlan.value = response.data
   } catch (error) {
     ElMessage.error(t('execution.fetchDetailFailed'))
@@ -227,7 +227,7 @@ const fetchTestPlan = async () => {
 
 const updateCaseStatus = async (runCase) => {
   try {
-    await api.patch(`/executions/run_cases/${runCase.id}/update_status/`, {
+    await axios.patch(`/api/executions/run_cases/${runCase.id}/update_status/`, {
       status: runCase.status,
       comments: runCase.comments || ''
     })
@@ -240,7 +240,7 @@ const updateCaseStatus = async (runCase) => {
 
 const updateCaseDetails = async (runCase) => {
   try {
-    await api.patch(`/executions/run_cases/${runCase.id}/update_status/`, {
+    await axios.patch(`/api/executions/run_cases/${runCase.id}/update_status/`, {
       status: runCase.status,
       comments: runCase.comments || ''
     })
@@ -252,7 +252,7 @@ const updateCaseDetails = async (runCase) => {
 
 const viewCaseHistory = async (runCase) => {
   try {
-    const response = await api.get(`/executions/run_cases/${runCase.id}/history/`)
+    const response = await axios.get(`/api/executions/run_cases/${runCase.id}/history/`)
     currentCaseHistory.value = response.data
     historyDialogVisible.value = true
   } catch (error) {
@@ -289,7 +289,7 @@ const batchDeleteCases = async () => {
 
     for (const runCase of selectedCases.value) {
       try {
-        await api.delete(`/executions/run_cases/${runCase.id}/`)
+        await axios.delete(`/api/executions/run_cases/${runCase.id}/`)
         successCount++
       } catch (error) {
         console.error(`删除用例 ${runCase.id} 失败:`, error)

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API接口测试 - 接口管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);
+  --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;
+  --text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);
+  --success:#7BA87D;--danger:#D4745C;--warning:#D4A574;--radius:8px;
+}
+body{font-family:-apple-system,PingFang SC,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+/* Sidebar */
+.sidebar{width:240px;background:var(--sidebar-bg);height:100vh;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:var(--border)}
+.sidebar-header .logo{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.sidebar-header span{font-weight:600;font-size:15px;color:var(--text)}
+.sidebar-search{margin:10px 16px;padding:7px 12px;background:rgba(255,255,255,0.6);border:var(--border);border-radius:6px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)}
+.sidebar-search:before{content:'🔍'}
+.sidebar-nav{flex:1;padding:8px 0}
+.nav-group-header{padding:8px 20px 8px 16px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border-left:3px solid transparent}
+.nav-group-header:hover{color:var(--primary)}
+.nav-group-header.active{border-left-color:var(--primary);color:var(--primary)}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 16px 7px 31px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(198,123,92,0.06);color:var(--text)}
+.nav-item.active{background:rgba(198,123,92,0.1);color:var(--primary);border-left-color:var(--primary);font-weight:500}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.topbar-right .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)}
+.topbar-right .avatar{width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+/* Three column layout */
+.content{display:flex;flex:1;overflow:hidden}
+/* Left panel - Collection tree */
+.left-panel{width:250px;min-width:250px;background:var(--card-bg);border-right:var(--border);display:flex;flex-direction:column;overflow:hidden}
+.left-header{padding:14px 16px;font-size:14px;font-weight:600;border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between}
+.left-header .count{font-size:12px;font-weight:400;color:var(--text-muted)}
+.tree-wrap{flex:1;overflow-y:auto;padding:8px 0}
+.tree-group{margin-bottom:2px}
+.tree-group-label{display:flex;align-items:center;gap:6px;padding:6px 12px 6px 16px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer}
+.tree-group-label:hover{color:var(--primary)}
+.tree-group-label .arrow{font-size:9px;transition:transform .2s}
+.tree-group-label .folder-icon{font-size:14px}
+.tree-item{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 38px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-radius:4px;margin:1px 8px}
+.tree-item:hover{background:var(--primary-bg);color:var(--text)}
+.tree-item.active{background:var(--primary-bg);color:var(--primary);font-weight:500}
+.tree-item .file-icon{font-size:13px}
+.left-footer{padding:12px 16px;border-top:var(--border)}
+.btn-new{width:100%;padding:8px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-new:hover{background:var(--primary-light)}
+/* Middle panel - Request editor */
+.middle-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.req-header{padding:12px 16px;border-bottom:var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.method-select{padding:5px 10px;border:var(--border);border-radius:6px;background:var(--card-bg);font-size:13px;color:var(--text);cursor:pointer;font-weight:500}
+.method-get{color:#7BA87D}.method-post{color:var(--warning)}.method-put{color:#5B8FD4}.method-delete{color:var(--danger)}.method-patch{color:#A084C5}
+.url-input{flex:1;padding:7px 12px;border:var(--border);border-radius:6px;background:var(--bg);font-size:13px;color:var(--text);min-width:0;outline:none}
+.url-input:focus{border-color:var(--primary)}
+.btn-send{padding:7px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500}
+.btn-send:hover{background:var(--primary-light)}
+/* Tabs */
+.req-tabs{display:flex;border-bottom:var(--border);padding:0 16px;background:var(--card-bg)}
+.req-tab{padding:10px 18px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.req-tab:hover{color:var(--text)}
+.req-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500}
+.req-body{flex:1;overflow-y:auto;padding:16px;background:var(--card-bg)}
+/* KV table */
+.kv-table{width:100%;border-collapse:collapse;font-size:13px}
+.kv-table th{padding:8px 10px;text-align:left;font-weight:500;color:var(--text-muted);font-size:12px;border-bottom:var(--border);background:rgba(246,240,231,0.4)}
+.kv-table td{padding:6px 10px;border-bottom:var(--border)}
+.kv-table input{width:100%;padding:5px 8px;border:1px solid transparent;border-radius:4px;font-size:13px;background:transparent;outline:none}
+.kv-table input:focus{border-color:rgba(198,123,92,0.3);background:rgba(198,123,92,0.04)}
+.kv-table .del-btn{color:var(--danger);cursor:pointer;font-size:14px;opacity:.5}
+.kv-table .del-btn:hover{opacity:1}
+.kv-add{padding:8px 0;font-size:13px;color:var(--primary);cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.kv-add:hover{color:var(--primary-light)}
+/* Body editor */
+.body-editor-wrap{border:var(--border);border-radius:8px;overflow:hidden}
+.body-format-bar{display:flex;gap:0;border-bottom:var(--border);background:var(--bg);padding:0}
+.body-format{position:relative;padding:7px 16px;font-size:12px;color:var(--text-secondary);cursor:pointer;border-right:var(--border);background:transparent}
+.body-format.active{background:var(--card-bg);color:var(--primary);font-weight:500}
+.body-format.active:after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--primary)}
+.body-editor{padding:14px;font-family:SFMono-Regular,Consolas,monospace;font-size:13px;line-height:1.6;min-height:120px;color:var(--text-secondary);white-space:pre-wrap}
+.body-editor .key{color:#C67B5C}.body-editor .string{color:#7BA87D}.body-editor .number{color:#5B8FD4}.body-editor .bracket{color:var(--text-muted)}
+.req-footer{padding:12px 16px;border-top:var(--border);display:flex;gap:8px;background:var(--card-bg)}
+.btn-save{padding:7px 20px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer}
+.btn-save:hover{background:var(--primary-light)}
+.btn-saveas{padding:7px 20px;background:transparent;color:var(--primary);border:1px solid var(--primary);border-radius:6px;font-size:13px;cursor:pointer}
+.btn-saveas:hover{background:var(--primary-bg)}
+/* Right panel - Response */
+.right-panel{width:350px;min-width:350px;background:var(--card-bg);border-left:var(--border);display:flex;flex-direction:column;overflow:hidden}
+.resp-header{padding:12px 16px;border-bottom:var(--border)}
+.resp-header-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.resp-status{padding:1px 10px;border-radius:4px;font-size:13px;font-weight:600}
+.status-200{background:rgba(123,168,125,0.12);color:var(--success)}
+.status-404{background:rgba(212,116,92,0.12);color:var(--danger)}
+.status-500{background:rgba(212,116,92,0.12);color:var(--danger)}
+.resp-meta{font-size:12px;color:var(--text-muted)}
+.resp-tabs{display:flex;border-bottom:var(--border);padding:0 16px}
+.resp-tab{padding:10px 18px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent}
+.resp-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500}
+.resp-body{flex:1;overflow-y:auto;padding:16px}
+.resp-json{font-family:SFMono-Regular,Consolas,monospace;font-size:13px;line-height:1.7;color:var(--text-secondary)}
+.resp-json .line{padding:1px 0;display:flex}
+.resp-json .indent{padding-left:20px}
+.resp-json .key{color:#C67B5C}.resp-json .string{color:#7BA87D}.resp-json .number{color:#5B8FD4}.resp-json .null{color:var(--text-muted)}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">T</div>
+    <span>TestHub Pro</span>
+  </div>
+  <div class="sidebar-search">搜索功能模块...</div>
+  <div class="sidebar-nav">
+    <div class="nav-group-header"><span>📊</span> 数据看板</div>
+    <div class="nav-group-header active"><span>🔗</span> 接口管理</div>
+    <div class="nav-group-header"><span>🤖</span> 自动化测试</div>
+    <div class="nav-group-header"><span>🌐</span> 环境管理</div>
+    <div class="nav-group-header"><span>⏱</span> 定时任务</div>
+    <div class="nav-group-header"><span>📋</span> 测试报告</div>
+    <div class="nav-group-header"><span>⚙️</span> 配置中心</div>
+  </div>
+</div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">🔗 API接口管理</div>
+    <div class="topbar-right">
+      <span style="font-size:16px;cursor:pointer">🔔</span>
+      <div class="user">
+        <div class="avatar">张</div>
+        <span>张三</span>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <!-- Left: Collection tree -->
+    <div class="left-panel">
+      <div class="left-header">
+        集合列表
+        <span class="count">共 8 个集合</span>
+      </div>
+      <div class="tree-wrap">
+        <div class="tree-group">
+          <div class="tree-group-label">
+            <span class="arrow">▼</span>
+            <span class="folder-icon">📂</span>
+            电商平台
+          </div>
+          <div class="tree-group">
+            <div class="tree-group-label" style="padding-left:42px;font-size:12px;">
+              <span class="arrow">▼</span>
+              <span class="folder-icon">📁</span>
+              用户模块
+            </div>
+            <div class="tree-item active">
+              <span class="file-icon">📄</span>
+              获取用户信息
+            </div>
+            <div class="tree-item">
+              <span class="file-icon">📄</span>
+              用户登录
+            </div>
+            <div class="tree-item">
+              <span class="file-icon">📄</span>
+              用户注册
+            </div>
+            <div class="tree-item">
+              <span class="file-icon">📄</span>
+              修改密码
+            </div>
+          </div>
+          <div class="tree-group">
+            <div class="tree-group-label" style="padding-left:42px;font-size:12px;">
+              <span class="arrow">▶</span>
+              <span class="folder-icon">📁</span>
+              商品模块
+            </div>
+          </div>
+          <div class="tree-group">
+            <div class="tree-group-label" style="padding-left:42px;font-size:12px;">
+              <span class="arrow">▶</span>
+              <span class="folder-icon">📁</span>
+              订单模块
+            </div>
+          </div>
+        </div>
+        <div class="tree-group">
+          <div class="tree-group-label">
+            <span class="arrow">▶</span>
+            <span class="folder-icon">📂</span>
+            用户中心
+          </div>
+        </div>
+        <div class="tree-group">
+          <div class="tree-group-label">
+            <span class="arrow">▶</span>
+            <span class="folder-icon">📂</span>
+            支付系统
+          </div>
+        </div>
+      </div>
+      <div class="left-footer">
+        <button class="btn-new">＋ 新建集合</button>
+      </div>
+    </div>
+
+    <!-- Middle: Request Editor -->
+    <div class="middle-panel">
+      <div class="req-header">
+        <select class="method-select method-get">
+          <option class="method-get">GET</option>
+          <option class="method-post">POST</option>
+          <option class="method-put">PUT</option>
+          <option class="method-delete">DELETE</option>
+          <option class="method-patch">PATCH</option>
+        </select>
+        <input class="url-input" value="https://api.example.com/v1/users/profile" placeholder="输入请求 URL">
+        <button class="btn-send">🚀 发送</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="req-tabs">
+        <div class="req-tab active">Params</div>
+        <div class="req-tab">Headers</div>
+        <div class="req-tab">Body</div>
+        <div class="req-tab">Auth</div>
+      </div>
+
+      <div class="req-body">
+        <!-- Params tab -->
+        <div>
+          <table class="kv-table">
+            <thead>
+              <tr><th style="width:30%">Key</th><th style="width:30%">Value</th><th style="width:30%">描述</th><th style="width:10%"></th></tr>
+            </thead>
+            <tbody>
+              <tr><td><input value="user_id"></td><td><input value="12345"></td><td><input placeholder="用户ID"></td><td><span class="del-btn">✕</span></td></tr>
+              <tr><td><input value="include"></td><td><input value="profile,orders"></td><td><input placeholder="关联数据"></td><td><span class="del-btn">✕</span></td></tr>
+              <tr><td><input placeholder="key"></td><td><input placeholder="value"></td><td><input placeholder="描述"></td><td><span class="del-btn">✕</span></td></tr>
+            </tbody>
+          </table>
+          <div class="kv-add">＋ 添加参数</div>
+        </div>
+      </div>
+
+      <div class="req-footer">
+        <button class="btn-save">💾 保存</button>
+        <button class="btn-saveas">保存为...</button>
+      </div>
+    </div>
+
+    <!-- Right: Response -->
+    <div class="right-panel">
+      <div class="resp-header">
+        <div class="resp-header-row">
+          <span class="resp-status status-200">200 OK</span>
+          <span class="resp-meta">342ms</span>
+          <span class="resp-meta">2.4 KB</span>
+          <span style="margin-left:auto;font-size:12px;color:var(--text-muted)">2026-06-12 14:30:22</span>
+        </div>
+      </div>
+      <div class="resp-tabs">
+        <div class="resp-tab active">Body</div>
+        <div class="resp-tab">Headers</div>
+      </div>
+      <div class="resp-body">
+        <div class="resp-json">
+          <div class="line"><span class="bracket">{</span></div>
+          <div class="line indent"><span class="key">"code"</span>: <span class="number">200</span>,</div>
+          <div class="line indent"><span class="key">"message"</span>: <span class="string">"success"</span>,</div>
+          <div class="line indent"><span class="key">"data"</span>: <span class="bracket">{</span></div>
+          <div class="line indent indent"><span class="key">"user_id"</span>: <span class="number">12345</span>,</div>
+          <div class="line indent indent"><span class="key">"username"</span>: <span class="string">"zhangsan"</span>,</div>
+          <div class="line indent indent"><span class="key">"email"</span>: <span class="string">"zhangsan@example.com"</span>,</div>
+          <div class="line indent indent"><span class="key">"phone"</span>: <span class="string">"138****8888"</span>,</div>
+          <div class="line indent indent"><span class="key">"role"</span>: <span class="string">"admin"</span>,</div>
+          <div class="line indent indent"><span class="key">"created_at"</span>: <span class="string">"2024-03-15T10:30:00Z"</span>,</div>
+          <div class="line indent indent"><span class="key">"status"</span>: <span class="string">"active"</span>,</div>
+          <div class="line indent indent"><span class="key">"permissions"</span>: <span class="bracket">[</span></div>
+          <div class="line indent indent indent"><span class="string">"user:read"</span>,</div>
+          <div class="line indent indent indent"><span class="string">"user:write"</span>,</div>
+          <div class="line indent indent indent"><span class="string">"order:read"</span></div>
+          <div class="line indent indent"><span class="bracket">]</span></div>
+          <div class="line indent"><span class="bracket">}</span>,</div>
+          <div class="line indent"><span class="key">"meta"</span>: <span class="bracket">{</span></div>
+          <div class="line indent indent"><span class="key">"request_id"</span>: <span class="string">"req_abc123xyz"</span>,</div>
+          <div class="line indent indent"><span class="key">"timestamp"</span>: <span class="number">1718184222</span></div>
+          <div class="line indent"><span class="bracket">}</span></div>
+          <div class="line"><span class="bracket">}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

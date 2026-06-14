@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成员管理 · AI-HUB</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--info:#5B8DEF;--danger:#D4745C;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-logo{padding:16px 18px;font-size:14px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px;cursor:pointer}
+.sidebar-logo .logo-icon{width:24px;height:24px;background:var(--primary);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+.sidebar-menu{flex:1;padding:4px 0;overflow-y:auto}
+.menu-group-title{padding:14px 18px 6px;font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.menu-item{display:flex;align-items:center;padding:8px 18px;color:var(--text-secondary);font-size:13px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.12s}
+.menu-item:hover{background:var(--primary-bg)}.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:16px;text-align:center;font-size:13px;flex-shrink:0}
+.sidebar-footer{padding:10px 18px;border-top:var(--border);font-size:11px;color:var(--text-muted)}
+.main{margin-left:220px;flex:1}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.content{padding:24px}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:22px;font-weight:700;color:var(--text)}.page-sub{font-size:13px;color:var(--text-muted);margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 16px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.15s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-light)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:var(--border)}.btn-ghost:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}.btn-xs{height:24px;padding:0 8px;font-size:11px}
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:0}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.tag-admin{background:rgba(91,141,239,0.12);color:var(--info)}
+.tag-lead{background:rgba(198,123,92,0.12);color:var(--primary)}
+.tag-member{background:rgba(180,150,120,0.12);color:var(--text-muted)}
+.tag-guest{background:rgba(212,165,116,0.12);color:#B8860B}
+/* 成员表格 */
+.member-table{width:100%;border-collapse:collapse}
+.member-table th{padding:10px 16px;font-size:12px;font-weight:600;color:var(--text-muted);text-align:left;border-bottom:var(--border);background:var(--bg)}
+.member-table td{padding:10px 16px;font-size:13px;color:var(--text-secondary);border-bottom:var(--border)}
+.member-table tr:last-child td{border-bottom:none}
+.member-table tr:hover td{background:var(--primary-bg)}
+.member-cell{display:flex;align-items:center;gap:10px}
+.member-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){
+.sidebar{width:60px}.sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}.sidebar-logo span,.menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}.sidebar-logo{padding:12px 0;justify-content:center}.menu-item{justify-content:center;padding:8px 0}.main{margin-left:60px}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">📋</div><span>测试管理</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group-title">测试管理</div>
+    <a class="menu-item" href="56-测试管理模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="01-仪表盘看板.html"><span class="icon">📊</span><span>数据看板</span></a>
+    <a class="menu-item" href="56-项目管理.html"><span class="icon">📁</span><span>项目管理</span></a>
+    <a class="menu-item" href="56-版本管理.html"><span class="icon">🏷️</span><span>版本管理</span></a>
+    <a class="menu-item active" href="56-成员管理.html"><span class="icon">👥</span><span>成员管理</span></a>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">测试管理 / <span>成员管理</span></div>
+    <div class="topbar-right"><span style="font-size:12px;color:var(--text-muted)">张明远</span><div class="avatar-sm">张</div></div>
+  </header>
+  <div class="content">
+    <div class="page-header fade-in">
+      <div><div class="page-title">👥 成员管理</div><div class="page-sub">项目团队成员与角色分配 · 共 8 人</div></div>
+      <div><button class="btn btn-primary btn-sm" onclick="showToast('邀请成员')">+ 邀请成员</button></div>
+    </div>
+    <div class="card fade-in">
+      <div class="card-header">
+        <span>团队成员</span>
+        <span style="font-size:12px;font-weight:400;color:var(--text-muted)">共 8 人</span>
+      </div>
+      <div class="card-body">
+        <table class="member-table">
+          <thead>
+            <tr><th>成员</th><th>角色</th><th>所属项目</th><th>最近活跃</th><th style="text-align:right">操作</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar" style="background:var(--primary)">张</div><div><div style="font-weight:500;color:var(--text)">张明远</div><div style="font-size:11px;color:var(--text-muted)">zhangmy@example.com</div></div></div></td>
+              <td><span class="tag tag-admin">管理员</span></td>
+              <td>电商APP · 用户中心</td>
+              <td>2026-06-12</td>
+              <td style="text-align:right"><button class="btn btn-ghost btn-xs">编辑</button></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar" style="background:var(--info)">李</div><div><div style="font-weight:500;color:var(--text)">李思琪</div><div style="font-size:11px;color:var(--text-muted)">lisq@example.com</div></div></div></td>
+              <td><span class="tag tag-lead">负责人</span></td>
+              <td>管理后台 · 开放平台</td>
+              <td>2026-06-11</td>
+              <td style="text-align:right"><button class="btn btn-ghost btn-xs">编辑</button></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar" style="background:var(--success)">王</div><div><div style="font-weight:500;color:var(--text)">王浩然</div><div style="font-size:11px;color:var(--text-muted)">wanghr@example.com</div></div></div></td>
+              <td><span class="tag tag-lead">负责人</span></td>
+              <td>支付网关</td>
+              <td>2026-06-10</td>
+              <td style="text-align:right"><button class="btn btn-ghost btn-xs">编辑</button></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar" style="background:var(--danger)">赵</div><div><div style="font-weight:500;color:var(--text)">赵雪婷</div><div style="font-size:11px;color:var(--text-muted)">zhaoxf@example.com</div></div></div></td>
+              <td><span class="tag tag-member">成员</span></td>
+              <td>IM通讯</td>
+              <td>2026-06-08</td>
+              <td style="text-align:right"><button class="btn btn-ghost btn-xs">编辑</button></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar" style="background:#B8860B">陈</div><div><div style="font-weight:500;color:var(--text)">陈晓峰</div><div style="font-size:11px;color:var(--text-muted)">chenxf@example.com</div></div></div></td>
+              <td><span class="tag tag-member">成员</span></td>
+              <td>电商APP</td>
+              <td>2026-06-07</td>
+              <td style="text-align:right"><button class="btn btn-ghost btn-xs">编辑</button></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar" style="background:var(--primary-light)">林</div><div><div style="font-weight:500;color:var(--text)">林小雅</div><div style="font-size:11px;color:var(--text-muted)">linxy@example.com</div></div></div></td>
+              <td><span class="tag tag-member">成员</span></td>
+              <td>管理后台</td>
+              <td>2026-06-06</td>
+              <td style="text-align:right"><button class="btn btn-ghost btn-xs">编辑</button></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar" style="background:var(--accent)">刘</div><div><div style="font-weight:500;color:var(--text)">刘志强</div><div style="font-size:11px;color:var(--text-muted)">liuzq@example.com</div></div></div></td>
+              <td><span class="tag tag-guest">访客</span></td>
+              <td>支付网关</td>
+              <td>2026-06-05</td>
+              <td style="text-align:right"><button class="btn btn-ghost btn-xs">编辑</button></td>
+            </tr>
+            <tr>
+              <td><div class="member-cell"><div class="member-avatar" style="background:#8B7355">周</div><div><div style="font-weight:500;color:var(--text)">周婉清</div><div style="font-size:11px;color:var(--text-muted)">zhouwq@example.com</div></div></div></td>
+              <td><span class="tag tag-guest">访客</span></td>
+              <td>开放平台</td>
+              <td>2026-06-03</td>
+              <td style="text-align:right"><button class="btn btn-ghost btn-xs">编辑</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function showToast(msg,t){var d=document.createElement('div');d.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#3D2E1F;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s';d.textContent=msg||t||'操作成功';document.body.appendChild(d);setTimeout(function(){d.style.opacity='1'},10);setTimeout(function(){d.style.opacity='0';setTimeout(function(){document.body.removeChild(d)},300)},2000)}
+</script>
+</body>
+</html>

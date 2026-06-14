@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI聊天室配置 - AI-HUB</title>
+<style>
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--radius:8px;--radius-lg:12px;--font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;height:100vh;}
+.sidebar{width:220px;background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-header{padding:20px;border-bottom:var(--border);}
+.sidebar-header h1{font-size:18px;color:var(--primary);font-weight:700;letter-spacing:1px;}
+.sidebar-header p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.nav-tabs{list-style:none;padding:12px 0;}
+.nav-tabs li{padding:10px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s;border-left:3px solid transparent;}
+.nav-tabs li:hover{background:rgba(198,123,92,0.06);color:var(--text);}
+.nav-tabs li.active{background:rgba(198,123,92,0.1);color:var(--primary);border-left-color:var(--primary);font-weight:600;}
+.nav-tabs li svg{width:18px;height:18px;flex-shrink:0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.main-header{padding:16px 28px;border-bottom:var(--border);background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;}
+.main-header h2{font-size:18px;font-weight:600;}
+.breadcrumb{font-size:13px;color:var(--text-muted);}
+.breadcrumb span{color:var(--text-secondary);}
+.content{padding:24px 28px;overflow-y:auto;flex:1;}
+.card{background:var(--card-bg);border-radius:var(--radius-lg);border:var(--border);padding:24px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);}
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;}
+.form-group select,.form-group input,.form-group textarea{width:100%;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;transition:border-color .2s;}
+.form-group select:focus,.form-group input:focus,.form-group textarea:focus{border-color:var(--primary);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.btn{padding:8px 20px;font-size:14px;font-family:var(--font);border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s;font-weight:500;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-light);}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-group{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
+.slider-group{display:flex;align-items:center;gap:12px;}
+.slider-group input[type="range"]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(198,123,92,0.2);outline:none;}
+.slider-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--primary);cursor:pointer;}
+.slider-value{font-size:14px;font-weight:600;color:var(--primary);min-width:32px;text-align:center;}
+.toggle{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer;}
+.toggle input{display:none;}
+.toggle-slider{width:40px;height:22px;background:rgba(180,150,120,0.2);border-radius:11px;transition:all .3s;position:relative;flex-shrink:0;}
+.toggle-slider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;transition:all .3s;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+.toggle input:checked+.toggle-slider{background:var(--primary);}
+.toggle input:checked+.toggle-slider::after{left:20px;}
+.toggle-label{font-size:14px;color:var(--text-secondary);}
+.content::-webkit-scrollbar{width:6px;}
+.content::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>AI-HUB</h1>
+    <p>智能测试平台</p>
+  </div>
+  <ul class="nav-tabs">
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      AI模型配置
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      提示词配置
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      生成行为
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      UI环境
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      APP环境
+    </li>
+    <li class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      AI聊天室
+    </li>
+  </ul>
+</div>
+
+<div class="main">
+  <div class="main-header">
+    <div>
+      <h2>AI聊天室配置</h2>
+      <div class="breadcrumb">配置中心 / <span>AI聊天室配置</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 对话模型配置 -->
+    <div class="card">
+      <div class="card-title">对话模型配置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>对话模型</label>
+          <select>
+            <option>GPT-4o</option>
+            <option>Claude 3.5 Sonnet</option>
+            <option>DeepSeek V3</option>
+            <option>通义千问 2.5</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>温度 (Temperature)</label>
+          <div class="slider-group">
+            <input type="range" min="0" max="2" step="0.1" value="0.8">
+            <span class="slider-value">0.8</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>上下文长度</label>
+          <select>
+            <option>4K (约 4000 tokens)</option>
+            <option selected>8K (约 8000 tokens)</option>
+            <option>16K (约 16000 tokens)</option>
+            <option>32K (约 32000 tokens)</option>
+            <option>128K (约 128000 tokens)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>最大回复 Token 数</label>
+          <input type="number" value="2048" min="1" max="4096">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>系统提示词</label>
+        <textarea rows="4" placeholder="设置对话的系统提示词..." style="width:100%;padding:10px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);resize:vertical;background:var(--card-bg);color:var(--text);outline:none;">你是一个智能测试助手，可以帮助用户解答软件测试相关问题，生成测试用例，分析测试结果等。</textarea>
+      </div>
+    </div>
+
+    <!-- 知识库关联设置 -->
+    <div class="card">
+      <div class="card-title">知识库关联设置</div>
+      <div class="form-group">
+        <label>启用知识库增强</label>
+        <label class="toggle">
+          <input type="checkbox" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">在对话中启用 RAG 知识库增强</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>关联知识库</label>
+        <select>
+          <option>产品需求文档库</option>
+          <option>API 接口文档库</option>
+          <option>测试用例库</option>
+          <option selected>全部知识库</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>检索参数</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label>检索条数</label>
+            <input type="number" value="5" min="1" max="20">
+          </div>
+          <div class="form-group">
+            <label>相关性阈值</label>
+            <div class="slider-group">
+              <input type="range" min="0" max="100" value="65">
+              <span class="slider-value">0.65</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 对话历史设置 -->
+    <div class="card">
+      <div class="card-title">对话历史设置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>保存对话历史</label>
+          <label class="toggle">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">自动保存对话记录</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label>历史保留天数</label>
+          <input type="number" value="90">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>最大历史会话数</label>
+          <input type="number" value="500">
+        </div>
+        <div class="form-group">
+          <label>导出格式</label>
+          <select>
+            <option>JSON</option>
+            <option selected>Markdown</option>
+            <option>HTML</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-outline">恢复默认</button>
+      <button class="btn btn-primary">保存配置</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

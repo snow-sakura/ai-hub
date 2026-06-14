@@ -9,7 +9,7 @@
         </template>
         <template #extra>
           <n-space :size="8">
-            <n-button size="small" type="primary" ghost @click="handleSaveToLibrary">保存到用例库</n-button>
+            <n-button size="small" type="primary" ghost :disabled="hasSavedCases" @click="handleSaveToLibrary">{{ hasSavedCases ? '已保存' : '保存到用例库' }}</n-button>
             <n-button size="small" quaternary @click="handleRetry">重新生成</n-button>
             <n-button size="small" quaternary @click="handleExport">导出 Excel</n-button>
           </n-space>
@@ -130,6 +130,8 @@ const modelLabel = computed(() => {
   return parts.length > 1 ? `${parts[0]}: ${parts[1]}` : m
 })
 
+const hasSavedCases = computed(() => !!(store.task?.has_saved_cases))
+
 // 从 store 解构响应式状态
 const {
   generatedCases, casesTotal, casesPage, casesPageSize,
@@ -145,7 +147,7 @@ async function loadData() {
   if (!id) { message.error('缺少任务 ID'); return }
   taskId.value = id
   loading.value = true
-  await Promise.all([
+  await Promise.allSettled([
     store.fetchTask(id),
     store.fetchResults(id),
     store.fetchGeneratedCases(id),
@@ -203,6 +205,10 @@ function handleChangePageSize(size: number) {
 }
 
 async function handleSaveToLibrary() {
+  if (hasSavedCases.value) {
+    message.info('该任务已保存过用例')
+    return
+  }
   try {
     dialog.info({
       title: '保存到用例库',
@@ -215,6 +221,7 @@ async function handleSaveToLibrary() {
         const savedCount = res.data?.saved_count || 0
         if (savedCount > 0) {
           message.success(`已保存 ${savedCount} 条用例到用例库`)
+          await store.fetchTask(taskId.value) // 刷新 has_saved_cases
         } else {
           message.info('没有可保存的用例，请先采用用例')
         }
@@ -267,4 +274,11 @@ onMounted(() => loadData())
   max-height: 200px;
   overflow-y: auto;
 }
+  @media (max-width: 768px) {
+    .requirement-text { font-size: 12px; }
+    .preview-text { font-size: 12px; }
+    :deep(.n-descriptions-table) { display: block; }
+    :deep(.n-descriptions-table tr) { display: block; padding: 8px 0; }
+    :deep(.n-descriptions-table td) { display: block; width: 100%; }
+  }
 </style>

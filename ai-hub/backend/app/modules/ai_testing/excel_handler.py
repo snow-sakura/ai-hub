@@ -209,7 +209,7 @@ def parse_markdown_cases(markdown_text: str) -> list[dict[str, Any]]:
       continue  # 无标题则跳过（可能是分析文本等非用例段落）
 
     priority_raw = _extract(r'\*\*优先级\*\*\s*:\s*(.+)')
-    priority = priority_raw.upper() if priority_raw.upper() in ("P0", "P1", "P2", "P3") else "P2"
+    priority = priority_raw.strip().upper() if priority_raw and priority_raw.strip().upper() in ("P0", "P1", "P2", "P3") else "P2"
 
     case_type = _extract(r'\*\*用例类型\*\*\s*:\s*(.+)') or "functional"
     # 规范化 AI 输出类型到有效枚举值

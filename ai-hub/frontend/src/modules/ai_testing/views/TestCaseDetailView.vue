@@ -39,19 +39,19 @@
       <!-- 前置条件 -->
       <section v-if="store.currentCase.preconditions" class="content-section">
         <h3 class="section-title">前置条件</h3>
-        <div class="md-content" v-html="renderMarkdown(store.currentCase.preconditions)"></div>
+        <div class="md-content" v-html="renderMd(store.currentCase.preconditions)"></div>
       </section>
 
       <!-- 测试步骤 -->
       <section v-if="store.currentCase.steps" class="content-section">
         <h3 class="section-title">测试步骤</h3>
-        <div class="md-content" v-html="renderMarkdown(store.currentCase.steps)"></div>
+        <div class="md-content" v-html="renderMd(store.currentCase.steps)"></div>
       </section>
 
       <!-- 预期结果 -->
       <section v-if="store.currentCase.expected_results" class="content-section">
         <h3 class="section-title">预期结果</h3>
-        <div class="md-content" v-html="renderMarkdown(store.currentCase.expected_results)"></div>
+        <div class="md-content" v-html="renderMd(store.currentCase.expected_results)"></div>
       </section>
 
       <!-- 标签 -->
@@ -117,6 +117,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { NButton, NTag, NSpin, useMessage, useDialog } from 'naive-ui'
 import { useTestCaseStore } from '@/modules/ai_testing/stores/testcase'
 import { useAttachmentStore } from '@/modules/ai_testing/stores/attachment'
+import { useMarkdownRenderer } from '@/shared/composables/useMarkdownRenderer'
 import PriorityBadge from '@/modules/ai_testing/components/common/PriorityBadge.vue'
 import CommentSection from '@/modules/ai_testing/components/testcase/CommentSection.vue'
 import { getAttachmentDownloadUrl } from '@/modules/ai_testing/api/attachment'
@@ -127,6 +128,7 @@ const message = useMessage()
 const dialog = useDialog()
 const store = useTestCaseStore()
 const attachmentStore = useAttachmentStore()
+const { render: renderMd } = useMarkdownRenderer()
 
 const caseId = computed(() => route.params.id as string)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -167,22 +169,6 @@ async function handleUploadAttachment(e: Event) {
 async function handleDeleteAttachment(attachmentId: string) {
   await attachmentStore.remove(attachmentId)
   message.success('附件已删除')
-}
-
-function renderMarkdown(text: string): string {
-  if (!text) return ''
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
-    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
-    .replace(/\n/g, '<br>')
 }
 
 function handleDelete() {
@@ -314,4 +300,11 @@ onMounted(() => {
   font-size: 13px;
 }
 .attachment-link:hover { text-decoration: underline; }
+  @media (max-width: 768px) {
+    .page-wrap { padding: 16px 12px 48px; }
+    .case-header-top { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .case-title { font-size: 20px; }
+    .case-footer { flex-direction: column; gap: 8px; }
+    .content-section { padding: 16px; }
+  }
 </style>

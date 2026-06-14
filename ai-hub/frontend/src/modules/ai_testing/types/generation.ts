@@ -22,6 +22,7 @@ export interface GenerationTask {
   status: TaskStatus
   generated_count: number
   error_message: string | null
+  has_saved_cases?: boolean
   created_at: string
   updated_at: string
 }
@@ -74,7 +75,7 @@ export interface DocumentUploadResponse {
 export interface ConfigItem {
   key: string
   value: string
-  category: 'model' | 'prompt' | 'behavior' | 'secret'
+  category: string
   description: string
 }
 
@@ -82,6 +83,7 @@ export interface ConfigItem {
 export interface ConfigDefaults {
   prompts: Record<string, string>  // { analyze, write, review, revise }
   models: Array<{ provider: string; model: string; display_name: string }>
+  base_urls?: Record<string, string>  // provider → 默认 API Base URL
 }
 
 /** SSE 生成事件类型 */

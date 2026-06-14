@@ -188,7 +188,7 @@ class ElementViewSet(viewsets.ModelViewSet):
         ).distinct()
         return Element.objects.filter(project__in=accessible_projects).select_related(
             'project', 'group', 'locator_strategy', 'created_by', 'parent_element'
-        ).prefetch_related('script_usages__script').order_by('page', 'order', 'name')
+        ).prefetch_related('script_usages__script').order_by('page', 'name')
 
     def filter_queryset(self, queryset):
         # 先应用默认的过滤器
@@ -779,23 +779,6 @@ class TestSuiteViewSet(viewsets.ModelViewSet):
         browser = request.data.get('browser', 'chrome')
         headless = request.data.get('headless', False)
 
-        if engine == 'selenium':
-            from .selenium_engine import SeleniumTestEngine
-            is_ready, error_msg = SeleniumTestEngine.check_execution_environment(browser)
-            if not is_ready:
-                return Response({
-                    'error': error_msg,
-                    'message': '浏览器驱动未就绪，请先安装后再执行测试套件'
-                }, status=status.HTTP_400_BAD_REQUEST)
-        elif engine == 'playwright':
-            from .playwright_engine import PlaywrightTestEngine
-            is_ready, error_msg = PlaywrightTestEngine.check_execution_environment_sync(browser)
-            if not is_ready:
-                return Response({
-                    'error': error_msg,
-                    'message': 'Playwright 浏览器未就绪，请先安装后再执行测试套件'
-                }, status=status.HTTP_400_BAD_REQUEST)
-
         # 更新套件执行状态为运行中
         test_suite.execution_status = 'running'
         test_suite.save()
@@ -1276,21 +1259,15 @@ class TestCaseViewSet(viewsets.ModelViewSet):
             if engine_type == 'selenium':
                 from .selenium_engine import SeleniumTestEngine
 
-                # Selenium 引擎需要预先检查浏览器和驱动是否可用
+                # Selenium 引擎需要预先检查浏览器是否可用
                 browser_type = request.data.get('browser', 'chrome')
-                is_ready, error_msg = SeleniumTestEngine.check_execution_environment(browser_type)
-                if not is_ready:
-                    # 浏览器环境不可用，立即返回错误
-                    logger.error(f"Selenium 执行环境检查失败: {error_msg}")
+                is_available, error_msg = SeleniumTestEngine.check_browser_available(browser_type)
+                if not is_available:
+                    # 浏览器不可用，立即返回错误
+                    logger.error(f"Selenium 浏览器检查失败: {error_msg}")
                     execution.status = 'failed'
                     execution.error_message = error_msg
-                    execution.execution_logs = (
-                        f"浏览器环境检查失败\n\n{error_msg}\n\n建议：\n"
-                        f"1. 请确认已安装 {browser_type.capitalize()} 浏览器\n"
-                        f"2. 执行 `python manage.py download_webdrivers --browsers {browser_type}` 安装对应驱动\n"
-                        f"3. 或者尝试使用其他浏览器（Chrome、Firefox、Edge）\n"
-                        f"4. 或者使用 Playwright 引擎（支持自动下载浏览器）"
-                    )
+                    execution.execution_logs = f"浏览器检查失败\n\n{error_msg}\n\n建议：\n1. 请确认已安装 {browser_type.capitalize()} 浏览器\n2. 或者尝试使用其他浏览器（Chrome、Firefox、Edge）\n3. 或者使用 Playwright 引擎（支持自动下载浏览器）"
                     execution.finished_at = timezone.now()
                     execution.save()
 
@@ -1300,48 +1277,18 @@ class TestCaseViewSet(viewsets.ModelViewSet):
                         'screenshots': [],
                         'execution_time': 0,
                         'errors': [{
-                            'message': f'{browser_type.capitalize()} 浏览器执行环境不可用',
+                            'message': f'{browser_type.capitalize()} 浏览器不可用',
                             'details': error_msg,
                             'step_number': None,
                             'action_type': '浏览器检查',
                             'element': '',
-                            'description': '执行前浏览器与驱动环境检查'
+                            'description': '执行前浏览器环境检查'
                         }]
                     }, status=status.HTTP_400_BAD_REQUEST)
             else:
                 import asyncio
                 import threading
                 from .playwright_engine import PlaywrightTestEngine
-
-                browser_type = request.data.get('browser', 'chrome')
-                is_ready, error_msg = PlaywrightTestEngine.check_execution_environment_sync(browser_type)
-                if not is_ready:
-                    logger.error(f"Playwright 执行环境检查失败: {error_msg}")
-                    execution.status = 'failed'
-                    execution.error_message = error_msg
-                    execution.execution_logs = (
-                        f"Playwright 浏览器环境检查失败\n\n{error_msg}\n\n建议：\n"
-                        f"1. 执行 `python -m playwright install` 或 `python -m playwright install {PlaywrightTestEngine.normalize_browser_type(browser_type)}` 安装浏览器\n"
-                        f"2. 如果 Playwright 模块未安装，请先执行 `pip install playwright`\n"
-                        f"3. 或者切换到 Selenium 引擎并安装对应浏览器驱动"
-                    )
-                    execution.finished_at = timezone.now()
-                    execution.save()
-
-                    return Response({
-                        'success': False,
-                        'logs': execution.execution_logs,
-                        'screenshots': [],
-                        'execution_time': 0,
-                        'errors': [{
-                            'message': f'{browser_type.capitalize()} Playwright 执行环境不可用',
-                            'details': error_msg,
-                            'step_number': None,
-                            'action_type': '浏览器检查',
-                            'element': '',
-                            'description': '执行前 Playwright 浏览器环境检查'
-                        }]
-                    }, status=status.HTTP_400_BAD_REQUEST)
 
             start_time = time.time()
 
@@ -1605,8 +1552,7 @@ class TestCaseViewSet(viewsets.ModelViewSet):
                         browser_map = {
                             'chrome': 'chromium',
                             'firefox': 'firefox',
-                            'safari': 'webkit',
-                            'edge': 'chromium'
+                            'safari': 'webkit'
                         }
                         browser_type = browser_map.get(request.data.get('browser', 'chrome'), 'chromium')
                         headless = request.data.get('headless', False)
@@ -2112,15 +2058,6 @@ class UiScheduledTaskViewSet(viewsets.ModelViewSet):
                         'error': '该测试套件未包含任何测试用例，无法执行'
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-                if task.engine == 'playwright':
-                    from .playwright_engine import PlaywrightTestEngine
-                    is_ready, error_msg = PlaywrightTestEngine.check_execution_environment_sync(task.browser)
-                    if not is_ready:
-                        return Response({
-                            'error': error_msg,
-                            'message': 'Playwright 浏览器未就绪，请先安装后再执行测试套件任务'
-                        }, status=status.HTTP_400_BAD_REQUEST)
-
                 # 更新套件执行状态
                 test_suite.execution_status = 'running'
                 test_suite.save()
@@ -2194,15 +2131,6 @@ class UiScheduledTaskViewSet(viewsets.ModelViewSet):
                         'error': '找不到配置的测试用例'
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-                if task.engine == 'playwright':
-                    from .playwright_engine import PlaywrightTestEngine
-                    is_ready, error_msg = PlaywrightTestEngine.check_execution_environment_sync(task.browser)
-                    if not is_ready:
-                        return Response({
-                            'error': error_msg,
-                            'message': 'Playwright 浏览器未就绪，请先安装后再执行测试用例任务'
-                        }, status=status.HTTP_400_BAD_REQUEST)
-
                 # 在后台线程中执行测试用例
                 import threading
 
@@ -2271,15 +2199,15 @@ class UiScheduledTaskViewSet(viewsets.ModelViewSet):
                                 if task.engine == 'selenium':
                                     from .selenium_engine import SeleniumTestEngine
 
-                                    # 检查浏览器和驱动是否可用
-                                    is_ready, error_msg = SeleniumTestEngine.check_execution_environment(task.browser)
-                                    if not is_ready:
+                                    # 检查浏览器是否可用
+                                    is_available, error_msg = SeleniumTestEngine.check_browser_available(task.browser)
+                                    if not is_available:
                                         execution.status = 'failed'
                                         execution.error_message = error_msg
                                         execution.execution_logs = json.dumps([{
                                             'step_number': 0,
                                             'action_type': '浏览器检查',
-                                            'description': '执行前浏览器与驱动环境检查',
+                                            'description': '执行前浏览器环境检查',
                                             'success': False,
                                             'error': error_msg
                                         }], ensure_ascii=False)
@@ -2359,8 +2287,7 @@ class UiScheduledTaskViewSet(viewsets.ModelViewSet):
                                         browser_map = {
                                             'chrome': 'chromium',
                                             'firefox': 'firefox',
-                                            'safari': 'webkit',
-                                            'edge': 'chromium'
+                                            'safari': 'webkit'
                                         }
                                         browser_type = browser_map.get(task.browser, 'chromium')
 
@@ -3068,36 +2995,17 @@ class AICaseViewSet(viewsets.ModelViewSet):
                     execution_record.status = 'stopped'
                     execution_record.logs += "\n[System] 任务已由用户停止。"
                 else:
-                    # 根据执行过程判断最终状态（任务或步骤出现失败则标记失败）
-                    failed = False
-                    if execution_record.planned_tasks:
-                        failed = any(t.get('status') in ('failed', 'error') for t in execution_record.planned_tasks)
-                    # history 也可能包含状态信息
-                    if not failed and history:
-                        try:
-                            steps = history.steps if hasattr(history, 'steps') else []
-                            for step in steps:
-                                if getattr(step, 'status', None) == 'failed':
-                                    failed = True
-                                    break
-                        except Exception:
-                            pass
-
-                    if failed:
-                        execution_record.status = 'failed'
-                        execution_record.logs += "\n执行完成，但检测到失败步骤或任务。"
-                    else:
-                        execution_record.status = 'passed'
+                    execution_record.status, task_summary = resolve_execution_status(execution_record.planned_tasks)
+                    if execution_record.status == 'passed':
                         execution_record.logs += "\n执行完成。"
-
-                    # 记录任务完成统计信息
-                    if execution_record.planned_tasks:
-                        total_tasks = len(execution_record.planned_tasks)
-                        completed_tasks = len(
-                            [t for t in execution_record.planned_tasks if t.get('status') == 'completed'])
-                        pending_tasks = len([t for t in execution_record.planned_tasks if t.get('status') == 'pending'])
-                        logger.info(
-                            f"🏁 Task completion summary: {completed_tasks}/{total_tasks} tasks completed, {pending_tasks} pending")
+                    else:
+                        execution_record.logs += "\n执行结束，但存在未完成或失败的子任务。"
+                    logger.info(
+                        "🏁 Task completion summary: "
+                        f"{task_summary['completed']}/{task_summary['total']} completed, "
+                        f"{task_summary['failed']} failed, "
+                        f"{task_summary['pending'] + task_summary['in_progress']} pending"
+                    )
 
                 execution_record.end_time = timezone.now()
                 execution_record.duration = (execution_record.end_time - execution_record.start_time).total_seconds()
@@ -3613,35 +3521,17 @@ class AIExecutionRecordViewSet(viewsets.ModelViewSet):
                     execution_record.status = 'stopped'
                     execution_record.logs += "\n[System] 任务已由用户停止。"
                 else:
-                    # 根据执行结果判定失败
-                    failed = False
-                    if execution_record.planned_tasks:
-                        failed = any(t.get('status') in ('failed', 'error') for t in execution_record.planned_tasks)
-                    if not failed and history:
-                        try:
-                            steps = history.steps if hasattr(history, 'steps') else []
-                            for step in steps:
-                                if getattr(step, 'status', None) == 'failed':
-                                    failed = True
-                                    break
-                        except Exception:
-                            pass
-
-                    if failed:
-                        execution_record.status = 'failed'
-                        execution_record.logs += "\n执行完成，但检测到失败步骤或任务。"
-                    else:
-                        execution_record.status = 'passed'
+                    execution_record.status, task_summary = resolve_execution_status(execution_record.planned_tasks)
+                    if execution_record.status == 'passed':
                         execution_record.logs += "\n执行完成。"
-
-                    # 记录任务完成统计信息
-                    if execution_record.planned_tasks:
-                        total_tasks = len(execution_record.planned_tasks)
-                        completed_tasks = len(
-                            [t for t in execution_record.planned_tasks if t.get('status') == 'completed'])
-                        pending_tasks = len([t for t in execution_record.planned_tasks if t.get('status') == 'pending'])
-                        logger.info(
-                            f"🏁 Task completion summary: {completed_tasks}/{total_tasks} tasks completed, {pending_tasks} pending")
+                    else:
+                        execution_record.logs += "\n执行结束，但存在未完成或失败的子任务。"
+                    logger.info(
+                        "🏁 Task completion summary: "
+                        f"{task_summary['completed']}/{task_summary['total']} completed, "
+                        f"{task_summary['failed']} failed, "
+                        f"{task_summary['pending'] + task_summary['in_progress']} pending"
+                    )
 
                 execution_record.end_time = timezone.now()
                 execution_record.duration = (execution_record.end_time - execution_record.start_time).total_seconds()

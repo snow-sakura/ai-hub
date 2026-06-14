@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系统设置 - AI-HUB</title>
+<style>
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--radius:8px;--radius-lg:12px;--font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;height:100vh;}
+.sidebar{width:220px;background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-header{padding:20px;border-bottom:var(--border);}
+.sidebar-header h1{font-size:18px;color:var(--primary);font-weight:700;letter-spacing:1px;}
+.sidebar-header p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.nav-tabs{list-style:none;padding:12px 0;}
+.nav-tabs li{padding:10px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s;border-left:3px solid transparent;}
+.nav-tabs li:hover{background:rgba(198,123,92,0.06);color:var(--text);}
+.nav-tabs li.active{background:rgba(198,123,92,0.1);color:var(--primary);border-left-color:var(--primary);font-weight:600;}
+.nav-tabs li svg{width:18px;height:18px;flex-shrink:0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.main-header{padding:16px 28px;border-bottom:var(--border);background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;}
+.main-header h2{font-size:18px;font-weight:600;}
+.breadcrumb{font-size:13px;color:var(--text-muted);}
+.breadcrumb span{color:var(--text-secondary);}
+.content{padding:24px 28px;overflow-y:auto;flex:1;}
+.card{background:var(--card-bg);border-radius:var(--radius-lg);border:var(--border);padding:24px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);}
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;}
+.form-group select,.form-group input{width:100%;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;transition:border-color .2s;}
+.form-group select:focus,.form-group input:focus{border-color:var(--primary);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.btn{padding:8px 20px;font-size:14px;font-family:var(--font);border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s;font-weight:500;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-light);}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-group{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
+.toggle{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer;}
+.toggle input{display:none;}
+.toggle-slider{width:40px;height:22px;background:rgba(180,150,120,0.2);border-radius:11px;transition:all .3s;position:relative;flex-shrink:0;}
+.toggle-slider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;transition:all .3s;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+.toggle input:checked+.toggle-slider{background:var(--primary);}
+.toggle input:checked+.toggle-slider::after{left:20px;}
+.toggle-label{font-size:14px;color:var(--text-secondary);}
+.slider-group{display:flex;align-items:center;gap:12px;}
+.slider-group input[type="range"]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(198,123,92,0.2);outline:none;}
+.slider-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--primary);cursor:pointer;}
+.slider-value{font-size:14px;font-weight:600;color:var(--primary);min-width:32px;text-align:center;}
+.file-upload{display:flex;align-items:center;gap:12px;}
+.file-upload .file-info{font-size:13px;color:var(--text-muted);}
+.file-upload .btn-outline{font-size:13px;padding:6px 14px;}
+.content::-webkit-scrollbar{width:6px;}
+.content::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>AI-HUB</h1>
+    <p>智能测试平台</p>
+  </div>
+  <ul class="nav-tabs">
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      用户管理
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      角色权限
+    </li>
+    <li class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      系统设置
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      审计日志
+    </li>
+  </ul>
+</div>
+
+<div class="main">
+  <div class="main-header">
+    <div>
+      <h2>系统设置</h2>
+      <div class="breadcrumb">系统管理 / <span>系统设置</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 基本设置 -->
+    <div class="card">
+      <div class="card-title">基本设置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>系统名称</label>
+          <input type="text" value="AI-HUB 智能测试平台" placeholder="系统名称">
+        </div>
+        <div class="form-group">
+          <label>默认语言</label>
+          <select>
+            <option selected>简体中文</option>
+            <option>English</option>
+            <option>日本語</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>系统 Logo</label>
+        <div class="file-upload">
+          <button class="btn btn-outline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            上传 Logo
+          </button>
+          <span class="file-info">当前: aihub_logo.png (32x32)</span>
+          <button class="btn btn-outline" style="font-size:12px;padding:4px 10px;">删除</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>系统描述</label>
+        <input type="text" value="基于 AI 技术的一站式智能软件测试平台" placeholder="系统简短描述">
+      </div>
+    </div>
+
+    <!-- 安全设置 -->
+    <div class="card">
+      <div class="card-title">安全设置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>密码最小长度</label>
+          <input type="number" value="8">
+        </div>
+        <div class="form-group">
+          <label>密码复杂度要求</label>
+          <select>
+            <option>无要求</option>
+            <option selected>字母 + 数字</option>
+            <option>字母 + 数字 + 特殊字符</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>最大登录尝试次数</label>
+          <input type="number" value="5">
+        </div>
+        <div class="form-group">
+          <label>登录锁定时间 (分钟)</label>
+          <input type="number" value="30">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>会话超时时间 (分钟)</label>
+          <input type="number" value="60">
+        </div>
+        <div class="form-group">
+          <label>密码过期天数</label>
+          <input type="number" value="90">
+        </div>
+      </div>
+    </div>
+
+    <!-- 邮件设置 -->
+    <div class="card">
+      <div class="card-title">邮件设置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>SMTP 服务器</label>
+          <input type="text" value="smtp.aihub.com" placeholder="smtp.example.com">
+        </div>
+        <div class="form-group">
+          <label>SMTP 端口</label>
+          <input type="number" value="587">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>发件人地址</label>
+          <input type="email" value="noreply@aihub.com" placeholder="noreply@example.com">
+        </div>
+        <div class="form-group">
+          <label>发件人名称</label>
+          <input type="text" value="AI-HUB 系统" placeholder="发件人名称">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="toggle">
+          <input type="checkbox" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">启用 SSL/TLS 加密</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 存储设置 -->
+    <div class="card">
+      <div class="card-title">存储设置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>文件存储路径</label>
+          <input type="text" value="/data/aihub/uploads" placeholder="文件存储目录">
+        </div>
+        <div class="form-group">
+          <label>最大上传大小 (MB)</label>
+          <input type="number" value="100">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>允许的文件类型</label>
+          <input type="text" value="pdf,doc,docx,md,xlsx,py,java,json,yaml" placeholder="逗号分隔">
+        </div>
+        <div class="form-group">
+          <label>存储使用量</label>
+          <div style="padding-top:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);margin-bottom:4px;">
+              <span>856 MB / 10 GB</span>
+              <span>8.3%</span>
+            </div>
+            <div style="height:6px;background:rgba(180,150,120,0.12);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:8.3%;background:var(--primary);border-radius:3px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-outline">恢复默认</button>
+      <button class="btn btn-primary">保存设置</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

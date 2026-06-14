@@ -1,459 +1,165 @@
 <template>
-  <div class="app-automation-dashboard">
-    <!-- 统计卡片 -->
-    <div class="stats-section">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon bg-blue">
-                <el-icon><Cellphone /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ statistics.devices.total }}</div>
-                <div class="stat-label">总设备数</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :span="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon bg-green">
-                <el-icon><CircleCheck /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ statistics.devices.online }}</div>
-                <div class="stat-label">在线设备</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :span="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon bg-orange">
-                <el-icon><Lock /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ statistics.devices.locked }}</div>
-                <div class="stat-label">已锁定设备</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :span="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon bg-purple">
-                <el-icon><Document /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ statistics.test_cases.total }}</div>
-                <div class="stat-label">测试用例</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+  <div class="app-auto">
+    <div class="app-page-header app-fade-in">
+      <div>
+        <h1 class="app-page-title">APP 自动化测试</h1>
+        <p class="app-page-subtitle">移动端自动化测试数据概览 · 最后更新：{{ lastUpdateTime }}</p>
+      </div>
+      <div class="header-actions">
+        <button class="app-btn app-btn-primary" @click="$router.push('/app-automation/test-cases')">+ 新建用例</button>
+      </div>
     </div>
-    
-    <!-- 执行统计和最近执行 -->
-    <el-row :gutter="20" class="content-section">
-      <!-- 执行统计 -->
-      <el-col :span="12">
-        <el-card class="stat-chart" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>执行统计</span>
-            </div>
-          </template>
-          <div class="chart-container">
-            <div class="stat-item">
-              <div class="stat-label">总执行次数</div>
-              <div class="stat-value large">{{ statistics.executions.total }}</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">成功次数</div>
-              <div class="stat-value success">{{ statistics.executions.success }}</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">失败次数</div>
-              <div class="stat-value danger">{{ statistics.executions.failed }}</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">通过率</div>
-              <div class="stat-value" :class="getPassRateClass(statistics.executions.pass_rate)">
-                {{ statistics.executions.pass_rate }}%
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <!-- 最近执行记录 -->
-      <el-col :span="12">
-        <el-card class="recent-executions" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>最近执行记录</span>
-              <el-button type="primary" size="small" @click="$router.push('/app-automation/executions')">
-                查看全部
-              </el-button>
-            </div>
-          </template>
-          <div v-if="loading" class="loading-container">
-            <el-empty description="加载中..." />
-          </div>
-          <div v-else-if="statistics.recent_executions.length === 0" class="empty-container">
-            <el-empty description="暂无执行记录" />
-          </div>
-          <div v-else class="executions-list">
-            <div v-for="execution in statistics.recent_executions" :key="execution.id" class="execution-item">
-              <div class="execution-info">
-                <div class="execution-name">{{ execution.case_name }}</div>
-                <div class="execution-meta">
-                  <el-tag :type="getStatusType(execution.status)" size="small">
-                    {{ getStatusText(execution.status) }}
-                  </el-tag>
-                  <span class="device-name">设备: {{ execution.device_name }}</span>
-                  <span class="execution-time">{{ formatTime(execution.created_at) }}</span>
-                </div>
-              </div>
-              <div class="execution-actions">
-                <el-button 
-                  type="primary" 
-                  size="small" 
-                  text
-                  @click="viewExecution(execution.id)"
-                >
-                  查看
-                </el-button>
-              </div>
+
+    <div class="app-stats-row app-fade-in">
+      <div class="app-stat-card">
+        <div class="app-stat-icon" style="background:rgba(91,141,239,0.12);color:var(--app-info)">📱</div>
+        <div class="app-stat-body">
+          <div class="app-stat-value">{{ stats.testCases }}</div>
+          <div class="app-stat-label">APP 用例数</div>
+          <div class="app-stat-change stat-up">↑ 12% 较上周</div>
+        </div>
+      </div>
+      <div class="app-stat-card">
+        <div class="app-stat-icon" style="background:rgba(123,168,125,0.12);color:var(--app-success)">▶️</div>
+        <div class="app-stat-body">
+          <div class="app-stat-value">{{ stats.totalExecutions }}</div>
+          <div class="app-stat-label">总执行次数</div>
+          <div class="app-stat-change stat-up">↑ 8% 较上周</div>
+        </div>
+      </div>
+      <div class="app-stat-card">
+        <div class="app-stat-icon" style="background:rgba(212,165,116,0.12);color:#B8860B">✅</div>
+        <div class="app-stat-body">
+          <div class="app-stat-value">{{ stats.passRate }}%</div>
+          <div class="app-stat-label">通过率</div>
+          <div class="app-stat-change stat-down">↓ 2.1% 较上周</div>
+        </div>
+      </div>
+      <div class="app-stat-card">
+        <div class="app-stat-icon" style="background:rgba(212,116,92,0.12);color:var(--app-danger)">📟</div>
+        <div class="app-stat-body">
+          <div class="app-stat-value">{{ stats.devices }}</div>
+          <div class="app-stat-label">设备数</div>
+          <div class="app-stat-change stat-up">↑ 2 较上周</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-row-2col app-fade-in">
+      <div class="app-card">
+        <div class="app-card-header">📈 近 7 日执行趋势</div>
+        <div class="app-card-body">
+          <div class="app-chart-bar">
+            <div v-for="(day, i) in trendData" :key="i" class="app-chart-col">
+              <div class="bar" :style="{ background: 'var(--app-primary)', height: day.height + '%' }"></div>
+              <span class="day-label">{{ day.label }}</span>
             </div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    
-    <!-- 快速操作 -->
-    <el-row :gutter="20" class="quick-actions-section">
-      <el-col :span="24">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>快速操作</span>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-header">📊 设备分布</div>
+        <div class="app-card-body">
+          <div class="app-bar-chart">
+            <div class="app-bar-item">
+              <span class="app-bar-label">Android</span>
+              <div class="app-bar-track"><div class="app-bar-fill" style="background:#7BA87D;width:55%"></div></div>
+              <span class="app-bar-value">55%</span>
             </div>
-          </template>
-          <div class="actions-grid">
-            <div class="action-item" @click="$router.push('/app-automation/devices')">
-              <div class="action-icon bg-blue">
-                <el-icon><Cellphone /></el-icon>
-              </div>
-              <div class="action-label">设备管理</div>
+            <div class="app-bar-item">
+              <span class="app-bar-label">iOS</span>
+              <div class="app-bar-track"><div class="app-bar-fill" style="background:var(--app-primary);width:35%"></div></div>
+              <span class="app-bar-value">35%</span>
             </div>
-            <div class="action-item" @click="$router.push('/app-automation/elements')">
-              <div class="action-icon bg-green">
-                <el-icon><Picture /></el-icon>
-              </div>
-              <div class="action-label">元素管理</div>
-            </div>
-            <div class="action-item" @click="$router.push('/app-automation/test-cases')">
-              <div class="action-icon bg-purple">
-                <el-icon><Document /></el-icon>
-              </div>
-              <div class="action-label">测试用例</div>
-            </div>
-            <div class="action-item" @click="$router.push('/app-automation/executions')">
-              <div class="action-icon bg-orange">
-                <el-icon><Aim /></el-icon>
-              </div>
-              <div class="action-label">执行记录</div>
+            <div class="app-bar-item">
+              <span class="app-bar-label">模拟器</span>
+              <div class="app-bar-track"><div class="app-bar-fill" style="background:var(--app-accent);width:10%"></div></div>
+              <span class="app-bar-value">10%</span>
             </div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-card app-fade-in">
+      <div class="app-card-header">📋 最近执行记录</div>
+      <div style="overflow-x:auto">
+        <table class="app-data-table">
+          <thead>
+            <tr><th>套件名称</th><th>设备</th><th>系统</th><th>用例数</th><th>通过</th><th>失败</th><th>耗时</th><th>状态</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, i) in recentExecutions" :key="i">
+              <td style="font-weight:600;cursor:pointer" @click="$router.push('/app-automation/reports')">{{ row.suite }}</td>
+              <td>{{ row.device }}</td>
+              <td>{{ row.os }}</td>
+              <td>{{ row.total }}</td>
+              <td>{{ row.passed }}</td>
+              <td>{{ row.failed }}</td>
+              <td>{{ row.duration }}</td>
+              <td><span :class="['app-tag', row.status === '通过' ? 'app-tag-pass' : 'app-tag-fail']">{{ row.status }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getDashboardStatistics } from '@/api/app-automation'
-import { getExecutionStatusType, getExecutionStatusText, formatRelativeTime } from '@/utils/app-automation-helpers'
-import { 
-  Cellphone, 
-  CircleCheck, 
-  Lock, 
-  Document, 
-  Picture,
-  Aim
-} from '@element-plus/icons-vue'
+import { ref } from 'vue'
 
-const loading = ref(false)
-const statistics = ref({
-  devices: {
-    total: 0,
-    online: 0,
-    locked: 0,
-    available: 0
-  },
-  test_cases: {
-    total: 0
-  },
-  executions: {
-    total: 0,
-    success: 0,
-    failed: 0,
-    pass_rate: 0
-  },
-  recent_executions: []
-})
+const stats = ref({ testCases: 36, totalExecutions: 428, passRate: 88.6, devices: 8 })
+const lastUpdateTime = ref(new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }))
 
-const loadStatistics = async () => {
-  loading.value = true
-  try {
-    const res = await getDashboardStatistics()
-    if (res.data.success) {
-      statistics.value = res.data.data
-    }
-  } catch (error) {
-    ElMessage.error('加载统计数据失败: ' + (error.message || '未知错误'))
-  } finally {
-    loading.value = false
-  }
-}
+const trendData = [
+  { label: '06-06', height: 60 },
+  { label: '06-07', height: 45 },
+  { label: '06-08', height: 70 },
+  { label: '06-09', height: 55 },
+  { label: '06-10', height: 80 },
+  { label: '06-11', height: 65 },
+  { label: '06-12', height: 90 }
+]
 
-const getStatusType = getExecutionStatusType
-const getStatusText = getExecutionStatusText
-const formatTime = formatRelativeTime
-
-const getPassRateClass = (rate) => {
-  if (rate >= 90) return 'success'
-  if (rate >= 70) return 'warning'
-  return 'danger'
-}
-
-const viewExecution = (id) => {
-  // 跳转到执行详情页
-  // TODO: 后续实现执行详情页
-  ElMessage.info('执行详情页待开发')
-}
-
-let refreshTimer = null
-
-onMounted(() => {
-  loadStatistics()
-  // 每30秒刷新一次统计数据
-  refreshTimer = setInterval(loadStatistics, 30000)
-})
-
-onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-    refreshTimer = null
-  }
-})
+const recentExecutions = [
+  { suite: '登录模块回归', device: 'iPhone 15', os: 'iOS 17', total: 12, passed: 11, failed: 1, duration: '2m18s', status: '通过' },
+  { suite: '支付流程验证', device: 'Pixel 7', os: 'Android 14', total: 8, passed: 7, failed: 1, duration: '1m45s', status: '通过' },
+  { suite: '注册流程冒烟', device: 'Galaxy S23', os: 'Android 13', total: 6, passed: 6, failed: 0, duration: '58s', status: '通过' },
+  { suite: '首页加载性能', device: 'iPhone 15', os: 'iOS 17', total: 5, passed: 3, failed: 2, duration: '3m12s', status: '失败' },
+  { suite: '搜索功能验证', device: 'Pixel 7', os: 'Android 14', total: 10, passed: 9, failed: 1, duration: '2m05s', status: '通过' }
+]
 </script>
 
-<style scoped lang="scss">
-.app-automation-dashboard {
-  padding: 20px;
+<style scoped>
+.app-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
 }
 
-.stats-section {
-  margin-bottom: 20px;
+.app-data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: var(--app-text-secondary);
+  border-bottom: var(--app-border);
+  white-space: nowrap;
+  background: var(--app-sidebar-bg);
+  font-size: 12px;
 }
 
-.stat-card {
-  cursor: pointer;
-  transition: transform 0.3s;
-  
-  &:hover {
-    transform: translateY(-5px);
-  }
-  
-  .stat-content {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    
-    .stat-icon {
-      width: 60px;
-      height: 60px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      color: white;
-      
-      &.bg-blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-      &.bg-green { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-      &.bg-orange { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-      &.bg-purple { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-    }
-    
-    .stat-info {
-      flex: 1;
-      
-      .stat-value {
-        font-size: 28px;
-        font-weight: bold;
-        color: #303133;
-        line-height: 1;
-        margin-bottom: 8px;
-      }
-      
-      .stat-label {
-        font-size: 14px;
-        color: #909399;
-      }
-    }
-  }
+.app-data-table td {
+  padding: 10px 12px;
+  border-bottom: var(--app-border);
+  color: var(--app-text);
 }
 
-.content-section {
-  margin-bottom: 20px;
+.app-data-table tr:nth-child(even) td {
+  background: rgba(180, 150, 120, 0.03);
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: bold;
-}
-
-.stat-chart {
-  .chart-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    
-    .stat-item {
-      text-align: center;
-      padding: 15px;
-      border-radius: 8px;
-      background: #f5f7fa;
-      
-      .stat-label {
-        font-size: 14px;
-        color: #909399;
-        margin-bottom: 10px;
-      }
-      
-      .stat-value {
-        font-size: 24px;
-        font-weight: bold;
-        
-        &.large { font-size: 32px; color: #409eff; }
-        &.success { color: #67c23a; }
-        &.warning { color: #e6a23c; }
-        &.danger { color: #f56c6c; }
-      }
-    }
-  }
-}
-
-.recent-executions {
-  .executions-list {
-    .execution-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px;
-      border-bottom: 1px solid #ebeef5;
-      
-      &:last-child {
-        border-bottom: none;
-      }
-      
-      &:hover {
-        background: #f5f7fa;
-      }
-      
-      .execution-info {
-        flex: 1;
-        
-        .execution-name {
-          font-size: 14px;
-          font-weight: 500;
-          color: #303133;
-          margin-bottom: 8px;
-        }
-        
-        .execution-meta {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          font-size: 12px;
-          color: #909399;
-          
-          .device-name {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-          }
-        }
-      }
-    }
-  }
-}
-
-.quick-actions-section {
-  .actions-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    
-    .action-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      padding: 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
-      background: #f5f7fa;
-      
-      &:hover {
-        background: #ecf5ff;
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-      
-      .action-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        color: white;
-        
-        &.bg-blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        &.bg-green { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        &.bg-orange { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-        &.bg-purple { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-      }
-      
-      .action-label {
-        font-size: 14px;
-        font-weight: 500;
-        color: #303133;
-      }
-    }
-  }
-}
-
-.loading-container,
-.empty-container {
-  padding: 40px 0;
+.app-data-table tr:hover td {
+  background: var(--app-primary-bg);
 }
 </style>

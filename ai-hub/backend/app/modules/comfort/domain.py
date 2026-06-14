@@ -42,6 +42,7 @@ class ComfortMemory:
   id: str
   conversation_id: str
   content: str
+  user_id: str = ""
   memory_type: str = "fact"  # fact / preference / event
   importance: float = 0.5
   created_at: datetime | None = None

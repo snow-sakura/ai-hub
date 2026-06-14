@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>版本管理 - AI-HUB</title>
+<style>
+  :root {
+    --primary:#C67B5C; --primary-light:#D49472; --accent:#D4A574;
+    --bg:#FBF7F0; --card-bg:#FFFDF9; --sidebar-bg:#F6F0E7;
+    --text:#3D2E1F; --text-secondary:#5C4A38; --text-muted:#8B7355;
+    --border:1px solid rgba(180,150,120,0.12);
+    --radius:8px; --radius-lg:12px;
+    --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--font); background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+  /* 侧边栏 - 复用 */
+  .sidebar { width:220px; background:var(--sidebar-bg); border-right:var(--border); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; flex-shrink:0; }
+  .sidebar-logo { display:flex; align-items:center; gap:10px; padding:20px 20px 16px; border-bottom:var(--border); }
+  .sidebar-logo-icon { width:32px; height:32px; background:linear-gradient(135deg,var(--primary),var(--accent)); border-radius:var(--radius); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:16px; }
+  .sidebar-logo-text { font-size:18px; font-weight:700; }
+  .sidebar-nav { flex:1; padding:12px 10px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius); cursor:pointer; color:var(--text-secondary); font-size:14px; transition:all 0.2s; margin-bottom:2px; }
+  .nav-item svg { width:18px; height:18px; flex-shrink:0; }
+  .nav-item:hover { background:rgba(198,123,92,0.06); color:var(--text); }
+  .nav-item.active { background:rgba(198,123,92,0.1); color:var(--primary); font-weight:600; }
+  .nav-section { font-size:11px; color:var(--text-muted); padding:16px 12px 6px; text-transform:uppercase; letter-spacing:1px; }
+  .sidebar-user { padding:16px 20px; border-top:var(--border); display:flex; align-items:center; gap:10px; cursor:pointer; }
+  .sidebar-user-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--primary-light),var(--accent)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:600; }
+  .sidebar-user-name { font-size:13px; font-weight:500; }
+  .sidebar-user-role { font-size:11px; color:var(--text-muted); }
+  /* 子导航 */
+  .sub-nav { display:flex; gap:4px; padding:12px 0 16px; flex-wrap:wrap; }
+  .sub-nav-item { padding:6px 16px; border-radius:20px; font-size:13px; cursor:pointer; color:var(--text-secondary); background:transparent; transition:all 0.2s; text-decoration:none; }
+  .sub-nav-item:hover { background:rgba(198,123,92,0.06); color:var(--text); }
+  .sub-nav-item.active { background:var(--primary); color:#fff; }
+  /* 主内容 */
+  .content { flex:1; padding:28px 32px; overflow-y:auto; max-width:calc(100vw - 220px); }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .page-header h1 { font-size:22px; font-weight:700; }
+  .page-header-breadcrumb { font-size:13px; color:var(--text-muted); margin-bottom:4px; }
+  .page-header-breadcrumb a { color:var(--primary); text-decoration:none; }
+  .btn { padding:8px 20px; border-radius:var(--radius); border:none; cursor:pointer; font-size:14px; font-weight:500; transition:all 0.2s; font-family:var(--font); display:inline-flex; align-items:center; gap:6px; }
+  .btn-primary { background:var(--primary); color:#fff; }
+  .btn-primary:hover { background:var(--primary-light); }
+  .btn-outline { background:transparent; border:1px solid rgba(180,150,120,0.25); color:var(--text-secondary); }
+  .btn-outline:hover { border-color:var(--primary); color:var(--primary); }
+  /* 搜索过滤 */
+  .filter-bar { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+  .search-box { display:flex; align-items:center; background:var(--card-bg); border:var(--border); border-radius:var(--radius); padding:0 12px; flex:1; min-width:200px; max-width:320px; transition:border-color 0.2s; }
+  .search-box:focus-within { border-color:var(--primary); }
+  .search-box svg { width:16px; height:16px; color:var(--text-muted); flex-shrink:0; }
+  .search-box input { border:none; outline:none; background:transparent; padding:9px 8px; font-size:14px; color:var(--text); width:100%; font-family:var(--font); }
+  .search-box input::placeholder { color:var(--text-muted); }
+  .filter-select { padding:8px 12px; border:var(--border); border-radius:var(--radius); background:var(--card-bg); color:var(--text); font-size:14px; cursor:pointer; font-family:var(--font); outline:none; transition:border-color 0.2s; }
+  .filter-select:focus { border-color:var(--primary); }
+  /* 版本卡片 */
+  .version-list { display:flex; flex-direction:column; gap:14px; }
+  .version-card { background:var(--card-bg); border-radius:var(--radius-lg); border:var(--border); padding:20px 24px; display:flex; align-items:flex-start; gap:16px; transition:all 0.25s; cursor:pointer; }
+  .version-card:hover { box-shadow:0 6px 20px rgba(180,150,120,0.08); transform:translateX(3px); }
+  .version-tag { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+  .version-tag.released { background:rgba(198,123,92,0.12); color:var(--primary); }
+  .version-tag.progress { background:rgba(212,165,116,0.12); color:var(--accent); }
+  .version-tag.obsolete { background:rgba(139,115,85,0.08); color:var(--text-muted); }
+  .version-body { flex:1; min-width:0; }
+  .version-top { display:flex; align-items:center; gap:12px; margin-bottom:6px; flex-wrap:wrap; }
+  .version-number { font-size:16px; font-weight:600; }
+  .version-status { display:inline-flex; align-items:center; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:500; }
+  .version-status.released { background:rgba(198,123,92,0.1); color:var(--primary); }
+  .version-status.progress { background:rgba(212,165,116,0.12); color:var(--accent); }
+  .version-status.obsolete { background:rgba(139,115,85,0.08); color:var(--text-muted); }
+  .version-project { font-size:13px; color:var(--text-muted); }
+  .version-date { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:4px; }
+  .version-changelog { margin-top:8px; padding:10px 14px; background:var(--bg); border-radius:var(--radius); font-size:13px; color:var(--text-secondary); line-height:1.6; }
+  .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
+  .empty-state svg { width:48px; height:48px; margin-bottom:12px; opacity:0.4; }
+  /* 模态框 */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(60,45,30,0.3); z-index:999; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--card-bg); border-radius:var(--radius-lg); width:520px; max-width:90vw; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(60,45,30,0.15); }
+  .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 16px; border-bottom:var(--border); }
+  .modal-header h2 { font-size:18px; font-weight:600; }
+  .modal-close { width:28px; height:28px; border:none; background:transparent; cursor:pointer; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); transition:all 0.2s; font-size:18px; }
+  .modal-close:hover { background:var(--bg); color:var(--text); }
+  .modal-body { padding:20px 24px; }
+  .form-group { margin-bottom:15px; }
+  .form-group label { display:block; font-size:13px; font-weight:500; color:var(--text-secondary); margin-bottom:5px; }
+  .form-group input,.form-group select,.form-group textarea { width:100%; padding:9px 12px; border:var(--border); border-radius:var(--radius); background:var(--bg); color:var(--text); font-size:14px; outline:none; font-family:var(--font); transition:border-color 0.2s; }
+  .form-group textarea { resize:vertical; min-height:60px; }
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus { border-color:var(--primary); }
+  .modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px 20px; border-top:var(--border); }
+  /* 响应式 */
+  @media(max-width:768px){ .sidebar { width:60px; } .sidebar-logo-text,.sidebar-user-name,.sidebar-user-role,.nav-item span,.nav-section { display:none; } .sidebar-logo{justify-content:center;padding:16px 8px;} .nav-item{justify-content:center;padding:10px;}.sidebar-user{justify-content:center;padding:12px;} .content{padding:20px 16px;max-width:calc(100vw - 60px);} .filter-bar{flex-direction:column;} .search-box{max-width:100%;} }
+</style>
+</head>
+<body>
+
+<!-- 侧边栏 -->
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="sidebar-logo-icon">AI</div><span class="sidebar-logo-text">AI-HUB</span></div>
+  <div class="sidebar-nav">
+    <div class="nav-item" onclick="location.href='../../00-首页仪表盘/首页仪表盘.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span>首页</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 014 4c0 1.5-.8 2.8-2 3.5V12a2 2 0 01-2 2h-1v2"/><circle cx="12" cy="22" r="2"/><circle cx="7" cy="20" r="2"/><circle cx="17" cy="20" r="2"/><path d="M12 6v2m-3 0a3 3 0 00-3 3v6"/></svg><span>AI智能测试</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14M7 3v3M17 3v3"/><rect x="3" y="10" width="18" height="4" rx="1"/></svg><span>API接口测试</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>UI自动化</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg><span>APP自动化</span></div>
+    <div class="nav-section">核心模块</div>
+    <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span>测试管理</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>配置中心</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>AI聊天室</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span>知识库</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>系统管理</span></div>
+  </div>
+  <div class="sidebar-user"><div class="sidebar-user-avatar">张</div><div><div class="sidebar-user-name">张三</div><div class="sidebar-user-role">管理员</div></div></div>
+</div>
+
+<!-- 主内容 -->
+<div class="content">
+  <div class="page-header">
+    <div>
+      <div class="page-header-breadcrumb"><a href="../../00-首页仪表盘/首页仪表盘.html">首页</a> / <a href="测试管理模块.html">测试管理</a> / 版本管理</div>
+      <h1>版本管理</h1>
+    </div>
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      新建版本
+    </button>
+  </div>
+
+  <!-- 子导航 -->
+  <div class="sub-nav">
+    <a class="sub-nav-item" href="测试管理模块.html">模块概览</a>
+    <a class="sub-nav-item" href="项目管理.html">项目管理</a>
+    <a class="sub-nav-item active" href="版本管理.html">版本管理</a>
+    <a class="sub-nav-item" href="成员管理.html">成员管理</a>
+    <a class="sub-nav-item" href="用例评审.html">用例评审</a>
+  </div>
+
+  <!-- 搜索过滤 -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="搜索版本号或项目..." oninput="filterVersions()">
+    </div>
+    <select class="filter-select" id="statusFilter" onchange="filterVersions()">
+      <option value="">全部状态</option>
+      <option value="已发布">已发布</option>
+      <option value="进行中">进行中</option>
+      <option value="已废弃">已废弃</option>
+    </select>
+    <span style="font-size:13px;color:var(--text-muted)" id="countInfo">共 6 个版本</span>
+  </div>
+
+  <!-- 版本列表 -->
+  <div class="version-list" id="versionList"></div>
+</div>
+
+<!-- 模态框 -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header"><h2>新建版本</h2><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>版本号</label><input type="text" placeholder="例: v2.2.0" id="verNumber"></div>
+      <div class="form-group"><label>关联项目</label>
+        <select id="verProject"><option value="AI-HUB智能测试平台">AI-HUB智能测试平台</option><option value="电商API测试套件">电商API测试套件</option><option value="移动端回归测试">移动端回归测试</option></select>
+      </div>
+      <div class="form-group"><label>状态</label>
+        <select id="verStatus"><option value="进行中">进行中</option><option value="已发布">已发布</option><option value="已废弃">已废弃</option></select>
+      </div>
+      <div class="form-group"><label>变更内容</label><textarea placeholder="请输入版本变更内容摘要..." id="verChangelog"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="addVersion()">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let versions = [
+    { ver:'v2.1.0', project:'AI-HUB智能测试平台', date:'2025-06-01', status:'已发布', changelog:'新增AI智能用例生成功能；优化接口测试执行引擎性能；修复已知Bug 12项' },
+    { ver:'v2.0.0', project:'AI-HUB智能测试平台', date:'2025-05-15', status:'已发布', changelog:'全新UI界面上线；引入拍立得暖色调设计系统；重构测试管理模块' },
+    { ver:'v1.3.0', project:'电商API测试套件', date:'2025-04-20', status:'已发布', changelog:'新增支付流程全链路测试；增加订单接口覆盖率至95%' },
+    { ver:'v1.2.0', project:'移动端回归测试', date:'2025-06-10', status:'进行中', changelog:'搭建iOS自动化测试框架；编写核心回归用例集（进行中）' },
+    { ver:'v1.1.0', project:'支付模块自动化', date:'2025-01-10', status:'已废弃', changelog:'因架构调整，该版本合并至电商API测试套件' },
+    { ver:'v1.0.0', project:'旧版兼容性测试', date:'2024-06-15', status:'已废弃', changelog:'初始版本，已完成主流浏览器兼容性测试覆盖' },
+  ];
+  function renderVersions(data){
+    const el=document.getElementById('versionList');
+    if(data.length===0){
+      el.innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><p>暂无匹配的版本</p></div>';
+      return;
+    }
+    const clsMap={'已发布':'released','进行中':'progress','已废弃':'obsolete'};
+    el.innerHTML=data.map(v=>\`
+      <div class="version-card" onclick="alert('查看版本详情: \${v.ver}\\n此为原型演示')">
+        <div class="version-tag \${clsMap[v.status]}">\${v.ver}</div>
+        <div class="version-body">
+          <div class="version-top">
+            <span class="version-number">\${v.ver}</span>
+            <span class="version-status \${clsMap[v.status]}">\${v.status}</span>
+            <span class="version-project">\${v.project}</span>
+          </div>
+          <div class="version-date">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            创建于 \${v.date}
+          </div>
+          <div class="version-changelog">\${v.changelog}</div>
+        </div>
+      </div>\`).join('');
+    document.getElementById('countInfo').textContent=\`共 \${data.length} 个版本\`;
+  }
+  function filterVersions(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    const s=document.getElementById('statusFilter').value;
+    const filtered=versions.filter(v=>(v.ver.toLowerCase().includes(q)||v.project.toLowerCase().includes(q))&&(!s||v.status===s));
+    renderVersions(filtered);
+  }
+  function openModal(){ document.getElementById('modal').classList.add('open'); }
+  function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+  function addVersion(){
+    const ver=document.getElementById('verNumber').value.trim();
+    const project=document.getElementById('verProject').value;
+    const status=document.getElementById('verStatus').value;
+    const changelog=document.getElementById('verChangelog').value.trim();
+    if(!ver){ alert('请输入版本号'); return; }
+    versions.push({ver,project,date:new Date().toISOString().slice(0,10),status,changelog:changelog||'暂无变更记录'});
+    filterVersions();
+    closeModal();
+    document.querySelectorAll('#modal input,#modal textarea').forEach(i=>i.value='');
+  }
+  filterVersions();
+</script>
+</body>
+</html>

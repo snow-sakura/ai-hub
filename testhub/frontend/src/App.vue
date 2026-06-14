@@ -17,6 +17,7 @@ import en from 'element-plus/es/locale/lang/en'
 const userStore = useUserStore()
 const appStore = useAppStore()
 
+// 根据 Element Plus 需要的 locale 配置
 const elementLocale = computed(() => {
   return appStore.language === 'zh-cn' ? zhCn : en
 })
@@ -28,7 +29,7 @@ onMounted(() => {
 
 <style>
 #app {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 
     'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

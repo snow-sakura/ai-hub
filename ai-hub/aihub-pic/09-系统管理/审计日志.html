@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审计日志 - AI-HUB</title>
+<style>
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--radius:8px;--radius-lg:12px;--font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;height:100vh;}
+.sidebar{width:220px;background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-header{padding:20px;border-bottom:var(--border);}
+.sidebar-header h1{font-size:18px;color:var(--primary);font-weight:700;letter-spacing:1px;}
+.sidebar-header p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.nav-tabs{list-style:none;padding:12px 0;}
+.nav-tabs li{padding:10px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s;border-left:3px solid transparent;}
+.nav-tabs li:hover{background:rgba(198,123,92,0.06);color:var(--text);}
+.nav-tabs li.active{background:rgba(198,123,92,0.1);color:var(--primary);border-left-color:var(--primary);font-weight:600;}
+.nav-tabs li svg{width:18px;height:18px;flex-shrink:0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.main-header{padding:16px 28px;border-bottom:var(--border);background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;}
+.main-header h2{font-size:18px;font-weight:600;}
+.breadcrumb{font-size:13px;color:var(--text-muted);}
+.breadcrumb span{color:var(--text-secondary);}
+.content{padding:24px 28px;overflow-y:auto;flex:1;}
+.card{background:var(--card-bg);border-radius:var(--radius-lg);border:var(--border);padding:24px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);display:flex;align-items:center;justify-content:space-between;}
+.form-group select,.form-group input{width:100%;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;transition:border-color .2s;}
+.form-group select:focus,.form-group input:focus{border-color:var(--primary);}
+.btn{padding:8px 20px;font-size:14px;font-family:var(--font);border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s;font-weight:500;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-light);}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-group{display:flex;gap:12px;justify-content:flex-end;margin-top:16px;}
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.filter-bar select{width:140px;padding:8px 12px;font-size:13px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;}
+.filter-bar input{width:200px;padding:8px 12px;font-size:13px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);outline:none;}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--primary);}
+.filter-bar .date-input{width:150px;}
+table{width:100%;border-collapse:collapse;}
+table th,table td{padding:10px 14px;text-align:left;font-size:14px;border-bottom:var(--border);}
+table th{color:var(--text-muted);font-weight:500;font-size:13px;background:rgba(246,240,231,0.3);white-space:nowrap;}
+table td{color:var(--text-secondary);}
+table tr:hover td{background:rgba(198,123,92,0.03);}
+table .log-detail{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-size:13px;}
+table .actions{display:flex;gap:4px;}
+table .actions button{padding:4px 10px;font-size:12px;border-radius:var(--radius);border:var(--border);background:transparent;cursor:pointer;color:var(--text-muted);transition:all .2s;}
+table .actions button:hover{border-color:var(--primary);color:var(--primary);}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:500;}
+.badge-create{background:rgba(107,158,107,0.1);color:#4a7a4a;}
+.badge-edit{background:rgba(70,130,180,0.1);color:#2c5f8a;}
+.badge-delete{background:rgba(192,57,43,0.1);color:#a0352a;}
+.badge-login{background:rgba(212,165,116,0.15);color:#b8894a;}
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;}
+.pagination button{padding:6px 12px;font-size:13px;border-radius:var(--radius);border:var(--border);background:var(--card-bg);cursor:pointer;color:var(--text-secondary);transition:all .2s;}
+.pagination button:hover{border-color:var(--primary);color:var(--primary);}
+.pagination button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.pagination .page-info{font-size:13px;color:var(--text-muted);}
+.content::-webkit-scrollbar{width:6px;}
+.content::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:3px;}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--card-bg);border-radius:var(--radius-lg);padding:28px;width:560px;box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+.modal h3{font-size:16px;margin-bottom:20px;}
+.detail-grid{display:grid;grid-template-columns:100px 1fr;gap:10px 16px;font-size:14px;}
+.detail-grid .label{color:var(--text-muted);font-weight:500;}
+.detail-grid .value{color:var(--text-secondary);word-break:break-all;}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>AI-HUB</h1>
+    <p>智能测试平台</p>
+  </div>
+  <ul class="nav-tabs">
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      用户管理
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      角色权限
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      系统设置
+    </li>
+    <li class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      审计日志
+    </li>
+  </ul>
+</div>
+
+<div class="main">
+  <div class="main-header">
+    <div>
+      <h2>审计日志</h2>
+      <div class="breadcrumb">系统管理 / <span>审计日志</span></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出日志
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="card">
+      <div class="card-title">
+        <span>操作日志</span>
+        <span style="font-size:13px;color:var(--text-muted);font-weight:400;">共 1,286 条记录</span>
+      </div>
+      <!-- 筛选 -->
+      <div class="filter-bar">
+        <input type="text" placeholder="2025-06-01 ~ 2025-06-14" class="date-input" value="2025-06-01 ~ 2025-06-14">
+        <select>
+          <option>全部操作类型</option>
+          <option>创建</option>
+          <option>编辑</option>
+          <option>删除</option>
+          <option>登录</option>
+        </select>
+        <select>
+          <option>全部模块</option>
+          <option>用户管理</option>
+          <option>AI智能测试</option>
+          <option>API接口测试</option>
+          <option>UI自动化</option>
+          <option>配置中心</option>
+          <option>系统管理</option>
+        </select>
+        <input type="text" placeholder="操作用户">
+        <button class="btn btn-outline" style="font-size:13px;padding:6px 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          搜索
+        </button>
+        <button class="btn btn-outline" style="font-size:13px;padding:6px 16px;">重置</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>用户</th>
+            <th>模块</th>
+            <th>操作类型</th>
+            <th>详情</th>
+            <th>IP 地址</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="white-space:nowrap;font-size:13px;">2025-06-14 10:30:25</td>
+            <td style="font-weight:500;">张明</td>
+            <td>用户管理</td>
+            <td><span class="badge badge-create">创建</span></td>
+            <td class="log-detail">新建用户：刘芳 (liufang@aihub.com)，角色：测试工程师</td>
+            <td style="font-size:13px;color:var(--text-muted);">192.168.1.100</td>
+            <td class="actions">
+              <button onclick="openDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td style="white-space:nowrap;font-size:13px;">2025-06-14 09:45:12</td>
+            <td style="font-weight:500;">李婷</td>
+            <td>AI智能测试</td>
+            <td><span class="badge badge-edit">编辑</span></td>
+            <td class="log-detail">编辑测试用例 ID: TC-2025-001，修改前置条件和测试步骤</td>
+            <td style="font-size:13px;color:var(--text-muted);">192.168.1.102</td>
+            <td class="actions">
+              <button onclick="openDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td style="white-space:nowrap;font-size:13px;">2025-06-14 09:20:05</td>
+            <td style="font-weight:500;">王强</td>
+            <td>API接口测试</td>
+            <td><span class="badge badge-create">创建</span></td>
+            <td class="log-detail">新建 API 请求：POST /api/v2/orders，添加了5个断言</td>
+            <td style="font-size:13px;color:var(--text-muted);">192.168.1.105</td>
+            <td class="actions">
+              <button onclick="openDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td style="white-space:nowrap;font-size:13px;">2025-06-14 08:55:30</td>
+            <td style="font-weight:500;">张明</td>
+            <td>系统管理</td>
+            <td><span class="badge badge-login">登录</span></td>
+            <td class="log-detail">用户登录系统 (IP: 192.168.1.100, 设备: Chrome/Windows)</td>
+            <td style="font-size:13px;color:var(--text-muted);">192.168.1.100</td>
+            <td class="actions">
+              <button onclick="openDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td style="white-space:nowrap;font-size:13px;">2025-06-13 17:30:18</td>
+            <td style="font-weight:500;">李婷</td>
+            <td>配置中心</td>
+            <td><span class="badge badge-edit">编辑</span></td>
+            <td class="log-detail">修改 AI 模型配置：切换模型为 GPT-4o，调整温度参数为 0.7</td>
+            <td style="font-size:13px;color:var(--text-muted);">192.168.1.102</td>
+            <td class="actions">
+              <button onclick="openDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td style="white-space:nowrap;font-size:13px;">2025-06-13 16:10:42</td>
+            <td style="font-weight:500;">陈雪</td>
+            <td>AI智能测试</td>
+            <td><span class="badge badge-delete">删除</span></td>
+            <td class="log-detail">删除测试用例 TC-2025-023：不再适用的旧版登录测试</td>
+            <td style="font-size:13px;color:var(--text-muted);">192.168.1.103</td>
+            <td class="actions">
+              <button onclick="openDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td style="white-space:nowrap;font-size:13px;">2025-06-13 14:22:36</td>
+            <td style="font-weight:500;">张明</td>
+            <td>角色权限</td>
+            <td><span class="badge badge-edit">编辑</span></td>
+            <td class="log-detail">修改角色「测试工程师」权限：新增UI自动化模块编辑权限</td>
+            <td style="font-size:13px;color:var(--text-muted);">192.168.1.100</td>
+            <td class="actions">
+              <button onclick="openDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td style="white-space:nowrap;font-size:13px;">2025-06-13 11:05:08</td>
+            <td style="font-weight:500;">李婷</td>
+            <td>知识库</td>
+            <td><span class="badge badge-create">创建</span></td>
+            <td class="log-detail">上传文档：性能测试方案.docx (3.2 MB) 至知识库「产品需求文档库」</td>
+            <td style="font-size:13px;color:var(--text-muted);">192.168.1.102</td>
+            <td class="actions">
+              <button onclick="openDetail()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 分页 -->
+      <div class="pagination">
+        <button>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="active">1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>4</button>
+        <button>5</button>
+        <span class="page-info">... 共 54 页</span>
+        <button>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 日志详情弹窗 -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <h3>日志详情</h3>
+    <div class="detail-grid">
+      <span class="label">时间</span>
+      <span class="value">2025-06-14 10:30:25</span>
+      <span class="label">操作用户</span>
+      <span class="value">张明 (zhangming@aihub.com)</span>
+      <span class="label">所属模块</span>
+      <span class="value">用户管理</span>
+      <span class="label">操作类型</span>
+      <span class="value"><span class="badge badge-create">创建</span></span>
+      <span class="label">操作详情</span>
+      <span class="value">新建用户：刘芳 (liufang@aihub.com)，角色：测试工程师，所属部门：测试部</span>
+      <span class="label">IP 地址</span>
+      <span class="value">192.168.1.100</span>
+      <span class="label">用户代理</span>
+      <span class="value" style="font-size:12px;color:var(--text-muted);">Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/125.0.0.0</span>
+      <span class="label">请求 ID</span>
+      <span class="value" style="font-size:12px;color:var(--text-muted);">req-a7f3b2c8-9e1d-4f5a-8c3b-6d7e2f1a0b4c</span>
+    </div>
+    <div class="btn-group" style="justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeDetail()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openDetail(){document.getElementById('detailModal').classList.add('show');}
+function closeDetail(){document.getElementById('detailModal').classList.remove('show');}
+document.getElementById('detailModal').addEventListener('click',function(e){if(e.target===this)closeDetail();});
+</script>
+</body>
+</html>

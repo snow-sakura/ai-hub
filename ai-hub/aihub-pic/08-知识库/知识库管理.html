@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库管理 - AI-HUB</title>
+<style>
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--radius:8px;--radius-lg:12px;--font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;height:100vh;}
+/* Left sidebar - library list */
+.lib-sidebar{width:240px;background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.lib-sidebar-header{padding:16px 18px;border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;}
+.lib-sidebar-header h2{font-size:16px;font-weight:600;}
+.lib-list{flex:1;overflow-y:auto;padding:8px 0;}
+.lib-item{padding:12px 18px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;}
+.lib-item:hover{background:rgba(198,123,92,0.04);}
+.lib-item.active{background:rgba(198,123,92,0.08);border-left-color:var(--primary);}
+.lib-item .lib-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.lib-item .lib-meta{font-size:12px;color:var(--text-muted);}
+.btn-icon{background:transparent;border:var(--border);border-radius:var(--radius);padding:6px 8px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;transition:all .2s;}
+.btn-icon:hover{background:rgba(198,123,92,0.08);color:var(--primary);}
+/* Main content */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.main-header{padding:16px 28px;border-bottom:var(--border);background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;}
+.main-header-left h2{font-size:18px;font-weight:600;}
+.main-header-left .subtitle{font-size:13px;color:var(--text-muted);}
+.main-header-actions{display:flex;gap:8px;}
+.content{padding:24px 28px;overflow-y:auto;flex:1;}
+.card{background:var(--card-bg);border-radius:var(--radius-lg);border:var(--border);padding:24px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);display:flex;align-items:center;justify-content:space-between;}
+.form-group select,.form-group input{width:100%;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;transition:border-color .2s;}
+.btn{padding:8px 20px;font-size:14px;font-family:var(--font);border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s;font-weight:500;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-light);}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-group{display:flex;gap:12px;justify-content:flex-end;margin-top:16px;}
+.search-bar{display:flex;gap:10px;margin-bottom:16px;}
+.search-bar input{flex:1;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);outline:none;}
+.search-bar input:focus{border-color:var(--primary);}
+table{width:100%;border-collapse:collapse;}
+table th,table td{padding:10px 14px;text-align:left;font-size:14px;border-bottom:var(--border);}
+table th{color:var(--text-muted);font-weight:500;font-size:13px;background:rgba(246,240,231,0.3);}
+table td{color:var(--text-secondary);}
+table tr:hover td{background:rgba(198,123,92,0.03);}
+table .actions{display:flex;gap:4px;}
+table .actions button{padding:4px 10px;font-size:12px;border-radius:var(--radius);border:var(--border);background:transparent;cursor:pointer;color:var(--text-muted);transition:all .2s;}
+table .actions button:hover{border-color:var(--primary);color:var(--primary);}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:500;}
+.badge-green{background:rgba(107,158,107,0.1);color:#4a7a4a;}
+.badge-yellow{background:rgba(212,165,116,0.15);color:#b8894a;}
+.badge-red{background:rgba(192,57,43,0.1);color:#a0352a;}
+.badge-blue{background:rgba(70,130,180,0.1);color:#2c5f8a;}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+.stat-card{background:var(--card-bg);border:var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:14px;}
+.stat-card .stat-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.stat-card .stat-info .num{font-size:22px;font-weight:700;color:var(--text);}
+.stat-card .stat-info .label{font-size:13px;color:var(--text-muted);}
+.content::-webkit-scrollbar,.lib-list::-webkit-scrollbar{width:6px;}
+.content::-webkit-scrollbar-thumb,.lib-list::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:3px;}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--card-bg);border-radius:var(--radius-lg);padding:28px;width:480px;box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+.modal h3{font-size:16px;margin-bottom:20px;}
+</style>
+</head>
+<body>
+<div class="lib-sidebar">
+  <div class="lib-sidebar-header">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="vertical-align:middle;margin-right:6px;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      知识库列表
+    </h2>
+    <button class="btn-icon" title="新建知识库">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+  <div class="lib-list">
+    <div class="lib-item active">
+      <div class="lib-name">产品需求文档库</div>
+      <div class="lib-meta">24 个文档 · 已索引</div>
+    </div>
+    <div class="lib-item">
+      <div class="lib-name">API 接口文档库</div>
+      <div class="lib-meta">18 个文档 · 已索引</div>
+    </div>
+    <div class="lib-item">
+      <div class="lib-name">测试用例库</div>
+      <div class="lib-meta">156 个文档 · 已索引</div>
+    </div>
+    <div class="lib-item">
+      <div class="lib-name">技术规范文档</div>
+      <div class="lib-meta">12 个文档 · 已索引</div>
+    </div>
+    <div class="lib-item">
+      <div class="lib-name">项目培训资料</div>
+      <div class="lib-meta">8 个文档 · 索引中</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="main-header">
+    <div class="main-header-left">
+      <h2>知识库管理</h2>
+      <div class="subtitle">AI聊天室 / <span>知识库管理</span></div>
+    </div>
+    <div class="main-header-actions">
+      <button class="btn btn-outline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="7 3 7 12 12 15 17 12 17 3"/><path d="M7 3h10"/><path d="M7 12H3"/><path d="M17 12h4"/><path d="M3 15l4 2"/><path d="M17 14l4-2"/></svg>
+        重新索引
+      </button>
+      <button class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        上传文档
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 知识库统计 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(198,123,92,0.1);">📄</div>
+        <div class="stat-info"><div class="num">218</div><div class="label">文档总数</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(212,165,116,0.1);">🧩</div>
+        <div class="stat-info"><div class="num">3,246</div><div class="label">分段数</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(107,158,107,0.1);">💾</div>
+        <div class="stat-info"><div class="num">856 MB</div><div class="label">已用存储</div></div>
+      </div>
+    </div>
+
+    <!-- 文档列表 -->
+    <div class="card">
+      <div class="card-title">
+        <span>文档列表 - 产品需求文档库</span>
+        <div style="display:flex;gap:8px;">
+          <select style="padding:6px 10px;font-size:13px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;width:120px;">
+            <option>全部状态</option>
+            <option>已索引</option>
+            <option>索引中</option>
+            <option>失败</option>
+          </select>
+        </div>
+      </div>
+      <div class="search-bar">
+        <input type="text" placeholder="搜索文档名称...">
+        <select style="padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;width:140px;">
+          <option>全部类型</option>
+          <option>PDF</option>
+          <option>Word</option>
+          <option>Markdown</option>
+          <option>代码</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>文档名称</th>
+            <th>类型</th>
+            <th>大小</th>
+            <th>上传时间</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:500;">AI-HUB 平台需求规格说明书 v2.3</td>
+            <td><span class="badge badge-blue">PDF</span></td>
+            <td>2.4 MB</td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-12 10:30</td>
+            <td><span class="badge badge-green">已索引</span></td>
+            <td class="actions">
+              <button>查看</button>
+              <button>删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">用户模块需求文档</td>
+            <td><span class="badge badge-blue">Word</span></td>
+            <td>1.8 MB</td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-11 15:20</td>
+            <td><span class="badge badge-green">已索引</span></td>
+            <td class="actions">
+              <button>查看</button>
+              <button>删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">API 接口设计文档</td>
+            <td><span class="badge badge-blue">Markdown</span></td>
+            <td>856 KB</td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-10 09:00</td>
+            <td><span class="badge badge-green">已索引</span></td>
+            <td class="actions">
+              <button>查看</button>
+              <button>删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">性能测试方案.docx</td>
+            <td><span class="badge badge-blue">Word</span></td>
+            <td>3.2 MB</td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-09 14:15</td>
+            <td><span class="badge badge-yellow">索引中</span></td>
+            <td class="actions">
+              <button>查看</button>
+              <button>删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">automation_framework.py</td>
+            <td><span class="badge" style="background:rgba(198,123,92,0.1);color:var(--primary);">代码</span></td>
+            <td>128 KB</td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-08 11:40</td>
+            <td><span class="badge badge-green">已索引</span></td>
+            <td class="actions">
+              <button>查看</button>
+              <button>删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">安全测试报告_2025Q2.pdf</td>
+            <td><span class="badge badge-blue">PDF</span></td>
+            <td>5.6 MB</td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-07 16:00</td>
+            <td><span class="badge badge-red">失败</span></td>
+            <td class="actions">
+              <button>查看</button>
+              <button>删除</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

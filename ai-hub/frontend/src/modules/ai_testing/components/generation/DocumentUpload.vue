@@ -45,6 +45,7 @@ import { uploadDocument } from '@/modules/ai_testing/api/generation'
 
 const emit = defineEmits<{
   parsed: [{ text: string; file_name: string }]
+  error: [message: string]
 }>()
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -78,10 +79,11 @@ async function handleFile(file: File) {
       uploadedFile.value = data.file_name
       emit('parsed', { text: data.text, file_name: data.file_name })
     }
-  } catch {
-    // 解析失败时保留原文件名
+  } catch (e: any) {
+    console.error('文档上传解析失败:', e)
+    const errMsg = e?.response?.data?.message || e?.response?.data?.detail || e?.message || '文档解析失败'
     uploadedFile.value = file.name
-    emit('parsed', { text: '', file_name: file.name })
+    emit('error', errMsg)
   } finally {
     uploading.value = false
   }

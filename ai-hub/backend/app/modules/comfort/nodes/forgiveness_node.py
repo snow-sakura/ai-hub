@@ -1,6 +1,6 @@
 """原谅值计算节点 - 基于情绪分析结果更新原谅值"""
 
-from app.shared.agent.state import AgentState
+from app.common.agent.state import AgentState
 from app.modules.comfort.domain import EmotionResult
 from app.modules.comfort.forgiveness_engine import calculate_forgiveness
 

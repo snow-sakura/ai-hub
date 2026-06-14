@@ -69,12 +69,33 @@
         </n-card>
       </div>
 
-      <!-- AI 评审 → 使用 ReviewResultCard 组件 -->
+      <!-- AI 评审（可折叠）→ 使用 ReviewResultCard 组件 -->
       <div v-if="reviewResult || isStageReached('review')" class="stage-card">
-        <ReviewResultCard
-          :review-result="reviewResult"
-          @regenerate="(s) => $emit('regenerate', s)"
-        />
+        <n-card size="small" :segmented="{ content: true }">
+          <template #header>
+            <div class="card-header" @click="toggleCollapse('review')">
+              <div class="card-header-left">
+                <span class="collapse-icon">{{ collapsed.review ? '▶' : '▼' }}</span>
+                <span class="card-title">⭐ AI 评审</span>
+              </div>
+              <div class="card-header-right">
+                <template v-if="reviewResult">
+                  <n-tag :type="reviewResult.review_passed ? 'success' : 'warning'" size="tiny" round>
+                    {{ reviewResult.overall_score }}/10 · {{ reviewResult.review_passed ? '通过' : '需修订' }}
+                  </n-tag>
+                </template>
+                <n-tag v-else-if="isStageActive('review')" type="info" size="tiny" round>评审中...</n-tag>
+                <n-tag v-else type="default" size="tiny" round>等待中</n-tag>
+              </div>
+            </div>
+          </template>
+          <div v-if="!collapsed.review">
+            <ReviewResultCard
+              :review-result="reviewResult"
+              @regenerate="(s) => $emit('regenerate', s)"
+            />
+          </div>
+        </n-card>
       </div>
 
       <div v-if="stageContents.revise || isStageReached('revise')" class="stage-card">

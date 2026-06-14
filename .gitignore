@@ -7,6 +7,7 @@ ai-hub/backend/app.db
 ai-hub/backend/chroma_data/
 ai-hub/backend/uploads/
 ai-hub/backend/workspace/
+testhub/.venv/
 
 # Node
 ai-hub/frontend/node_modules/
@@ -29,6 +30,9 @@ ai-hub/frontend/src/auto-imports.d.ts
 .env
 *.local
 
+# Vite cache
+.vite/
+
 # Data (runtime generated)
 ai-hub/backend/data/
 
@@ -38,3 +42,7 @@ ai-hub/frontend/src/components.d.ts
 # PNG screenshots
 *.png
 ai-hub/frontend/tsconfig.tsbuildinfo
+
+# Testhub runtime
+testhub/logs/
+testhub/media/

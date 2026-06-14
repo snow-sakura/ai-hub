@@ -1,6 +1,6 @@
 """Step 4: 用例修订节点 - 根据评审反馈修订测试用例"""
 
-from app.shared.core.llm_factory import LLMFactory
+from app.common.core.llm_factory import LLMFactory
 from app.modules.ai_testing.prompts import revise_prompt
 
 
@@ -9,6 +9,7 @@ async def revise_node(state: dict) -> dict:
   llm = LLMFactory.create(
     state.get("model_provider", "deepseek"),
     state.get("model_name", ""),
+    reasoning_effort="high",
     api_key=state.get("model_api_key") or None,
   )
 
@@ -38,6 +39,13 @@ async def revise_node(state: dict) -> dict:
   if not suggestions_text:
     suggestions_text = "- 无改进建议\n"
 
+  # 自定义建议提示（用于提示 LLM 优先参考用户选中的建议）
+  custom_suggestions_hint = (
+    "本次修订使用用户选中的自定义建议，优先参考自定义建议。"
+    if custom_suggestions
+    else "本次修订使用 LLM 生成的改进建议，可选择性采纳。"
+  )
+
   chain = revise_prompt | llm
   result = await chain.ainvoke({
     "requirement_text": state["requirement_text"],
@@ -45,6 +53,7 @@ async def revise_node(state: dict) -> dict:
     "review_score": review_result.get("overall_score", 5),
     "issues": issues_text,
     "suggestions": suggestions_text,
+    "custom_suggestions_hint": custom_suggestions_hint,
   })
 
   return {"final_test_cases": result.content}

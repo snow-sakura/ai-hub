@@ -196,3 +196,115 @@ body {
 :focus:not(:focus-visible) {
   outline: none;
 }
+
+/* ── 响应式工具类 ────────────────────────────────────────── */
+/* 在桌面端隐藏 */
+.desktop-only {
+  display: none;
+}
+@media (min-width: 769px) {
+  .desktop-only {
+    display: revert;
+  }
+}
+/* 在移动端隐藏 */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+}
+/* 移动端表格外容器——支持水平滚动 */
+.table-mobile-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-mobile-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.table-mobile-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.08);
+  border-radius: 2px;
+}
+
+/* 通用页面容器（桌面端居中，移动端缩窄边距） */
+.page-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+@media (max-width: 768px) {
+  .page-wrap {
+    padding: 20px 12px 48px;
+  }
+}
+
+/* 通用统计行（flex 卡片，移动端换行） */
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 768px) {
+  .stats-row {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stats-row > * {
+    flex: 1 1 calc(50% - 10px);
+    min-width: 0;
+  }
+}
+
+/* 通用筛选栏 */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .filter-bar > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+/* 通用页面 header */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+@media (max-width: 768px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary, #3D2E1F);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.page-count {
+  font-size: 13px;
+  color: var(--text-secondary, #7A6855);
+}
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 18px;
+  }
+}

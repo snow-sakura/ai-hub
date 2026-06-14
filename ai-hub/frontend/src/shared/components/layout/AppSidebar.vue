@@ -15,6 +15,7 @@
       <n-button size="small" type="primary" @click="createNew" block>
         + 新对话
       </n-button>
+      <div class="sidebar-model-info">✦ AI 模型就绪</div>
     </div>
     <ConversationList />
   </aside>
@@ -49,7 +50,7 @@ function goHome() {
 }
 
 .sidebar-header {
-  padding: 16px;
+  padding: 14px 16px 12px;
   border-bottom: 1px solid rgba(180, 150, 120, 0.1);
 }
 
@@ -57,7 +58,7 @@ function goHome() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .brand-title {
@@ -69,6 +70,10 @@ function goHome() {
   align-items: center;
   gap: 8px;
   transition: opacity 0.15s ease;
+  background: linear-gradient(135deg, var(--accent), var(--warm));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .brand-title:hover {
@@ -77,5 +82,13 @@ function goHome() {
 
 .brand-icon {
   font-size: 18px;
+}
+
+.sidebar-model-info {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 10px;
+  letter-spacing: 0.3px;
 }
 </style>

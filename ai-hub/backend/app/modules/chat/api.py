@@ -4,15 +4,15 @@ import uuid
 import os
 import stat
 from pathlib import Path
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
 
 from app.modules.chat.schemas import ChatRequest
-from app.shared.api.schemas.common import ApiResponse
+from app.common.api.schemas.common import ApiResponse
 from app.modules.chat.service import ChatService
 from app.config import get_settings
-from app.shared.core.logging import get_logger
-from app.shared.utils.file_validator import (
+from app.common.logs import get_logger
+from app.common.utils.file_validator import (
   validate_file_magic,
   has_path_traversal,
   safe_filename,
@@ -42,20 +42,22 @@ ALLOWED_EXTENSIONS = {
 
 
 @router.post("/send")
-async def send_chat(request: ChatRequest):
+async def send_chat(
+    request: Request,
+    body: ChatRequest):
   """发送消息并流式返回 AI 响应（SSE）"""
   return StreamingResponse(
     chat_service.stream_chat(
-      message=request.message,
-      conversation_id=request.conversation_id,
-      model_provider=request.model_provider,
-      model_name=request.model_name,
-      knowledge_doc_ids=request.knowledge_doc_ids,
-      attachments=request.attachments,
-      comfort_mode=request.comfort_mode,
-      reasoning_effort=request.reasoning_effort,
-      web_search_enabled=request.web_search_enabled,
-      deep_thinking_enabled=request.deep_thinking_enabled,
+      message=body.message,
+      conversation_id=body.conversation_id,
+      model_provider=body.model_provider,
+      model_name=body.model_name,
+      knowledge_doc_ids=body.knowledge_doc_ids,
+      attachments=body.attachments,
+      comfort_mode=body.comfort_mode,
+      reasoning_effort=body.reasoning_effort,
+      web_search_enabled=body.web_search_enabled,
+      deep_thinking_enabled=body.deep_thinking_enabled,
     ),
     media_type="text/event-stream",
     headers={
@@ -67,7 +69,9 @@ async def send_chat(request: ChatRequest):
 
 
 @router.post("/upload")
-async def upload_chat_attachment(file: UploadFile = File(...)) -> ApiResponse[dict]:
+async def upload_chat_attachment(
+    request: Request,
+    file: UploadFile = File(...)) -> ApiResponse[dict]:
   """上传聊天附件，返回 file_id 供后续发送消息时引用
 
   安全校验：
@@ -95,7 +99,15 @@ async def upload_chat_attachment(file: UploadFile = File(...)) -> ApiResponse[di
       detail=f"不支持的文件类型: {ext}。允许的格式: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
     )
 
-  # 4. 读取文件内容并检查大小
+  # 4. Content-Length 预检（快速拒绝超大文件）
+  content_length = file.size
+  if content_length is not None and content_length > MAX_FILE_SIZE:
+    raise HTTPException(
+      status_code=413,
+      detail=f"文件过大（{content_length / 1024 / 1024:.1f}MB）。最大允许 {MAX_FILE_SIZE / 1024 / 1024}MB"
+    )
+
+  # 5. 读取文件内容并检查大小
   content = await file.read()
   if len(content) > MAX_FILE_SIZE:
     raise HTTPException(
@@ -103,18 +115,22 @@ async def upload_chat_attachment(file: UploadFile = File(...)) -> ApiResponse[di
       detail=f"文件过大（{len(content) / 1024 / 1024:.1f}MB）。最大允许 {MAX_FILE_SIZE / 1024 / 1024}MB"
     )
 
-  # 5. 文件魔数验证
+  # 6. 文件魔数验证
   if not validate_file_magic(content, ext):
     raise HTTPException(
       status_code=400,
       detail="文件内容与扩展名不符，请检查文件格式"
     )
 
-  # 6. 检查 MIME 类型（辅助检查）
-  if file.content_type and file.content_type not in ALLOWED_IMAGE_TYPES | ALLOWED_DOCUMENT_TYPES:
-    logger.warning("未知的 MIME 类型: %s (文件: %s)", file.content_type, raw_name)
+  # 7. 检查 MIME 类型（严格校验）
+  mime_type = file.content_type or "application/octet-stream"
+  if mime_type not in ALLOWED_IMAGE_TYPES | ALLOWED_DOCUMENT_TYPES:
+    raise HTTPException(
+      status_code=400,
+      detail=f"不支持的 MIME 类型: {mime_type}"
+    )
 
-  # 7. 保存文件
+  # 8. 保存文件
   settings = get_settings()
   upload_dir = Path(settings.upload_dir) / "chat_attachments"
   upload_dir.mkdir(parents=True, exist_ok=True)

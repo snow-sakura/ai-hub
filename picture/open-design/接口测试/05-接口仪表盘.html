@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API数据看板 · AI-HUB 智能工作台</title>
+<style>
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --info: #5B8DEF; --radius: 8px;
+  --font: -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --font-mono: ui-monospace,'SF Mono','Fira Code','Consolas',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* 侧栏 */
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+
+/* 主内容 */
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;height:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px;flex:1}
+
+/* 页面头部 */
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-0.02em}
+.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light);box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:var(--border)}
+.btn-secondary:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid rgba(180,150,120,0.15)}
+.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}
+
+/* 卡片 */
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:16px 20px}
+
+/* 统计卡片行 */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--card-bg);border:var(--border);border-radius:12px;padding:16px 18px;transition:all 0.2s}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.stat-label{font-size:12px;color:var(--text-muted);margin-bottom:6px}
+.stat-value{font-size:22px;font-weight:700;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.stat-trend{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:3px}
+.trend-up{color:var(--success)}
+.trend-down{color:var(--danger)}
+
+/* 图表行 */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.chart-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.chart-title .period{font-size:11px;color:var(--text-muted);font-weight:400}
+
+/* 柱状图(纵向) */
+.bar-chart-v{display:flex;align-items:flex-end;gap:8px;height:150px;padding:4px 8px}
+.bar-v-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
+.bar-v-track{width:100%;max-width:32px;border-radius:4px 4px 0 0;min-height:4px;position:relative;transition:height 0.5s ease}
+.bar-v-label{font-size:10px;color:var(--text-muted);margin-top:6px;white-space:nowrap}
+.bar-v-value{font-size:9px;color:var(--text-muted);margin-bottom:3px}
+
+/* 环形图 */
+.pie-wrap{display:flex;align-items:center;gap:24px}
+.pie-ring{width:100px;height:100px;border-radius:50%;position:relative;flex-shrink:0}
+.pie-ring::after{content:'';position:absolute;top:50%;left:50%;width:56px;height:56px;background:var(--card-bg);border-radius:50%;transform:translate(-50%,-50%)}
+.pie-legend{display:flex;flex-direction:column;gap:6px;flex:1}
+.pie-item{display:flex;align-items:center;gap:6px}
+.pie-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.pie-label{font-size:12px;color:var(--text-secondary)}
+.pie-count{font-size:12px;font-weight:600;color:var(--text);margin-left:auto}
+.pie-pct{font-size:10px;color:var(--text-muted);min-width:30px;text-align:right}
+
+/* 横向柱状图 */
+.hbar-chart{display:flex;flex-direction:column;gap:8px}
+.hbar-item{display:flex;align-items:center;gap:10px}
+.hbar-label{width:56px;font-size:12px;color:var(--text-secondary);text-align:right;flex-shrink:0}
+.hbar-track{flex:1;height:18px;background:rgba(180,150,120,0.08);border-radius:4px;overflow:hidden}
+.hbar-fill{height:100%;border-radius:4px;width:0;transition:width 0.5s ease}
+.hbar-value{width:40px;font-size:12px;font-weight:600;color:var(--text);text-align:right}
+
+/* 表格 */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);white-space:nowrap;background:var(--sidebar-bg);font-size:12px}
+td{padding:10px 12px;border-bottom:var(--border);color:var(--text)}
+tr:nth-child(even) td{background:rgba(180,150,120,0.03)}
+tr:hover td{background:var(--primary-bg)}
+.text-muted{color:var(--text-muted)}
+
+/* 标签 */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag-get{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-post{background:rgba(212,165,116,0.12);color:#B8860B}
+.tag-put{background:rgba(91,141,239,0.12);color:var(--info)}
+.tag-delete{background:rgba(212,116,92,0.12);color:var(--danger)}
+.tag-success{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-warning{background:rgba(212,165,116,0.12);color:#B8860B}
+.tag-error{background:rgba(212,116,92,0.12);color:var(--danger)}
+
+/* 方法标签（内联表格） */
+.method-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;color:#fff;min-width:32px;text-align:center}
+
+/* 动画 */
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:10px;padding:12px 20px;box-shadow:0 8px 30px rgba(30,20,10,0.12);display:flex;align-items:center;gap:10px;font-size:13px;animation:slideIn 0.25s ease;max-width:360px}
+.toast-success{border-left:4px solid var(--success)}
+.toast-info{border-left:4px solid var(--info)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* 响应式 */
+@media(max-width:1100px){
+  .stats-grid{grid-template-columns:repeat(3,1fr)}
+  .charts-row{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .sidebar{width:60px}
+  .sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}
+  .sidebar-logo span{display:none}
+  .menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}
+  .sidebar-logo{padding:14px 0;justify-content:center}
+  .menu-item{justify-content:center;padding:9px 0}
+  .main{margin-left:60px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr}
+  .content{padding:16px 12px}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">🔌</div><span>接口测试</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">接口测试</div>
+    <a class="menu-item" href="51-接口测试模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item active" href="05-接口仪表盘.html"><span class="icon">📊</span><span>数据看板</span></a>
+    <a class="menu-item" href="06-接口管理.html"><span class="icon">🔗</span><span>接口管理</span></a>
+    <a class="menu-item" href="07-接口自动化.html"><span class="icon">⚡</span><span>自动化测试</span></a>
+    <a class="menu-item" href="08-接口环境管理.html"><span class="icon">🌐</span><span>环境管理</span></a>
+    <a class="menu-item" href="09-接口请求历史.html"><span class="icon">📜</span><span>请求历史</span></a>
+    <a class="menu-item" href="10-Mock服务.html"><span class="icon">🎭</span><span>Mock服务</span></a>
+    <a class="menu-item" href="11-接口定时任务.html"><span class="icon">⏰</span><span>定时任务</span></a>
+    <a class="menu-item" href="12-接口通知.html"><span class="icon">🔔</span><span>通知配置</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<!-- 主内容 -->
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">接口测试 / <span>数据看板</span></div>
+    <div class="topbar-right">
+      <button class="topbar-btn" onclick="showToast('页面已刷新','info')" title="刷新">⟳</button>
+      <button class="topbar-btn" onclick="showToast('暂无新通知','info')" title="通知">🔔</button>
+      <div class="avatar-sm">张</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- 页面头部 -->
+    <div class="page-header fade-in">
+      <div>
+        <h1 class="page-title">API 数据看板</h1>
+        <p class="page-sub">实时监控 API 测试状态与质量指标</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="showToast('数据已刷新','success')">🔄 刷新数据</button>
+        <a href="06-接口管理.html" class="btn btn-primary">📋 接口管理</a>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-grid fade-in">
+      <div class="stat-card">
+        <div class="stat-label">📁 接口总数</div>
+        <div class="stat-value" style="color:var(--primary)">342</div>
+        <div class="stat-trend trend-up">↑ 12.5% <span style="color:var(--text-muted);font-weight:400">较上月</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🔄 总执行次数</div>
+        <div class="stat-value" style="color:var(--text)">1,256</div>
+        <div class="stat-trend trend-up">↑ 8.3% <span style="color:var(--text-muted);font-weight:400">较上月</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">✅ 通过率</div>
+        <div class="stat-value" style="color:var(--success)">87.3%</div>
+        <div class="stat-trend trend-up">↑ 2.1% <span style="color:var(--text-muted);font-weight:400">较上月</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">❌ 失败次数</div>
+        <div class="stat-value" style="color:var(--danger)">28</div>
+        <div class="stat-trend trend-down">↑ 5 <span style="color:var(--text-muted);font-weight:400">较上周</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">⚡ 平均响应</div>
+        <div class="stat-value" style="color:var(--accent)">235ms</div>
+        <div class="stat-trend trend-up">↓ 12ms <span style="color:var(--text-muted);font-weight:400">较昨日</span></div>
+      </div>
+    </div>
+
+    <!-- 图表行 -->
+    <div class="charts-row fade-in">
+
+      <!-- 请求趋势 -->
+      <div class="card">
+        <div class="card-header">📈 请求趋势（近7天）</div>
+        <div class="card-body">
+          <div class="bar-chart-v" id="trendChart">
+            <div class="bar-v-wrapper"><div class="bar-v-value">42</div><div class="bar-v-track" style="height:60%;background:linear-gradient(to top,#C67B5C,#D49472)"></div><div class="bar-v-label">周一</div></div>
+            <div class="bar-v-wrapper"><div class="bar-v-value">56</div><div class="bar-v-track" style="height:80%;background:linear-gradient(to top,#C67B5C,#D49472)"></div><div class="bar-v-label">周二</div></div>
+            <div class="bar-v-wrapper"><div class="bar-v-value">38</div><div class="bar-v-track" style="height:54%;background:linear-gradient(to top,#C67B5C,#D49472)"></div><div class="bar-v-label">周三</div></div>
+            <div class="bar-v-wrapper"><div class="bar-v-value">65</div><div class="bar-v-track" style="height:93%;background:linear-gradient(to top,#C67B5C,#D49472)"></div><div class="bar-v-label">周四</div></div>
+            <div class="bar-v-wrapper"><div class="bar-v-value">48</div><div class="bar-v-track" style="height:69%;background:linear-gradient(to top,#C67B5C,#D49472)"></div><div class="bar-v-label">周五</div></div>
+            <div class="bar-v-wrapper"><div class="bar-v-value">70</div><div class="bar-v-track" style="height:100%;background:linear-gradient(to top,#C67B5C,#D49472)"></div><div class="bar-v-label">周六</div></div>
+            <div class="bar-v-wrapper"><div class="bar-v-value">52</div><div class="bar-v-track" style="height:74%;background:linear-gradient(to top,#C67B5C,#D49472)"></div><div class="bar-v-label">周日</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 方法分布 -->
+      <div class="card">
+        <div class="card-header">🎯 方法分布</div>
+        <div class="card-body">
+          <div class="pie-wrap">
+            <div class="pie-ring" id="methodPie"></div>
+            <div class="pie-legend">
+              <div class="pie-item"><span class="pie-dot" style="background:#7BA87D"></span><span class="pie-label">GET</span><span class="pie-count">156</span><span class="pie-pct">45.6%</span></div>
+              <div class="pie-item"><span class="pie-dot" style="background:#D4A574"></span><span class="pie-label">POST</span><span class="pie-count">98</span><span class="pie-pct">28.7%</span></div>
+              <div class="pie-item"><span class="pie-dot" style="background:#5B8DEF"></span><span class="pie-label">PUT</span><span class="pie-count">52</span><span class="pie-pct">15.2%</span></div>
+              <div class="pie-item"><span class="pie-dot" style="background:#D4745C"></span><span class="pie-label">DELETE</span><span class="pie-count">36</span><span class="pie-pct">10.5%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 响应时间分布 -->
+      <div class="card">
+        <div class="card-header">⚡ 响应时间分布</div>
+        <div class="card-body">
+          <div class="hbar-chart" id="respChart">
+            <div class="hbar-item"><span class="hbar-label">&lt;100ms</span><div class="hbar-track"><div class="hbar-fill" style="background:linear-gradient(to right,#7BA87D,#9CC49E)" data-w="45"></div></div><span class="hbar-value">45%</span></div>
+            <div class="hbar-item"><span class="hbar-label">100-300ms</span><div class="hbar-track"><div class="hbar-fill" style="background:linear-gradient(to right,#9CC49E,#C67B5C)" data-w="30"></div></div><span class="hbar-value">30%</span></div>
+            <div class="hbar-item"><span class="hbar-label">300-500ms</span><div class="hbar-track"><div class="hbar-fill" style="background:linear-gradient(to right,#C67B5C,#D4A574)" data-w="14"></div></div><span class="hbar-value">14%</span></div>
+            <div class="hbar-item"><span class="hbar-label">500-1000ms</span><div class="hbar-track"><div class="hbar-fill" style="background:linear-gradient(to right,#D4A574,#D4745C)" data-w="8"></div></div><span class="hbar-value">8%</span></div>
+            <div class="hbar-item"><span class="hbar-label">&gt;1s</span><div class="hbar-track"><div class="hbar-fill" style="background:#D4745C" data-w="3"></div></div><span class="hbar-value">3%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 项目统计 -->
+      <div class="card">
+        <div class="card-header">📊 项目统计</div>
+        <div class="card-body" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>项目名</th><th>接口数</th><th>成功率</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr><td>电商平台</td><td>128</td><td style="color:var(--success);font-weight:600">92.5%</td><td><span class="tag tag-get">正常</span></td></tr>
+                <tr><td>金融风控系统</td><td>86</td><td style="color:var(--success);font-weight:600">95.8%</td><td><span class="tag tag-get">正常</span></td></tr>
+                <tr><td>移动端网关</td><td>58</td><td style="color:#B8860B;font-weight:600">78.4%</td><td><span class="tag tag-warning">告警</span></td></tr>
+                <tr><td>内部管理系统</td><td>42</td><td style="color:var(--success);font-weight:600">97.6%</td><td><span class="tag tag-get">正常</span></td></tr>
+                <tr><td>数据分析平台</td><td>28</td><td style="color:var(--danger);font-weight:600">65.2%</td><td><span class="tag tag-error">异常</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 最近执行记录 -->
+    <div class="card fade-in">
+      <div class="card-header">🕐 最近执行记录 <span style="font-size:12px;font-weight:400;color:var(--text-muted)">最新 5 条</span></div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>执行时间</th><th>方法</th><th>URL</th><th>状态码</th><th>耗时</th></tr></thead>
+            <tbody>
+              <tr><td class="text-muted">2026-06-12 14:28:32</td><td><span class="method-tag" style="background:#7BA87D">GET</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/orders/list</td><td><span class="tag tag-get">200</span></td><td>128ms</td></tr>
+              <tr><td class="text-muted">2026-06-12 14:25:17</td><td><span class="method-tag" style="background:#D4A574">POST</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/orders/create</td><td><span class="tag tag-get">201</span></td><td>342ms</td></tr>
+              <tr><td class="text-muted">2026-06-12 14:20:05</td><td><span class="method-tag" style="background:#5B8DEF">PUT</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/users/profile</td><td><span class="tag tag-get">200</span></td><td>95ms</td></tr>
+              <tr><td class="text-muted">2026-06-12 14:15:44</td><td><span class="method-tag" style="background:#D4745C">DELETE</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/products/1024</td><td><span class="tag tag-error">500</span></td><td>1256ms</td></tr>
+              <tr><td class="text-muted">2026-06-12 14:12:30</td><td><span class="method-tag" style="background:#7BA87D">GET</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/dashboard/stats</td><td><span class="tag tag-get">200</span></td><td>67ms</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// 环形图 conic-gradient
+document.addEventListener('DOMContentLoaded', function() {
+  var pie = document.getElementById('methodPie');
+  if (pie) {
+    pie.style.background = 'conic-gradient(#7BA87D 0deg 164deg, #D4A574 164deg 267deg, #5B8DEF 267deg 322deg, #D4745C 322deg 360deg)';
+  }
+
+  // 响应时间条动画
+  setTimeout(function() {
+    document.querySelectorAll('.hbar-fill').forEach(function(el) {
+      el.style.width = el.getAttribute('data-w') + '%';
+    });
+  }, 300);
+});
+
+function showToast(msg, type) {
+  type = type || 'success';
+  var t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.innerHTML = (type === 'success' ? '✅ ' : 'ℹ️ ') + msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 2500);
+}
+</script>
+
+</body>
+</html>

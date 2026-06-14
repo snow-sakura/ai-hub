@@ -6,6 +6,18 @@ import type {
   VersionUpdate,
 } from '@/modules/ai_testing/types/version'
 
+/** 获取所有版本（独立模块） */
+export function getAllVersions(): Promise<ApiResponse<ProjectVersion[]>> {
+  return request.get('/testing/versions')
+}
+
+/** 创建版本（独立模块） */
+export function createVersionStandalone(
+  data: VersionCreate
+): Promise<ApiResponse<ProjectVersion>> {
+  return request.post('/testing/versions', data)
+}
+
 /** 获取项目版本列表 */
 export function getVersions(projectId: string): Promise<ApiResponse<ProjectVersion[]>> {
   return request.get(`/testing/projects/${projectId}/versions`)

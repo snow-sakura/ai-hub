@@ -82,7 +82,7 @@ import {
   useMessage,
 } from 'naive-ui'
 import type { FormInst } from 'naive-ui'
-import type { CasePriority, CaseStatus } from '@/modules/ai_testing/types/testcase'
+import type { CasePriority, CaseStatus, TestCaseCreate, TestCaseUpdate } from '@/modules/ai_testing/types/testcase'
 import { useTestCaseStore } from '@/modules/ai_testing/stores/testcase'
 import { useProjectStore } from '@/modules/ai_testing/stores/project'
 import MarkdownField from '@/modules/ai_testing/components/testcase/MarkdownField.vue'
@@ -148,8 +148,20 @@ async function handleSave() {
 
   isSaving.value = true
   try {
+    const payload: TestCaseUpdate = {
+      title: formData.title,
+      project_id: formData.project_id,
+      priority: formData.priority,
+      case_type: formData.case_type,
+      version: formData.version,
+      status: formData.status,
+      preconditions: formData.preconditions,
+      steps: formData.steps,
+      expected_results: formData.expected_results,
+      tags: formData.tags,
+    }
     if (isEdit.value) {
-      const ok = await store.updateCase(caseId.value, { ...formData } as any)
+      const ok = await store.updateCase(caseId.value, payload)
       if (ok) {
         message.success('用例已更新')
         router.push(`/ai-testing/testcases/${caseId.value}`)
@@ -157,7 +169,7 @@ async function handleSave() {
         message.error('更新失败')
       }
     } else {
-      const created = await store.createCase({ ...formData } as any)
+      const created = await store.createCase(payload as TestCaseCreate)
       if (created) {
         message.success('用例已创建')
         router.push(`/ai-testing/testcases/${created.id}`)
@@ -265,4 +277,11 @@ onMounted(async () => {
   padding-top: 20px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
+  @media (max-width: 768px) {
+    .page-wrap { padding: 16px 12px 48px; }
+    .form-row { flex-direction: column; align-items: stretch; }
+    .form-row > * { width: 100%; }
+    .form-card { padding: 16px; }
+    .form-actions { flex-direction: column; align-items: stretch; }
+  }
 </style>

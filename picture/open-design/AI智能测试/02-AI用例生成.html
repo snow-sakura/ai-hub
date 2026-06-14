@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 用例生成 · AI-HUB 智能工作台</title>
+<style>
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --info: #5B8DEF; --radius: 8px;
+  --font: -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --font-mono: ui-monospace,'SF Mono','Fira Code','Consolas',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* 侧栏（同上） */
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+.content{padding:24px;flex:1;max-width:1100px}
+
+/* 页面标题 */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:22px;font-weight:700;color:var(--text)}
+.page-subtitle{font-size:13px;color:var(--text-muted);margin-top:4px}
+.page-actions{display:flex;gap:8px}
+
+/* 卡片 */
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;transition:all 0.2s}
+.card-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.card-header-left{display:flex;align-items:center;gap:8px}
+.card-title{font-size:15px;font-weight:600;color:var(--text)}
+.card-collapse-icon{font-size:10px;color:var(--text-muted);transition:transform 0.2s}
+.card-body{margin-top:14px}
+.card-body.collapsed{display:none}
+
+/* 表单 */
+.form-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.form-label{font-size:13px;color:var(--text-muted);min-width:80px}
+select{padding:6px 12px;border:var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:13px;outline:none;cursor:pointer;transition:border-color 0.15s;width:280px}
+select:focus{border-color:var(--primary)}
+select:disabled{opacity:0.5;cursor:not-allowed}
+
+/* 双列输入 */
+.dual-pane{display:flex;gap:0;align-items:stretch;margin-bottom:12px}
+.pane{flex:1;min-width:0;display:flex;flex-direction:column}
+.pane-label{font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px}
+.pane-divider{display:flex;align-items:center;justify-content:center;width:48px;flex-shrink:0}
+.divider-label{font-size:13px;color:var(--text-muted);font-weight:500;background:var(--sidebar-bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+textarea{width:100%;padding:10px 12px;border:var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:13px;outline:none;resize:vertical;font-family:inherit;line-height:1.6;transition:border-color 0.15s}
+textarea:focus{border-color:var(--primary)}
+textarea:disabled{opacity:0.5;cursor:not-allowed;background:var(--sidebar-bg)}
+.char-count{text-align:right;font-size:11px;color:var(--text-muted);margin-top:4px}
+
+/* 上传 */
+.drop-zone{border:2px dashed rgba(180,150,120,0.25);border-radius:8px;min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;background:rgba(0,0,0,0.01);padding:20px;flex:1}
+.drop-zone:hover,.drop-zone.dragging{border-color:var(--primary);background:var(--primary-bg)}
+.drop-zone.has-file{border-style:solid;border-color:var(--success)}
+.drop-icon{font-size:36px;color:var(--primary);margin-bottom:8px;line-height:1}
+.drop-text{font-size:14px;color:var(--text);margin-bottom:4px}
+.drop-hint{font-size:12px;color:var(--text-muted)}
+.file-info{display:flex;align-items:center;gap:8px;font-size:14px}
+.file-name{color:var(--text)}
+.btn-remove{background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;padding:2px 6px;border-radius:4px}
+.btn-remove:hover{background:rgba(212,116,92,0.08)}
+
+/* 按钮 */
+.btn-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.btn{padding:7px 18px;border-radius:8px;font-size:13px;font-weight:500;border:var(--border);background:var(--card-bg);color:var(--text);cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-light);border-color:var(--primary-light);color:#fff}
+.btn-primary:disabled{background:rgba(198,123,92,0.4);border-color:transparent}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-xs{padding:3px 10px;font-size:11px}
+
+/* Radio */
+.radio-group{display:inline-flex;border:var(--border);border-radius:8px;overflow:hidden}
+.radio-option{padding:5px 14px;font-size:13px;color:var(--text-muted);cursor:pointer;transition:all 0.15s;border-right:var(--border);background:var(--card-bg)}
+.radio-option:last-child{border-right:none}
+.radio-option:hover{background:var(--primary-bg)}
+.radio-option.active{background:var(--primary);color:#fff}
+.radio-option input{display:none}
+
+/* 步骤指示器 */
+.step-indicator{display:flex;align-items:flex-start;gap:0;width:100%;margin-bottom:16px}
+.step-item{display:flex;align-items:center;flex:1;position:relative}
+.step-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;background:#e8e4e0;color:var(--text-muted);flex-shrink:0;transition:all 0.3s}
+.step-item.active .step-circle{background:var(--primary);color:#fff}
+.step-item.completed .step-circle{background:var(--success);color:#fff}
+.step-item.current .step-circle{box-shadow:0 0 0 3px rgba(198,123,92,0.3)}
+.step-content{margin-left:10px;flex:1;min-width:0}
+.step-title{font-size:13px;font-weight:600;color:var(--text)}
+.step-item:not(.active):not(.completed) .step-title{color:var(--text-muted)}
+.step-desc{font-size:11px;color:var(--text-muted)}
+.step-connector{flex:1;height:2px;background:#e8e4e0;margin:0 12px;margin-bottom:16px;transition:background 0.3s}
+.step-connector.completed{background:var(--success)}
+.step-connector.active{background:var(--primary)}
+
+/* 进度条 */
+.progress-track{height:8px;background:#e8e4e0;border-radius:4px;overflow:hidden;position:relative;margin-bottom:8px}
+.progress-fill{height:100%;border-radius:4px;background:var(--primary);transition:width 0.5s ease;position:relative}
+.progress-fill.done{background:var(--success)}
+.progress-fill.error{background:var(--danger)}
+.progress-info{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:16px}
+
+/* 阶段网格 */
+.stage-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.stage-card{border:var(--border);border-radius:10px;background:var(--card-bg);overflow:hidden}
+.stage-card-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;border-bottom:1px solid transparent}
+.stage-card-header.expanded{border-bottom-color:rgba(180,150,120,0.12)}
+.stage-card-left{display:flex;align-items:center;gap:6px}
+.stage-card-title{font-size:14px;font-weight:600;color:var(--text)}
+.stage-card-right{display:flex;align-items:center;gap:8px}
+.stage-card-body{padding:12px 14px}
+.stage-card-body.hidden{display:none}
+.stage-content{white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.6;font-family:var(--font-mono);max-height:400px;overflow-y:auto;margin:0}
+.cursor-blink{animation:blink 1s step-end infinite;color:var(--primary);font-weight:bold}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* 标签 */
+.tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:100px;font-size:11px;font-weight:500}
+.tag-info{background:var(--primary-bg);color:var(--primary)}
+.tag-success{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-warning{background:rgba(212,165,116,0.15);color:#b8860b}
+.tag-error{background:rgba(212,116,92,0.12);color:var(--danger)}
+.tag-default{background:#e8e4e0;color:var(--text-muted)}
+
+/* 评审 UI */
+.dimension-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dimension-item{display:flex;flex-direction:column}
+.dimension-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.dimension-label{font-size:12px;color:var(--text);font-weight:500}
+.dimension-score{font-size:12px;font-weight:600}
+.dimension-bar-bg{height:4px;background:#e8e4e0;border-radius:2px;overflow:hidden}
+.dimension-bar-fill{height:100%;border-radius:2px;transition:width 0.5s ease}
+.overall-row{display:flex;align-items:center;gap:12px;padding-top:12px;border-top:1px solid rgba(180,150,120,0.12);margin-top:12px}
+.overall-label{font-size:14px;font-weight:600;color:var(--text)}
+.overall-score{font-size:20px;font-weight:700}
+
+/* 结果 */
+.result-stats{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.result-stats .stat-number{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:28px;background:rgba(123,168,125,0.1);color:var(--success);font-weight:700;font-size:15px;border-radius:6px;padding:0 8px}
+
+/* Alert */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px}
+.alert-error{background:rgba(212,116,92,0.08);border-left:3px solid var(--danger);color:#b05a44}
+.alert-error .alert-title{font-weight:600;margin-bottom:2px}
+
+/* 其他 */
+.hidden{display:none!important}
+.divider{border:none;border-top:1px solid rgba(180,150,120,0.12);margin:12px 0}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn 0.3s ease}
+
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:8px;padding:10px 18px;font-size:13px;color:var(--text);box-shadow:0 4px 16px rgba(60,40,20,0.1);display:none;align-items:center;gap:8px;animation:slideIn 0.3s ease}
+.toast.show{display:flex}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+@media(max-width:768px){
+  .sidebar{width:60px}
+  .sidebar-logo span,.menu-group-title,.menu-item .label{display:none}
+  .sidebar-logo{justify-content:center;padding:14px 0}
+  .menu-item{justify-content:center;padding:10px 0;border-left:none}
+  .main{margin-left:60px}
+  .dual-pane{flex-direction:column}
+  .pane-divider{width:100%;height:32px}
+  .stage-grid{grid-template-columns:1fr}
+  .dimension-grid{grid-template-columns:1fr}
+  .page-header{flex-direction:column;gap:12px}
+  select{width:100%}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">🤖</div><span>AI 智能测试</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">AI 智能测试</div>
+    <a class="menu-item" href="50-AI智能测试模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item active" href="02-AI用例生成.html"><span class="icon">🤖</span><span>AI用例生成</span></a>
+    <a class="menu-item" href="03-AI评测师.html"><span class="icon">🔍</span><span>AI评测师</span></a>
+    <a class="menu-item" href="04-AI测试报告.html"><span class="icon">📈</span><span>AI测试报告</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+
+<div class="main">
+  <div class="topbar"><div class="breadcrumb">AI 智能测试 / <span>AI用例生成</span></div></div>
+  <div class="content">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">AI 用例生成</div>
+        <div class="page-subtitle">输入需求文档 → AI 自动分析 → 评审 → 修订 → 高质量测试用例</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-sm" onclick="showToast('查看生成记录')">📋 记录</button>
+        <button class="btn btn-sm">⚙️ 配置</button>
+      </div>
+    </div>
+
+    <!-- Zone 1: 需求输入 -->
+    <div class="card" id="zone-input">
+      <div class="card-header" onclick="toggleCard('input-body','input-icon')">
+        <div class="card-header-left">
+          <span class="card-collapse-icon" id="input-icon">▼</span>
+          <span class="card-title">📄 需求输入</span>
+        </div>
+      </div>
+      <div class="card-body" id="input-body">
+        <div class="form-row">
+          <span class="form-label">所属项目</span>
+          <select id="project-select">
+            <option value="">选择项目（可选）</option>
+            <option value="1">电商平台 · 用户端</option>
+            <option value="2">支付系统 · 核心交易</option>
+            <option value="3">用户中心 · 统一认证</option>
+          </select>
+          <span class="form-label" style="min-width:auto;margin-left:12px;">模型</span>
+          <select>
+            <option>DeepSeek Chat</option>
+            <option>DeepSeek Reasoner</option>
+            <option>Qwen Max</option>
+          </select>
+        </div>
+        <div class="dual-pane">
+          <div class="pane">
+            <div class="pane-label">手动输入需求</div>
+            <textarea id="req-text" rows="10" placeholder="在此粘贴需求文档内容&#10;&#10;支持 Markdown 格式：&#10;- **功能点描述**&#10;- 边界条件&#10;- 异常场景" maxlength="8000" oninput="updateCount()"></textarea>
+            <div class="char-count"><span id="char-count">0</span> / 8000</div>
+          </div>
+          <div class="pane-divider"><span class="divider-label">或</span></div>
+          <div class="pane">
+            <div class="pane-label">上传需求文档</div>
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+              <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.md" style="display:none" onchange="handleFile(event)">
+              <div id="upload-empty">
+                <div class="drop-icon">📄</div>
+                <div class="drop-text">点击上传或拖拽文档</div>
+                <div class="drop-hint">支持 docx / pdf / txt</div>
+              </div>
+              <div id="upload-info" class="hidden file-info">
+                <span class="file-name" id="file-name"></span>
+                <button class="btn-remove" onclick="event.stopPropagation();clearFile()">移除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <span class="form-label" style="min-width:auto">输出模式</span>
+          <div class="radio-group">
+            <label class="radio-option active" id="mode-stream"><input type="radio" name="mode" value="stream" checked onchange="switchMode('stream')">流式输出</label>
+            <label class="radio-option" id="mode-complete"><input type="radio" name="mode" value="complete" onchange="switchMode('complete')">完整输出</label>
+          </div>
+          <button class="btn btn-primary" id="btn-start" onclick="startGen()">开始生成</button>
+          <button class="btn btn-danger hidden" id="btn-stop" onclick="stopGen()">停止</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone 2: 生成进度 -->
+    <div class="card hidden" id="zone-progress">
+      <div class="card-header" onclick="toggleCard('progress-body','progress-icon')">
+        <div class="card-header-left">
+          <span class="card-collapse-icon" id="progress-icon">▼</span>
+          <span class="card-title">🚀 生成进度</span>
+        </div>
+      </div>
+      <div class="card-body" id="progress-body">
+        <div class="form-row" style="margin-bottom:16px">
+          <span style="font-size:12px;color:var(--text-muted)">任务 ID：</span>
+          <span style="font-size:12px;font-family:var(--font-mono)" id="task-id">TASK-20240612-001</span>
+          <span class="tag tag-info" id="status-tag">运行中</span>
+        </div>
+        <div class="step-indicator" id="step-indicator"></div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        <div class="progress-info"><span id="progress-msg">准备开始...</span><span id="progress-pct">0%</span></div>
+        <div class="stage-grid" id="stage-grid"></div>
+        <div class="alert alert-error hidden" id="error-info"><div class="alert-title" id="error-code">错误</div><div id="error-msg"></div></div>
+      </div>
+    </div>
+
+    <!-- Zone 3: 生成结果 -->
+    <div class="card hidden" id="zone-result">
+      <div class="card-header"><div class="card-header-left"><span class="card-title">✅ 生成完成</span></div></div>
+      <div class="card-body">
+        <div class="result-stats"><span>共生成</span><span class="stat-number" id="result-count">0</span><span>条测试用例</span><span class="tag tag-success" id="result-pass">评审通过</span></div>
+        <div class="btn-row" style="margin-bottom:16px">
+          <button class="btn btn-primary btn-sm" onclick="showToast('已保存到用例库')">💾 保存</button>
+          <button class="btn btn-sm" onclick="showToast('正在下载 Excel...')">📥 下载 Excel</button>
+          <button class="btn btn-sm" onclick="regen()">🔄 重新生成</button>
+          <button class="btn btn-sm" onclick="resetAll()">重置</button>
+        </div>
+        <div class="divider"></div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px">⭐ AI 评审结果</div>
+        <div id="review-area"></div>
+        <div class="divider"></div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">最终输出</div>
+        <div style="border:var(--border);border-radius:8px;background:var(--card-bg);padding:16px;max-height:500px;overflow-y:auto"><pre id="final-content" style="white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.6;font-family:var(--font-mono);margin:0"></pre></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STAGES = [
+  {key:'analyze',label:'🔍 需求分析'},{key:'write',label:'✍️ 用例编写'},
+  {key:'review',label:'⭐ AI 评审'},{key:'revise',label:'🔧 用例修订'}
+];
+const STEP_LABELS = [
+  {label:'需求分析',desc:'提取功能点与场景'},{label:'用例编写',desc:'生成结构化用例'},
+  {label:'AI 评审',desc:'质量评分与反馈'},{label:'修订完善',desc:'根据反馈优化'}
+];
+const STAGE_ORDER = ['analyze','write','review','revise'];
+let streaming=false,done=false,stopped=false,stageIdx=-1,pct=0,timers=[];
+let collapsed={analyze:false,write:false,review:false,revise:false};
+
+const SIM={analyze:'## 需求分析结果\n\n### 功能点提取\n1. **用户注册功能** - 支持邮箱/手机号注册，含验证码校验\n2. **用户登录功能** - 支持密码登录和验证码登录\n3. **用户信息管理** - 支持查看/编辑个人资料\n4. **密码重置** - 通过邮箱验证码重置密码\n\n### 边界条件识别\n- 注册时用户名长度限制（2-20个字符）\n- 密码复杂度要求（8位以上，含大小写字母+数字+特殊字符）\n- 验证码有效期（5分钟）\n- 登录失败次数限制（5次后锁定15分钟）\n\n### 异常场景\n- 网络中断时的超时处理\n- 重复用户名/邮箱注册\n- 无效验证码处理\n- 并发登录冲突',
+write:'| 标题 | 优先级 | 前置条件 | 测试步骤 | 预期结果 |\n|------|--------|----------|----------|----------|\n| TC-001 正常注册流程 | P0 | 用户未注册，网络正常 | 1.打开注册页面 2.输入有效信息 3.获取验证码 4.提交注册 | 注册成功，跳转至欢迎页 |\n| TC-002 重复邮箱注册 | P1 | 邮箱已被注册 | 1.使用已注册邮箱注册 2.填写其他信息 3.提交 | 提示"邮箱已被注册" |\n| TC-003 密码强度校验 | P1 | 用户输入弱密码 | 1.输入少于8位的密码 2.输入无特殊字符密码 3.输入纯数字密码 | 提示密码不符合复杂度要求 |\n| TC-004 验证码过期 | P2 | 验证码已超5分钟 | 1.获取验证码 2.等待6分钟 3.输入原验证码 | 提示"验证码已过期，请重新获取" |\n\n共生成 **12** 条测试用例（含功能测试8条、边界测试2条、异常测试2条）',
+review:'{"overall_score":8.9,"review_passed":true,"summary":"用例整体质量较高，覆盖了主要功能点和边界场景，建议补充部分异常场景和安全用例。","dimensions":{"coverage":{"score":9.0,"comment":"功能覆盖全面"},"edge_cases":{"score":8.5,"comment":"边界场景覆盖较好"},"completeness":{"score":9.2,"comment":"用例结构完整"},"clarity":{"score":8.8,"comment":"步骤清晰度良好"}},"issues":[{"severity":"warning","description":"缺少SQL注入相关安全测试用例"},{"severity":"info","description":"部分用例缺少详细的前置条件"}],"improvement_suggestions":["补充 SQL/XSS 注入安全测试用例（2-3条）","为 TC-008/TC-009 补充详细前置条件","增加高并发场景下的性能测试用例","补充验证码接口防刷场景测试"]}',
+revise:'| 标题 | 优先级 | 前置条件 | 测试步骤 | 预期结果 | 类型 |\n|------|--------|----------|----------|----------|------|\n| TC-001 正常注册流程 | P0 | 用户未注册，网络正常 | 1.打开注册页面 2.输入有效信息 3.获取验证码 4.提交注册 | 注册成功，跳转至欢迎页 | 功能测试 |\n| TC-002 重复邮箱注册 | P1 | 邮箱已被注册 | 1.使用已注册邮箱注册 2.填写其他信息 3.提交 | 提示"邮箱已被注册" | 功能测试 |\n| TC-003 密码强度校验 | P1 | 用户输入弱密码 | 1.输入少于8位的密码 2.输入无特殊字符密码 3.输入纯数字密码 | 提示密码不符合复杂度要求 | 边界测试 |\n| TC-004 验证码过期 | P2 | 验证码已超5分钟 | 1.获取验证码 2.等待6分钟 3.输入原验证码 | 提示"验证码已过期，请重新获取" | 异常测试 |\n| TC-005 SQL注入防护 | P1 | 功能输入框可用 | 1.在搜索框输入恶意SQL 2.提交 | 请求被拦截，无数据泄露 | 安全测试 |\n| TC-006 高并发注册 | P2 | 负载均衡正常 | 1.使用JMeter模拟100并发注册 2.监控服务器 | 成功率≥95%，响应时间≤3s | 性能测试 |\n\n> 根据 AI 评审建议已补充安全测试和性能测试用例，共计 14 条测试用例'};
+
+function init(){renderSteps();renderStages()}
+function renderSteps(){
+  var c=document.getElementById('step-indicator');c.innerHTML='';
+  for(var i=0;i<STEP_LABELS.length;i++){
+    var s=STEP_LABELS[i],d=document.createElement('div');
+    d.className='step-item';d.id='step-'+i;
+    d.innerHTML='<div class="step-circle" id="sc-'+i+'">'+(i+1)+'</div><div class="step-content"><div class="step-title">'+s.label+'</div><div class="step-desc">'+s.desc+'</div></div>'+(i<STEP_LABELS.length-1?'<div class="step-connector" id="conn-'+i+'"></div>':'');
+    c.appendChild(d);
+  }
+}
+function updateStep(idx){
+  for(var i=0;i<STEP_LABELS.length;i++){
+    var it=document.getElementById('step-'+i),ci=document.getElementById('sc-'+i),cn=document.getElementById('conn-'+i);
+    it.classList.remove('active','completed','current');
+    if(i<idx){it.classList.add('completed');ci.innerHTML='✓'}
+    else if(i===idx){it.classList.add('active','current');ci.innerHTML=''+(i+1)}
+    else ci.innerHTML=''+(i+1);
+    if(cn){cn.classList.remove('active','completed');if(i<idx)cn.classList.add('completed');if(i===idx)cn.classList.add('active')}
+  }
+}
+function renderStages(){
+  var g=document.getElementById('stage-grid');g.innerHTML='';
+  for(var s of STAGES){
+    var d=document.createElement('div');d.className='stage-card hidden';d.id='sc-'+s.key;
+    d.innerHTML='<div class="stage-card-header" id="sh-'+s.key+'" onclick="toggleStage(\''+s.key+'\')"><div class="stage-card-left"><span class="card-collapse-icon" id="sci-'+s.key+'">▼</span><span class="stage-card-title">'+s.label+'</span></div><div class="stage-card-right"><span class="tag tag-info hidden" id="stag-'+s.key+'">生成中...</span><span class="tag tag-success hidden" id="sdon-'+s.key+'">完成</span></div></div><div class="stage-card-body" id="sbd-'+s.key+'"><pre class="stage-content" id="sct-'+s.key+'"></pre></div>';
+    g.appendChild(d);
+  }
+}
+function toggleStage(k){collapsed[k]=!collapsed[k];var b=document.getElementById('sbd-'+k),i=document.getElementById('sci-'+k),h=document.getElementById('sh-'+k);if(collapsed[k]){b.classList.add('hidden');i.textContent='▶';h.classList.remove('expanded')}else{b.classList.remove('hidden');i.textContent='▼';h.classList.add('expanded')}}
+function toggleCard(b,i){var e=document.getElementById(b),c=document.getElementById(i);e.classList.toggle('collapsed');c.textContent=e.classList.contains('collapsed')?'▶':'▼'}
+function updateCount(){document.getElementById('char-count').textContent=document.getElementById('req-text').value.length}
+function switchMode(m){document.getElementById('mode-stream').classList.toggle('active',m==='stream');document.getElementById('mode-complete').classList.toggle('active',m==='complete')}
+function handleFile(e){var f=e.target.files[0];if(f){document.getElementById('upload-empty').classList.add('hidden');document.getElementById('upload-info').classList.remove('hidden');document.getElementById('file-name').textContent=f.name;document.getElementById('drop-zone').classList.add('has-file');setTimeout(function(){document.getElementById('req-text').value='文件「'+f.name+'」已解析完成。\n\n经文档解析引擎处理，已提取以下需求要点：\n- 用户注册功能\n- 用户登录功能\n- 密码重置功能\n- 个人信息管理\n';updateCount();showToast('文档解析完成')},800)}}
+function clearFile(){document.getElementById('upload-empty').classList.remove('hidden');document.getElementById('upload-info').classList.add('hidden');document.getElementById('file-input').value='';document.getElementById('drop-zone').classList.remove('has-file')}
+function showToast(m){var t=document.getElementById('toast');t.textContent='✓ '+m;t.className='toast show';setTimeout(function(){t.className='toast'},2000)}
+
+var dz=document.getElementById('drop-zone');
+dz.addEventListener('dragenter',function(e){e.preventDefault();this.classList.add('dragging')});
+dz.addEventListener('dragover',function(e){e.preventDefault()});
+dz.addEventListener('dragleave',function(e){e.preventDefault();this.classList.remove('dragging')});
+dz.addEventListener('drop',function(e){e.preventDefault();this.classList.remove('dragging');var f=e.dataTransfer.files[0];if(f)handleFile({target:{files:[f]}})});
+
+function typewrite(id,text,speed,cb){
+  var el=document.getElementById(id);if(!el){if(cb)cb();return}
+  var idx=0;el.textContent='';
+  function tick(){
+    if(stopped){if(cb)cb();return}
+    if(idx<text.length){el.textContent+=text[idx];idx++;var t=setTimeout(tick,text[idx-1]==='\n'?speed*3:speed);timers.push(t)}
+    else{if(cb)cb()}
+  }
+  tick()
+}
+
+function startGen(){
+  var t=document.getElementById('req-text').value.trim();
+  if(t.length<5){showToast('请输入至少 5 个字符');return}
+  stopped=false;streaming=true;done=false;stageIdx=-1;pct=0;
+  document.getElementById('btn-start').classList.add('hidden');
+  document.getElementById('btn-stop').classList.remove('hidden');
+  document.getElementById('zone-progress').classList.remove('hidden');document.getElementById('zone-progress').classList.add('fade-in');
+  document.getElementById('zone-result').classList.add('hidden');
+  document.getElementById('progress-fill').style.width='0%';document.getElementById('progress-fill').className='progress-fill';
+  document.getElementById('progress-msg').textContent='准备开始...';document.getElementById('progress-pct').textContent='0%';
+  document.getElementById('error-info').classList.add('hidden');
+  document.getElementById('status-tag').className='tag tag-info';document.getElementById('status-tag').textContent='运行中';
+  for(var s of STAGES){document.getElementById('sc-'+s.key).classList.add('hidden');document.getElementById('sct-'+s.key).textContent='';document.getElementById('stag-'+s.key).classList.add('hidden');document.getElementById('sdon-'+s.key).classList.add('hidden')}
+  updateStep(-1);
+  document.getElementById('task-id').textContent='TASK-'+Date.now().toString(36).toUpperCase();
+  stageIdx=0;runStage('analyze');
+}
+
+function runStage(key){
+  if(stopped)return;
+  var idx=STAGE_ORDER.indexOf(key);stageIdx=idx;updateStep(idx);
+  var card=document.getElementById('sc-'+key);card.classList.remove('hidden');card.classList.add('fade-in');
+  document.getElementById('stag-'+key).classList.remove('hidden');document.getElementById('sdon-'+key).classList.add('hidden');
+  var msgs={analyze:'正在分析需求文档...',write:'正在编写测试用例...',review:'AI 正在进行质量评审...',revise:'正在修订用例...'};
+  document.getElementById('progress-msg').textContent=msgs[key]||'处理中...';
+  animPct(idx/4*100,idx/4*100+15);
+  var content=SIM[key],speed=key==='review'?15:20;
+  if(!content){completeStage(key);return}
+  if(key==='review'){
+    var parsed;try{parsed=JSON.parse(content)}catch(e){parsed=null}
+    if(parsed){
+      var el=document.getElementById('sct-review');el.textContent='正在进行 AI 评审分析...\n\n';
+      typewrite('sct-review','【评审摘要】\n'+parsed.summary+'\n\n',speed,function(){
+        var dims=Object.entries(parsed.dimensions).map(function(d){var lb={coverage:'功能覆盖度',edge_cases:'边界覆盖度',completeness:'场景完整度',clarity:'步骤清晰度'};return lb[d[0]]+': '+d[1].score+'/10 - '+d[1].comment}).join('\n');
+        typewrite('sct-review','\n'+dims+'\n\n',speed,function(){setTimeout(function(){completeStage('review')},600)})
+      })
+    }else typewrite('sct-'+key,content,speed,function(){setTimeout(function(){completeStage(key)},400)})
+  }else typewrite('sct-'+key,content,speed,function(){setTimeout(function(){completeStage(key)},400)})
+}
+
+function completeStage(key){
+  if(stopped)return;
+  var idx=STAGE_ORDER.indexOf(key);
+  document.getElementById('stag-'+key).classList.add('hidden');document.getElementById('sdon-'+key).classList.remove('hidden');
+  var bp=((idx+1)/4)*100;animPct(bp-10,Math.min(bp,85));
+  if(idx+1<4){document.getElementById('progress-msg').textContent='阶段 '+(idx+1)+' 完成，准备下一步...';setTimeout(function(){if(!stopped)runStage(STAGE_ORDER[idx+1])},800)}
+  else finishGen()
+}
+
+function animPct(from,to){
+  var start=from||0,end=to||100,dur=800,st=Date.now();
+  function upd(){
+    var t=Math.min((Date.now()-st)/dur,1),v=start+(end-start)*t;pct=v;
+    document.getElementById('progress-fill').style.width=v+'%';document.getElementById('progress-pct').textContent=Math.round(v)+'%';
+    if(t<1)requestAnimationFrame(upd)
+  }
+  requestAnimationFrame(upd)
+}
+
+function finishGen(){
+  if(stopped)return;done=true;streaming=false;
+  document.getElementById('btn-start').classList.remove('hidden');document.getElementById('btn-stop').classList.add('hidden');
+  document.getElementById('status-tag').className='tag tag-success';document.getElementById('status-tag').textContent='完成';
+  updateStep(4);animPct(85,100);document.getElementById('progress-fill').classList.add('done');document.getElementById('progress-msg').textContent='✅ 生成完成！';
+  setTimeout(function(){
+    document.getElementById('zone-result').classList.remove('hidden');document.getElementById('zone-result').classList.add('fade-in');
+    document.getElementById('result-count').textContent='14';document.getElementById('result-pass').textContent='✅ 评审通过';
+    renderReview();document.getElementById('final-content').textContent=SIM.revise;
+    document.getElementById('zone-result').scrollIntoView({behavior:'smooth',block:'start'})
+  },600)
+}
+
+function renderReview(){
+  var area=document.getElementById('review-area'),r=JSON.parse(SIM.review),html='';
+  if(r.summary)html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">'+r.summary+'</div>';
+  html+='<div class="dimension-grid">';
+  var dl={coverage:'功能覆盖度',edge_cases:'边界覆盖度',completeness:'场景完整度',clarity:'步骤清晰度'};
+  for(var k in r.dimensions){var d=r.dimensions[k],c=d.score>=8?'var(--success)':d.score>=6?'#d4874a':'var(--danger)';html+='<div class="dimension-item"><div class="dimension-header"><span class="dimension-label">'+(dl[k]||k)+'</span><span class="dimension-score" style="color:'+c+'">'+d.score+'/10</span></div><div class="dimension-bar-bg"><div class="dimension-bar-fill" style="width:'+(d.score/10*100)+'%;background:'+c+'"></div></div>'+(d.comment?'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+d.comment+'</div>':'')+'</div>'}
+  html+='</div><div class="overall-row"><span class="overall-label">综合评分</span><span class="overall-score" style="color:'+(r.overall_score>=8?'var(--success)':r.overall_score>=6?'#d4874a':'var(--danger)')+'">'+r.overall_score+'/10</span><span class="tag tag-success">✅ 评审通过</span></div>';
+  area.innerHTML=html
+}
+
+function stopGen(){
+  stopped=true;streaming=false;
+  document.getElementById('btn-start').classList.remove('hidden');document.getElementById('btn-stop').classList.add('hidden');
+  document.getElementById('status-tag').className='tag tag-warning';document.getElementById('status-tag').textContent='已停止';
+  document.getElementById('progress-fill').classList.add('error');document.getElementById('progress-msg').textContent='⏹ 已手动停止';
+  for(var t of timers)clearTimeout(t);
+  document.getElementById('error-info').classList.remove('hidden');document.getElementById('error-code').textContent='用户中断';document.getElementById('error-msg').textContent='生成已被手动停止。您可以修改需求后重新生成。'
+}
+function regen(){showToast('正在重新生成...');startGen()}
+function resetAll(){
+  streaming=false;done=false;stopped=false;stageIdx=-1;pct=0;
+  document.getElementById('btn-start').classList.remove('hidden');document.getElementById('btn-stop').classList.add('hidden');
+  document.getElementById('zone-progress').classList.add('hidden');document.getElementById('zone-result').classList.add('hidden');
+  for(var s of STAGES){document.getElementById('sc-'+s.key).classList.add('hidden');document.getElementById('sct-'+s.key).textContent='';document.getElementById('stag-'+s.key).classList.add('hidden');document.getElementById('sdon-'+s.key).classList.add('hidden')}
+  updateStep(-1);document.getElementById('progress-fill').style.width='0%';document.getElementById('progress-fill').className='progress-fill';
+  document.getElementById('progress-msg').textContent='准备开始...';document.getElementById('progress-pct').textContent='0%';
+  document.getElementById('error-info').classList.add('hidden');for(var t of timers)clearTimeout(t);timers=[];showToast('已重置')
+}
+
+init();
+</script>
+</body>
+</html>

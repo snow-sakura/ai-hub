@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>请求历史 · AI-HUB 智能工作台</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--danger:#D4745C;--info:#5B8DEF;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;--font-mono:ui-monospace,'SF Mono','Fira Code','Consolas',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px;cursor:pointer}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;height:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px;flex:1}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-0.02em}
+.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light);box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:var(--border)}
+.btn-secondary:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid rgba(180,150,120,0.15);padding:0 12px}
+.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}
+.btn-xs{height:24px;padding:0 8px;font-size:11px}
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:16px 20px}
+.filter-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.filter-bar select,.filter-bar input{height:34px;border:var(--border);border-radius:6px;padding:0 12px;font-size:13px;color:var(--text);font-family:inherit;background:var(--card-bg);outline:none}
+.filter-bar select{min-width:120px}
+.filter-bar input{flex:1;min-width:180px}
+.filter-bar select:focus,.filter-bar input:focus{border-color:var(--primary)}
+.tabs{display:flex;gap:0;border-bottom:var(--border)}
+.tab{padding:10px 20px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);white-space:nowrap;background:var(--sidebar-bg);font-size:12px}
+td{padding:10px 12px;border-bottom:var(--border);color:var(--text)}
+tr:nth-child(even) td{background:rgba(180,150,120,0.03)}
+tr:hover td{background:var(--primary-bg)}
+.text-muted{color:var(--text-muted)}
+.method-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;color:#fff;min-width:32px;text-align:center}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 0;color:var(--text-muted)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:13px}
+.drawer-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(30,20,10,0.25);z-index:200}
+.drawer-overlay.active{display:block}
+.drawer{position:fixed;top:0;right:-520px;width:520px;height:100vh;background:var(--card-bg);box-shadow:-4px 0 30px rgba(30,20,10,0.1);z-index:210;transition:right 0.3s ease;display:flex;flex-direction:column;overflow-y:auto}
+.drawer.open{right:0}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border);position:sticky;top:0;background:var(--card-bg);z-index:1}
+.drawer-head h3{font-size:16px;font-weight:600}
+.drawer-close{width:28px;height:28px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:16px}
+.drawer-close:hover{background:var(--primary-bg);color:var(--text)}
+.drawer-body{padding:20px;flex:1}
+.detail-section{margin-bottom:20px}
+.detail-section-title{font-size:13px;font-weight:600;color:var(--text);padding-bottom:8px;border-bottom:var(--border);margin-bottom:10px}
+.detail-row{display:flex;padding:4px 0;font-size:12px}
+.detail-label{width:80px;color:var(--text-muted);flex-shrink:0}
+.detail-value{color:var(--text-secondary);word-break:break-all}
+.kv-list{font-size:12px}
+.kv-item{display:flex;padding:3px 0;font-family:var(--font-mono)}
+.kv-key{color:var(--primary);min-width:140px}
+.kv-value{color:var(--text-secondary)}
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:10px;padding:12px 20px;box-shadow:0 8px 30px rgba(30,20,10,0.12);display:flex;align-items:center;gap:10px;font-size:13px;animation:slideIn 0.25s ease;max-width:360px}
+.toast-success{border-left:4px solid var(--success)}
+.toast-info{border-left:4px solid var(--info)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}.sidebar-logo span,.menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}.sidebar-logo{padding:14px 0;justify-content:center}.menu-item{justify-content:center;padding:9px 0}.main{margin-left:60px}.drawer{width:100%;right:-100%}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">🔌</div><span>接口测试</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">接口测试</div>
+    <a class="menu-item" href="51-接口测试模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="05-接口仪表盘.html"><span class="icon">📊</span><span>数据看板</span></a>
+    <a class="menu-item" href="06-接口管理.html"><span class="icon">🔗</span><span>接口管理</span></a>
+    <a class="menu-item" href="07-接口自动化.html"><span class="icon">⚡</span><span>自动化测试</span></a>
+    <a class="menu-item" href="08-接口环境管理.html"><span class="icon">🌐</span><span>环境管理</span></a>
+    <a class="menu-item active" href="09-接口请求历史.html"><span class="icon">📜</span><span>请求历史</span></a>
+    <a class="menu-item" href="10-Mock服务.html"><span class="icon">🎭</span><span>Mock服务</span></a>
+    <a class="menu-item" href="11-接口定时任务.html"><span class="icon">⏰</span><span>定时任务</span></a>
+    <a class="menu-item" href="12-接口通知.html"><span class="icon">🔔</span><span>通知配置</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">接口测试 / <span>请求历史</span></div>
+    <div class="topbar-right"><button class="topbar-btn" onclick="showToast('页面已刷新','info')" title="刷新">⟳</button><button class="topbar-btn" onclick="showToast('暂无新通知','info')" title="通知">🔔</button><div class="avatar-sm">张</div></div>
+  </header>
+  <div class="content">
+    <div class="page-header fade-in">
+      <div><h1 class="page-title">请求历史</h1><p class="page-sub">共 8 条记录 · 查看所有 API 请求的详细日志</p></div>
+      <div class="header-actions"><button class="btn btn-ghost" onclick="if(confirm('确认清空所有历史记录?'))showToast('历史已清空','success')">🗑️ 清空历史</button></div>
+    </div>
+    <div class="filter-bar fade-in">
+      <select id="methodFilter" onchange="applyFilter()"><option value="">全部方法</option><option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="DELETE">DELETE</option></select>
+      <select id="statusFilter" onchange="applyFilter()"><option value="">全部状态</option><option value="2">2xx 成功</option><option value="3">3xx 重定向</option><option value="4">4xx 客户端错误</option><option value="5">5xx 服务端错误</option></select>
+      <input id="searchInput" type="text" placeholder="搜索 URL..." oninput="applyFilter()">
+    </div>
+    <div class="card fade-in">
+      <div class="tabs">
+        <button class="tab active" data-tab="http">🌐 HTTP 历史</button>
+        <button class="tab" data-tab="ws">🔌 WebSocket 历史</button>
+      </div>
+      <div class="tab-content active" id="tab-http">
+        <div class="card-body" style="padding:0">
+          <div class="table-wrap">
+            <table><thead><tr><th>请求时间</th><th>方法</th><th>URL</th><th>状态码</th><th>耗时</th><th>操作</th></tr></thead><tbody id="historyBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+      <div class="tab-content" id="tab-ws">
+        <div class="card-body">
+          <div class="empty-state"><div class="icon">🔌</div><p>暂无 WebSocket 历史记录</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 抽屉详情 -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="detailDrawer">
+  <div class="drawer-head"><h3>📄 请求详情</h3><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
+  <div class="drawer-body">
+    <div class="detail-section">
+      <div class="detail-section-title">基本信息</div>
+      <div class="detail-row"><span class="detail-label">请求时间</span><span class="detail-value" id="dTime">-</span></div>
+      <div class="detail-row"><span class="detail-label">请求方法</span><span class="detail-value" id="dMethod">-</span></div>
+      <div class="detail-row"><span class="detail-label">请求 URL</span><span class="detail-value" id="dUrl" style="font-family:var(--font-mono);font-size:11px">-</span></div>
+      <div class="detail-row"><span class="detail-label">状态码</span><span class="detail-value" id="dStatus">-</span></div>
+      <div class="detail-row"><span class="detail-label">耗时</span><span class="detail-value" id="dDuration">-</span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">请求 Headers</div>
+      <div class="kv-list" id="dReqHeaders"><div class="kv-item" style="color:var(--text-muted)">无</div></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">请求 Body</div>
+      <textarea class="text-area-box" rows="4" readonly id="dReqBody" style="width:100%;border:var(--border);border-radius:6px;padding:10px;font-size:12px;font-family:var(--font-mono);color:var(--text);background:rgba(180,150,120,0.04);resize:none;outline:none">无</textarea>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">响应结果</div>
+      <textarea class="text-area-box" rows="6" readonly id="dRespBody" style="width:100%;border:var(--border);border-radius:6px;padding:10px;font-size:12px;font-family:var(--font-mono);color:var(--text);background:rgba(180,150,120,0.04);resize:none;outline:none">无</textarea>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">响应 Headers</div>
+      <div class="kv-list" id="dRespHeaders"><div class="kv-item" style="color:var(--text-muted)">无</div></div>
+    </div>
+    <div style="padding-top:16px;border-top:var(--border)">
+      <button class="btn btn-primary" onclick="showToast('请求已重发','success')">🔄 重发请求</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab
+document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});
+  document.querySelectorAll('.tab-content').forEach(function(x){x.classList.remove('active')});
+  this.classList.add('active');document.getElementById('tab-'+this.dataset.tab).classList.add('active');
+})});
+
+var allHistory = [
+  {id:1,time:'2026-06-12 14:28:32',method:'GET',url:'/api/v1/orders/list',status:200,duration:128,reqHeaders:['Accept: application/json','Authorization: Bearer ****'],reqBody:'',respBody:'{"code":200,"data":{"items":[],"total":42}}',respHeaders:['content-type: application/json','x-request-id: req_abc123']},
+  {id:2,time:'2026-06-12 14:25:17',method:'POST',url:'/api/v1/orders/create',status:201,duration:342,reqHeaders:['Content-Type: application/json','Authorization: Bearer ****'],reqBody:'{"productId":1024,"quantity":2}',respBody:'{"code":201,"data":{"orderId":"ORD20260612001"}}',respHeaders:['content-type: application/json','x-request-id: req_def456']},
+  {id:3,time:'2026-06-12 14:20:05',method:'PUT',url:'/api/v1/users/profile',status:200,duration:95,reqHeaders:['Content-Type: application/json'],reqBody:'{"nickname":"test_user"}',respBody:'{"code":200,"data":{"id":1,"nickname":"test_user"}}',respHeaders:['content-type: application/json']},
+  {id:4,time:'2026-06-12 14:15:44',method:'DELETE',url:'/api/v1/products/1024',status:204,duration:1256,reqHeaders:['Authorization: Bearer ****'],reqBody:'',respBody:'',respHeaders:['x-request-id: req_ghi789']},
+  {id:5,time:'2026-06-12 14:12:30',method:'GET',url:'/api/v1/dashboard/stats',status:200,duration:67,reqHeaders:[],reqBody:'',respBody:'{"code":200,"data":{"orders":128,"users":56}}',respHeaders:['content-type: application/json']},
+  {id:6,time:'2026-06-12 13:55:00',method:'GET',url:'/api/v1/orders/1024',status:404,duration:45,reqHeaders:[],reqBody:'',respBody:'{"code":404,"message":"Order not found"}',respHeaders:['content-type: application/json']},
+  {id:7,time:'2026-06-12 13:30:22',method:'POST',url:'/api/v1/payments/pay',status:500,duration:2800,reqHeaders:['Content-Type: application/json'],reqBody:'{"orderId":"ORD20260612001","amount":99.99}',respBody:'{"code":500,"message":"Internal server error","error":"timeout"}',respHeaders:['content-type: application/json']},
+  {id:8,time:'2026-06-12 12:00:00',method:'GET',url:'/api/v1/health',status:200,duration:12,reqHeaders:[],reqBody:'',respBody:'{"status":"healthy","uptime":"72h"}',respHeaders:['content-type: application/json']}
+];
+
+var methodColors = {GET:'#7BA87D',POST:'#D4A574',PUT:'#5B8DEF',DELETE:'#D4745C',PATCH:'#A07BC6'};
+
+function applyFilter() {
+  var mf = document.getElementById('methodFilter').value;
+  var sf = document.getElementById('statusFilter').value;
+  var sq = document.getElementById('searchInput').value.toLowerCase();
+  var filtered = allHistory.filter(function(r){
+    if(mf && r.method !== mf) return false;
+    if(sf && String(r.status).charAt(0) !== sf) return false;
+    if(sq && !r.url.toLowerCase().includes(sq)) return false;
+    return true;
+  });
+  var body = document.getElementById('historyBody');
+  if(filtered.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">无匹配记录</td></tr>';
+    return;
+  }
+  body.innerHTML = filtered.map(function(r){
+    var sc = r.status < 300 ? '#7BA87D' : r.status < 400 ? '#5B8DEF' : r.status < 500 ? '#B8860B' : '#D4745C';
+    return '<tr>'+
+      '<td class="text-muted" style="font-size:12px">'+r.time+'</td>'+
+      '<td><span class="method-tag" style="background:'+(methodColors[r.method]||'#888')+'">'+r.method+'</span></td>'+
+      '<td style="font-family:var(--font-mono);font-size:12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.url+'</td>'+
+      '<td><span style="color:'+sc+';font-weight:600">'+r.status+'</span></td>'+
+      '<td class="text-muted">'+r.duration+'ms</td>'+
+      '<td><button class="btn btn-ghost btn-xs" onclick="showDetail('+r.id+')">查看</button><button class="btn btn-ghost btn-xs" onclick="showToast(\'请求已重发\',\'success\')" style="margin-left:4px">重发</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function showDetail(id) {
+  var r = allHistory.find(function(x){return x.id===id});
+  if(!r) return;
+  document.getElementById('dTime').textContent = r.time;
+  document.getElementById('dMethod').textContent = r.method;
+  document.getElementById('dUrl').textContent = r.url;
+  document.getElementById('dStatus').textContent = r.status;
+  document.getElementById('dDuration').textContent = r.duration+'ms';
+  document.getElementById('dReqHeaders').innerHTML = r.reqHeaders.length ? r.reqHeaders.map(function(h){return '<div class="kv-item"><span class="kv-key" style="color:var(--text-muted)">'+h.split(':')[0]+':</span><span class="kv-value">'+(h.split(':').slice(1).join(':')||'')+'</span></div>'}).join('') : '<div class="kv-item" style="color:var(--text-muted)">无</div>';
+  document.getElementById('dReqBody').value = r.reqBody || '无';
+  document.getElementById('dRespBody').value = r.respBody || '无响应体';
+  document.getElementById('dRespHeaders').innerHTML = r.respHeaders.length ? r.respHeaders.map(function(h){return '<div class="kv-item"><span class="kv-key" style="color:var(--text-muted)">'+h.split(':')[0]+':</span><span class="kv-value">'+(h.split(':').slice(1).join(':')||'')+'</span></div>'}).join('') : '<div class="kv-item" style="color:var(--text-muted)">无</div>';
+  document.getElementById('detailDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('active');
+}
+
+function closeDrawer() {
+  document.getElementById('detailDrawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('active');
+}
+
+function showToast(msg,type){type=type||'success';var t=document.createElement('div');t.className='toast toast-'+type;t.innerHTML=(type==='success'?'✅ ':'ℹ️ ')+msg;document.body.appendChild(t);setTimeout(function(){t.remove()},2500);}
+applyFilter();
+</script>
+</body>
+</html>

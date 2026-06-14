@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提示词配置 - AI-HUB</title>
+<style>
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--radius:8px;--radius-lg:12px;--font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;height:100vh;}
+.sidebar{width:220px;background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-header{padding:20px;border-bottom:var(--border);}
+.sidebar-header h1{font-size:18px;color:var(--primary);font-weight:700;letter-spacing:1px;}
+.sidebar-header p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.nav-tabs{list-style:none;padding:12px 0;}
+.nav-tabs li{padding:10px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s;border-left:3px solid transparent;}
+.nav-tabs li:hover{background:rgba(198,123,92,0.06);color:var(--text);}
+.nav-tabs li.active{background:rgba(198,123,92,0.1);color:var(--primary);border-left-color:var(--primary);font-weight:600;}
+.nav-tabs li svg{width:18px;height:18px;flex-shrink:0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.main-header{padding:16px 28px;border-bottom:var(--border);background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;}
+.main-header h2{font-size:18px;font-weight:600;}
+.breadcrumb{font-size:13px;color:var(--text-muted);}
+.breadcrumb span{color:var(--text-secondary);}
+.content{padding:24px 28px;overflow-y:auto;flex:1;}
+.card{background:var(--card-bg);border-radius:var(--radius-lg);border:var(--border);padding:24px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);display:flex;align-items:center;justify-content:space-between;}
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;}
+.form-group select,.form-group input,.form-group textarea{width:100%;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;transition:border-color .2s;}
+.form-group select:focus,.form-group input:focus,.form-group textarea:focus{border-color:var(--primary);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.btn{padding:8px 20px;font-size:14px;font-family:var(--font);border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s;font-weight:500;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-light);}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-danger{background:transparent;border:var(--border);color:#c0392b;}
+.btn-danger:hover{background:rgba(192,57,43,0.06);border-color:#c0392b;}
+.btn-group{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:500;}
+.badge-blue{background:rgba(70,130,180,0.1);color:#2c5f8a;}
+.badge-green{background:rgba(107,158,107,0.1);color:#4a7a4a;}
+.badge-orange{background:rgba(212,165,116,0.15);color:#b8894a;}
+table{width:100%;border-collapse:collapse;}
+table th,table td{padding:10px 14px;text-align:left;font-size:14px;border-bottom:var(--border);}
+table th{color:var(--text-muted);font-weight:500;font-size:13px;background:rgba(246,240,231,0.3);}
+table td{color:var(--text-secondary);}
+table tr:hover td{background:rgba(198,123,92,0.03);}
+table .actions{display:flex;gap:6px;}
+table .actions button{padding:4px 10px;font-size:12px;border-radius:var(--radius);border:var(--border);background:transparent;cursor:pointer;color:var(--text-muted);transition:all .2s;}
+table .actions button:hover{border-color:var(--primary);color:var(--primary);}
+.text-preview{color:var(--text-muted);font-size:13px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.search-bar{display:flex;gap:10px;margin-bottom:16px;}
+.search-bar input{flex:1;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);outline:none;}
+.search-bar input:focus{border-color:var(--primary);}
+.content::-webkit-scrollbar{width:6px;}
+.content::-webkit-scrollbar-track{background:transparent;}
+.content::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:3px;}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--card-bg);border-radius:var(--radius-lg);padding:28px;width:620px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+.modal h3{font-size:16px;margin-bottom:20px;}
+.modal .btn-group{margin-top:20px;}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>AI-HUB</h1>
+    <p>智能测试平台</p>
+  </div>
+  <ul class="nav-tabs">
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      AI模型配置
+    </li>
+    <li class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      提示词配置
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      生成行为
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      UI环境
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      APP环境
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      AI聊天室
+    </li>
+  </ul>
+</div>
+
+<div class="main">
+  <div class="main-header">
+    <div>
+      <h2>提示词配置</h2>
+      <div class="breadcrumb">配置中心 / <span>提示词配置</span></div>
+    </div>
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      新建提示词
+    </button>
+  </div>
+
+  <div class="content">
+    <div class="card">
+      <div class="card-title">预设提示词列表</div>
+      <div class="search-bar">
+        <input type="text" placeholder="搜索提示词名称或内容...">
+        <select style="padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;width:160px;">
+          <option>全部类型</option>
+          <option>需求分析</option>
+          <option>用例生成</option>
+          <option>用例评审</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>提示词名称</th>
+            <th>类型</th>
+            <th>内容预览</th>
+            <th>最后修改</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:500;">需求分析提示词</td>
+            <td><span class="badge badge-blue">需求分析</span></td>
+            <td><div class="text-preview">你是一个专业的软件测试需求分析专家，请分析以下需求文档...</div></td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-10 14:30</td>
+            <td class="actions">
+              <button onclick="openModal()">编辑</button>
+              <button>复制</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">测试用例生成器</td>
+            <td><span class="badge badge-green">用例生成</span></td>
+            <td><div class="text-preview">基于以下需求描述，生成覆盖正向、异常、边界场景的测试用例...</div></td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-08 10:15</td>
+            <td class="actions">
+              <button onclick="openModal()">编辑</button>
+              <button>复制</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">用例评审助手</td>
+            <td><span class="badge badge-orange">用例评审</span></td>
+            <td><div class="text-preview">请对以下测试用例进行评审，检查完整性、正确性和可执行性...</div></td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-05 16:45</td>
+            <td class="actions">
+              <button onclick="openModal()">编辑</button>
+              <button>复制</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">API测试用例生成</td>
+            <td><span class="badge badge-green">用例生成</span></td>
+            <td><div class="text-preview">根据API接口文档生成RESTful API测试用例，覆盖状态码校验...</div></td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-06-01 09:20</td>
+            <td class="actions">
+              <button onclick="openModal()">编辑</button>
+              <button>复制</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">UI自动化用例生成</td>
+            <td><span class="badge badge-green">用例生成</span></td>
+            <td><div class="text-preview">根据页面描述和用户操作流程，生成UI自动化测试用例...</div></td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-05-28 11:30</td>
+            <td class="actions">
+              <button onclick="openModal()">编辑</button>
+              <button>复制</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">安全测试提示词</td>
+            <td><span class="badge badge-blue">需求分析</span></td>
+            <td><div class="text-preview">分析以下系统模块的安全需求，识别潜在的安全风险和漏洞...</div></td>
+            <td style="color:var(--text-muted);font-size:13px;">2025-05-25 14:00</td>
+            <td class="actions">
+              <button onclick="openModal()">编辑</button>
+              <button>复制</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="btn-group" style="justify-content:flex-start;">
+      <button class="btn btn-outline">恢复默认设置</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="promptModal">
+  <div class="modal">
+    <h3>编辑提示词</h3>
+    <div class="form-group">
+      <label>提示词名称</label>
+      <input type="text" value="需求分析提示词" placeholder="输入提示词名称">
+    </div>
+    <div class="form-group">
+      <label>类型</label>
+      <select>
+        <option selected>需求分析</option>
+        <option>用例生成</option>
+        <option>用例评审</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>提示词内容</label>
+      <textarea rows="10" placeholder="输入提示词内容..." style="width:100%;padding:10px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);resize:vertical;background:var(--card-bg);color:var(--text);outline:none;">你是一个专业的软件测试需求分析专家，请分析以下需求文档，提取关键测试点，识别潜在风险，并输出详细的需求分析报告。
+
+需求文档内容：
+{需求文档内容}
+
+请从以下维度进行分析：
+1. 功能完整性
+2. 边界条件
+3. 异常场景
+4. 性能要求
+5. 安全考量</textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(){document.getElementById('promptModal').classList.add('show');}
+function closeModal(){document.getElementById('promptModal').classList.remove('show');}
+document.getElementById('promptModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+</script>
+</body>
+</html>

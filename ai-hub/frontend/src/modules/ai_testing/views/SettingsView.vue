@@ -59,13 +59,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { checkConfig } from '@/modules/ai_testing/api/generation'
 import type { ConfigCheckResponse } from '@/modules/ai_testing/types/generation'
 
 const router = useRouter()
+const route = useRoute()
 const message = useMessage()
 
 const configStatus = ref<ConfigCheckResponse | null>(null)
@@ -138,6 +139,12 @@ function handleRefresh() {
 }
 
 onMounted(() => loadStatus())
+// 每次路由回到配置页时重新检查状态（确保保存后立即反映）
+watch(() => route.path, (path) => {
+  if (path === '/ai-testing/settings' || path === '/ai-testing/config') {
+    loadStatus()
+  }
+})
 </script>
 
 <style scoped>

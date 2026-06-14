@@ -155,12 +155,16 @@ watch(() => comfortStore.streamingContent, () => {
   gap: 12px;
   text-align: center;
   max-width: 320px;
+  background: linear-gradient(135deg, var(--bg-card), rgba(198,123,92,0.03));
+  padding: 32px 24px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-md);
 }
 
 .empty-name {
   font-size: 20px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--accent);
   margin: 0;
 }
 
@@ -225,10 +229,16 @@ watch(() => comfortStore.streamingContent, () => {
   border-top-left-radius: 6px;
   padding: 12px 16px;
   box-shadow: 0 1px 4px rgba(60, 40, 20, 0.04);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   font-size: 15px;
   line-height: 1.7;
   color: var(--text-primary);
   min-width: 0;
+}
+
+.char-message:hover .char-bubble {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .char-name-label {
@@ -243,7 +253,7 @@ watch(() => comfortStore.streamingContent, () => {
   display: inline-block;
   width: 2px;
   height: 16px;
-  background: var(--accent);
+  background: linear-gradient(180deg, var(--accent), var(--warm));
   margin-left: 2px;
   vertical-align: text-bottom;
   animation: blink 0.8s step-end infinite;

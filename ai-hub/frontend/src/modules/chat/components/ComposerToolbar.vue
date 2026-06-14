@@ -126,7 +126,7 @@ function handleCustomRequest(options: any) {
   padding: 0 12px;
   border-radius: 15px;
   gap: 4px;
-  border: 1px solid rgba(180, 150, 120, 0.2) !important;
+  border: var(--border) !important;
 }
 
 .tool-btn-icon {
@@ -173,7 +173,7 @@ function handleCustomRequest(options: any) {
 
 .toggle-btn--active {
   border-color: rgba(198, 123, 92, 0.35);
-  background: rgba(198, 123, 92, 0.06);
+  background: linear-gradient(135deg, var(--accent-bg), var(--warm-bg));
   color: var(--accent);
 }
 
@@ -216,6 +216,12 @@ function handleCustomRequest(options: any) {
 
 .send-btn:not(.n-button--primary) {
   border-color: rgba(180, 150, 120, 0.35) !important;
+}
+
+.send-btn.n-button--primary-type {
+  --n-color: var(--accent) !important;
+  --n-color-hover: var(--accent-light) !important;
+  --n-color-pressed: var(--accent) !important;
 }
 
 .send-icon {

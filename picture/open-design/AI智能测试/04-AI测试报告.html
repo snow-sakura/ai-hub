@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI测试报告 · AI-HUB 智能工作台</title>
+<style>
+/* ═══════════════════════════════════════════
+   拍立得暖色设计系统 · Polaroid Warm
+   设计主色: #C67B5C 焦糖棕
+   页面底色: #FBF7F0 暖米白
+   卡片底色: #FFFDF9 暖白
+   侧栏底色: #F6F0E7 暖灰褐
+   ═══════════════════════════════════════════ */
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --info: #5B8DEF; --warning: #D4A574;
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* === 侧栏 === */
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+
+/* === 主内容 === */
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;height:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px;flex:1}
+
+/* === 页面头部 === */
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-0.02em}
+.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+
+/* === 按钮 === */
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light);box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:var(--border)}
+.btn-secondary:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid rgba(180,150,120,0.15)}
+.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}
+
+/* === 卡片 === */
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:16px 20px}
+
+/* === 摘要统计行 === */
+.summary-row{display:flex;align-items:center}
+.summary-item{display:flex;align-items:center;gap:14px;flex:1;justify-content:center;padding:10px 0}
+.summary-icon{font-size:28px;line-height:1}
+.summary-body{display:flex;flex-direction:column}
+.summary-value{font-size:26px;font-weight:700;color:var(--text);line-height:1.2}
+.summary-label{font-size:12px;color:var(--text-muted);margin-top:2px}
+.summary-divider{width:1px;height:48px;background:rgba(180,150,120,0.15)}
+
+/* === 两栏布局 === */
+.row-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+
+/* === 环形图 === */
+.ring-chart-wrap{display:flex;align-items:center;gap:28px;padding:4px 0}
+.ring-chart{flex-shrink:0}
+.ring-circle{width:140px;height:140px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center}
+.ring-center{background:var(--card-bg);width:80px;height:80px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-center-value{font-size:22px;font-weight:700;color:var(--text);line-height:1.1}
+.ring-center-label{font-size:11px;color:var(--text-muted)}
+.ring-legend{display:flex;flex-direction:column;gap:10px;flex:1}
+.ring-legend-item{display:flex;align-items:center;gap:8px}
+.ring-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.ring-label{color:var(--text-secondary);flex:1;font-size:13px}
+.ring-value{font-weight:600;color:var(--text);font-size:14px}
+.ring-pct{color:var(--text-muted);font-size:11px;min-width:36px;text-align:right}
+
+/* === 进度条 === */
+.status-bars{display:flex;flex-direction:column;gap:14px;padding:4px 0}
+.status-bar-item{display:flex;flex-direction:column;gap:6px}
+.status-bar-header{display:flex;justify-content:space-between;font-size:13px}
+.status-bar-label{color:var(--text-secondary)}
+.status-bar-count{font-weight:600;color:var(--text)}
+.status-bar-track{height:10px;background:rgba(180,150,120,0.1);border-radius:5px;overflow:hidden}
+.status-bar-fill{height:100%;border-radius:5px;width:0;transition:width 0.6s ease}
+
+/* === Tabs === */
+.tabs{display:flex;gap:0;border-bottom:var(--border);padding:0 20px}
+.tab{padding:10px 20px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.tab-content{display:none;padding:16px 20px}
+.tab-content.active{display:block}
+.tab-section-title{font-size:15px;font-weight:600;color:var(--text);margin:0 0 14px}
+
+/* === 柱状图 === */
+.bar-chart{display:flex;flex-direction:column;gap:10px}
+.bar-item{display:flex;align-items:center;gap:12px}
+.bar-label{width:80px;font-size:13px;color:var(--text-secondary);text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:22px;background:rgba(180,150,120,0.08);border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;width:0;transition:width 0.6s ease;min-width:4px}
+.bar-value{width:32px;font-size:13px;font-weight:600;color:var(--text);text-align:right}
+
+/* === 指标网格 === */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
+.metric-item{padding:14px;background:rgba(180,150,120,0.03);border-radius:8px;border:var(--border)}
+.metric-label{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:700}
+.metric-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* === 表格 === */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);white-space:nowrap;background:var(--sidebar-bg);font-size:12px}
+td{padding:10px 12px;border-bottom:var(--border);color:var(--text)}
+tr:nth-child(even) td{background:rgba(180,150,120,0.03)}
+tr:hover td{background:var(--primary-bg)}
+.text-muted{color:var(--text-muted)}
+
+/* === 标签 === */
+.tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:500}
+.tag-p0{background:rgba(212,116,92,0.12);color:var(--danger)}
+.tag-p1{background:rgba(212,165,116,0.12);color:#B8860B}
+.tag-p2{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-p3{background:rgba(180,150,120,0.12);color:var(--text-muted)}
+.tag-pass{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-fail{background:rgba(212,116,92,0.12);color:var(--danger)}
+.tag-block{background:rgba(212,165,116,0.12);color:var(--warning)}
+
+/* === 分页 === */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px}
+.pagination-info{font-size:12px;color:var(--text-muted)}
+.pagination-btns{display:flex;gap:6px}
+
+/* === 缺陷网格 === */
+.defect-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.defect-card-item{background:var(--card-bg);border:var(--border);border-radius:10px;padding:20px;text-align:center}
+.defect-level{font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
+.defect-count{font-size:32px;font-weight:700;line-height:1.1;margin-bottom:8px}
+.defect-desc{font-size:12px;color:var(--text-muted)}
+
+/* === 报告头部信息 === */
+.report-meta{display:flex;gap:24px;flex-wrap:wrap;margin-top:4px}
+.report-meta span{font-size:12px;color:var(--text-muted)}
+.report-meta strong{color:var(--text-secondary);font-weight:600}
+
+/* === 评估卡 === */
+.score-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.score-card{text-align:center;padding:16px 12px;background:var(--card-bg);border:var(--border);border-radius:10px}
+.score-value{font-size:28px;font-weight:700;line-height:1.2}
+.score-label{font-size:12px;color:var(--text-muted);margin-top:4px}
+.score-bar{height:4px;border-radius:2px;margin-top:10px;background:rgba(180,150,120,0.1);overflow:hidden}
+.score-bar-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+
+/* === 建议列表 === */
+.suggestion-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.suggestion-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(180,150,120,0.04);border-radius:8px;border:var(--border)}
+.suggestion-num{width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.suggestion-text{font-size:13px;color:var(--text-secondary);line-height:1.5}
+
+/* === 模态框 === */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(30,20,10,0.35);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--card-bg);border-radius:14px;width:92%;max-width:560px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(30,20,10,0.18);animation:modalIn 0.2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border)}
+.modal-head h3{font-size:16px;font-weight:600}
+.modal-close{width:28px;height:28px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--primary-bg);color:var(--text)}
+.modal-body{padding:20px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:var(--border)}
+
+/* === Toast === */
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:10px;padding:12px 20px;box-shadow:0 8px 30px rgba(30,20,10,0.12);display:flex;align-items:center;gap:10px;font-size:13px;animation:slideIn 0.25s ease;max-width:360px}
+.toast-success{border-left:4px solid var(--success)}
+.toast-info{border-left:4px solid var(--info)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* === 动画 === */
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* === 响应式 === */
+@media(max-width:920px){
+  .sidebar{width:60px}
+  .sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}
+  .sidebar-logo span{display:none}
+  .menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}
+  .sidebar-logo{padding:14px 0;justify-content:center}
+  .menu-item{justify-content:center;padding:9px 0}
+  .main{margin-left:60px}
+  .summary-icon{display:none}
+}
+@media(max-width:768px){
+  .row-2col,.score-row{grid-template-columns:1fr}
+  .summary-row{flex-wrap:wrap;gap:8px}
+  .summary-item{flex:1 1 40%}
+  .summary-divider{display:none}
+  .defect-grid{grid-template-columns:1fr}
+  .metric-grid{grid-template-columns:1fr 1fr}
+  .page-header{flex-direction:column;align-items:flex-start;gap:12px}
+}
+@media(max-width:480px){
+  .content{padding:16px 12px}
+  .summary-item{flex:1 1 100%;justify-content:flex-start}
+  .header-actions{flex-direction:column;width:100%}
+  .header-actions .btn{width:100%;justify-content:center}
+  .metric-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ 侧栏 ═══ -->
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">🤖</div><span>AI 智能测试</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">AI 智能测试</div>
+    <a class="menu-item" href="50-AI智能测试模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="02-AI用例生成.html"><span class="icon">🤖</span><span>AI用例生成</span></a>
+    <a class="menu-item" href="03-AI评测师.html"><span class="icon">🔍</span><span>AI评测师</span></a>
+    <a class="menu-item active" href="04-AI测试报告.html"><span class="icon">📈</span><span>AI测试报告</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+
+<!-- ═══ 主内容 ═══ -->
+<div class="main">
+
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <div class="breadcrumb">AI 智能测试 / <span>AI测试报告</span></div>
+    <div class="topbar-right">
+      <button class="topbar-btn" onclick="showToast('页面已刷新', 'info')" title="刷新">⟳</button>
+      <button class="topbar-btn" onclick="showToast('暂无新通知', 'info')" title="通知">🔔</button>
+      <div class="avatar-sm">张</div>
+    </div>
+  </header>
+
+  <!-- 内容区 -->
+  <div class="content">
+
+    <!-- 页面头部 -->
+    <div class="page-header fade-in">
+      <div>
+        <h1 class="page-title">AI 测试报告</h1>
+        <p class="page-sub">AI 智能分析与质量评估报告</p>
+        <div class="report-meta">
+          <span>报告编号：<strong>RPT-2026-0612-001</strong></span>
+          <span>生成时间：<strong>2026-06-12 14:32</strong></span>
+          <span>测试负责人：<strong>张工</strong></span>
+          <span>AI 模型：<strong>DeepSeek-Chart</strong></span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="openPreview()">👁️ 预览</button>
+        <button class="btn btn-ghost" onclick="shareReport()">📤 分享</button>
+        <button class="btn btn-primary" onclick="exportReport()">📥 导出报告</button>
+      </div>
+    </div>
+
+    <!-- AI 综合评分 -->
+    <div class="card fade-in">
+      <div class="card-header">🤖 AI 综合评估</div>
+      <div class="card-body">
+        <div class="score-row">
+          <div class="score-card">
+            <div class="score-value" style="color:var(--success)">85</div>
+            <div class="score-label">功能覆盖度</div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:85%;background:var(--success)"></div></div>
+          </div>
+          <div class="score-card">
+            <div class="score-value" style="color:var(--primary)">72</div>
+            <div class="score-label">边界覆盖度</div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:72%;background:var(--primary)"></div></div>
+          </div>
+          <div class="score-card">
+            <div class="score-value" style="color:var(--warning)">68</div>
+            <div class="score-label">场景完整度</div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:68%;background:var(--warning)"></div></div>
+          </div>
+          <div class="score-card">
+            <div class="score-value" style="color:var(--accent)">78</div>
+            <div class="score-label">步骤清晰度</div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:78%;background:var(--accent)"></div></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:rgba(198,123,92,0.06);border-radius:8px;margin-top:4px">
+          <span style="font-size:24px">💡</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">AI 分析建议</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">场景完整度偏低（68%），建议补充异常流程和中断恢复场景用例；边界覆盖度尚有提升空间，建议增加输入边界值和压力边界测试。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 摘要统计卡片 -->
+    <div class="card fade-in">
+      <div class="card-body" style="padding:0">
+        <div class="summary-row">
+          <div class="summary-item">
+            <span class="summary-icon">📋</span>
+            <div class="summary-body">
+              <span class="summary-value">100</span>
+              <span class="summary-label">总用例数</span>
+            </div>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-icon">✅</span>
+            <div class="summary-body">
+              <span class="summary-value">73%</span>
+              <span class="summary-label">通过率</span>
+            </div>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-icon">🎯</span>
+            <div class="summary-body">
+              <span class="summary-value">12</span>
+              <span class="summary-label">覆盖功能点</span>
+            </div>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-icon">⏱️</span>
+            <div class="summary-body">
+              <span class="summary-value">98%</span>
+              <span class="summary-label">执行完成率</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 两栏：环形图 + 状态概览 -->
+    <div class="row-2col fade-in">
+      <!-- 环形图 -->
+      <div class="card">
+        <div class="card-header">🎯 执行结果分布</div>
+        <div class="card-body">
+          <div class="ring-chart-wrap">
+            <div class="ring-chart">
+              <div class="ring-circle" id="donutChart">
+                <div class="ring-center">
+                  <span class="ring-center-value">73%</span>
+                  <span class="ring-center-label">通过率</span>
+                </div>
+              </div>
+            </div>
+            <div class="ring-legend">
+              <div class="ring-legend-item">
+                <span class="ring-dot" style="background:#7BA87D"></span>
+                <span class="ring-label">通过</span>
+                <span class="ring-value">73</span>
+                <span class="ring-pct">73%</span>
+              </div>
+              <div class="ring-legend-item">
+                <span class="ring-dot" style="background:#D4745C"></span>
+                <span class="ring-label">失败</span>
+                <span class="ring-value">18</span>
+                <span class="ring-pct">18%</span>
+              </div>
+              <div class="ring-legend-item">
+                <span class="ring-dot" style="background:#D4A574"></span>
+                <span class="ring-label">阻塞</span>
+                <span class="ring-value">5</span>
+                <span class="ring-pct">5%</span>
+              </div>
+              <div class="ring-legend-item">
+                <span class="ring-dot" style="background:#8B7355"></span>
+                <span class="ring-label">未执行</span>
+                <span class="ring-value">4</span>
+                <span class="ring-pct">4%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 状态概览 -->
+      <div class="card">
+        <div class="card-header">📊 状态概览</div>
+        <div class="card-body">
+          <div class="status-bars">
+            <div class="status-bar-item">
+              <div class="status-bar-header">
+                <span class="status-bar-label">已通过</span>
+                <span class="status-bar-count">73</span>
+              </div>
+              <div class="status-bar-track">
+                <div class="status-bar-fill sbf" style="background:#7BA87D" data-width="73"></div>
+              </div>
+            </div>
+            <div class="status-bar-item">
+              <div class="status-bar-header">
+                <span class="status-bar-label">已失败</span>
+                <span class="status-bar-count">18</span>
+              </div>
+              <div class="status-bar-track">
+                <div class="status-bar-fill sbf" style="background:#D4745C" data-width="18"></div>
+              </div>
+            </div>
+            <div class="status-bar-item">
+              <div class="status-bar-header">
+                <span class="status-bar-label">阻塞</span>
+                <span class="status-bar-count">5</span>
+              </div>
+              <div class="status-bar-track">
+                <div class="status-bar-fill sbf" style="background:#D4A574" data-width="5"></div>
+              </div>
+            </div>
+            <div class="status-bar-item">
+              <div class="status-bar-header">
+                <span class="status-bar-label">未执行</span>
+                <span class="status-bar-count">4</span>
+              </div>
+              <div class="status-bar-track">
+                <div class="status-bar-fill sbf" style="background:#8B7355" data-width="4"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 详情标签页卡片 -->
+    <div class="card fade-in">
+      <div class="tabs">
+        <button class="tab active" data-tab="overview">📈 统计概览</button>
+        <button class="tab" data-tab="cases">📋 用例列表</button>
+        <button class="tab" data-tab="defects">🐛 缺陷分布</button>
+        <button class="tab" data-tab="suggestions">💡 改进建议</button>
+      </div>
+
+      <!-- Tab: 统计概览 -->
+      <div class="tab-content active" id="tab-overview">
+        <div class="tab-section-title">各模块用例统计</div>
+        <div class="bar-chart" id="barChartContainer">
+          <div class="bar-item"><span class="bar-label">用户管理</span><div class="bar-track"><div class="bar-fill bf-chart" style="background:#C67B5C" data-width="100"></div></div><span class="bar-value">28</span></div>
+          <div class="bar-item"><span class="bar-label">订单系统</span><div class="bar-track"><div class="bar-fill bf-chart" style="background:#D49472" data-width="85.7"></div></div><span class="bar-value">24</span></div>
+          <div class="bar-item"><span class="bar-label">支付模块</span><div class="bar-track"><div class="bar-fill bf-chart" style="background:#D4A574" data-width="64.3"></div></div><span class="bar-value">18</span></div>
+          <div class="bar-item"><span class="bar-label">消息推送</span><div class="bar-track"><div class="bar-fill bf-chart" style="background:#7BA87D" data-width="50"></div></div><span class="bar-value">14</span></div>
+          <div class="bar-item"><span class="bar-label">数据分析</span><div class="bar-track"><div class="bar-fill bf-chart" style="background:#D4745C" data-width="35.7"></div></div><span class="bar-value">10</span></div>
+          <div class="bar-item"><span class="bar-label">权限管理</span><div class="bar-track"><div class="bar-fill bf-chart" style="background:#8B7355" data-width="21.4"></div></div><span class="bar-value">6</span></div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric-item">
+            <div class="metric-label">平均执行时间</div>
+            <div class="metric-value" style="color:var(--primary)">1.2s</div>
+            <div class="metric-sub">单用例平均耗时</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">最大失败模块</div>
+            <div class="metric-value" style="color:var(--danger)">安全策略</div>
+            <div class="metric-sub">通过率仅 52%</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">AI 分析建议</div>
+            <div class="metric-value" style="color:var(--accent)">6 项</div>
+            <div class="metric-sub">建议优先处理 3 项</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: 用例列表 -->
+      <div class="tab-content" id="tab-cases">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>用例名称</th>
+                <th>所属模块</th>
+                <th>优先级</th>
+                <th>状态</th>
+                <th>执行人</th>
+                <th>耗时</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>用户登录-正常流程</td><td>用户管理</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-pass">通过</span></td><td class="text-muted">张三</td><td class="text-muted">0.8s</td></tr>
+              <tr><td>用户登录-密码错误</td><td>用户管理</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-pass">通过</span></td><td class="text-muted">张三</td><td class="text-muted">0.6s</td></tr>
+              <tr><td>用户登录-账号锁定</td><td>用户管理</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-fail">失败</span></td><td class="text-muted">李四</td><td class="text-muted">1.2s</td></tr>
+              <tr><td>订单创建-正常流程</td><td>订单系统</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-pass">通过</span></td><td class="text-muted">李四</td><td class="text-muted">2.1s</td></tr>
+              <tr><td>订单创建-库存不足</td><td>订单系统</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-block">阻塞</span></td><td class="text-muted">王五</td><td class="text-muted">—</td></tr>
+              <tr><td>订单取消-退款流程</td><td>订单系统</td><td><span class="tag tag-p2">P2</span></td><td><span class="tag tag-pass">通过</span></td><td class="text-muted">王五</td><td class="text-muted">1.5s</td></tr>
+              <tr><td>支付回调-签名验证</td><td>支付模块</td><td><span class="tag tag-p0">P0</span></td><td><span class="tag tag-fail">失败</span></td><td class="text-muted">赵六</td><td class="text-muted">3.2s</td></tr>
+              <tr><td>消息推送-批量发送</td><td>消息推送</td><td><span class="tag tag-p2">P2</span></td><td><span class="tag tag-pass">通过</span></td><td class="text-muted">张三</td><td class="text-muted">0.9s</td></tr>
+              <tr><td>数据分析-报表导出</td><td>数据分析</td><td><span class="tag tag-p3">P3</span></td><td><span class="tag tag-pass">通过</span></td><td class="text-muted">赵六</td><td class="text-muted">4.5s</td></tr>
+              <tr><td>权限管理-角色分配</td><td>权限管理</td><td><span class="tag tag-p1">P1</span></td><td><span class="tag tag-fail">失败</span></td><td class="text-muted">李四</td><td class="text-muted">1.1s</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span class="pagination-info">共 100 条，当前第 1/10 页</span>
+          <div class="pagination-btns">
+            <button class="btn btn-ghost btn-sm" disabled>上一页</button>
+            <button class="btn btn-primary btn-sm" style="height:28px;padding:0 10px">1</button>
+            <button class="btn btn-ghost btn-sm">2</button>
+            <button class="btn btn-ghost btn-sm">3</button>
+            <button class="btn btn-ghost btn-sm">···</button>
+            <button class="btn btn-ghost btn-sm">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: 缺陷分布 -->
+      <div class="tab-content" id="tab-defects">
+        <div class="tab-section-title">缺陷等级分布</div>
+        <div class="defect-grid">
+          <div class="defect-card-item" style="border-left:4px solid #D4745C">
+            <div class="defect-level">Critical</div>
+            <div class="defect-count" style="color:#D4745C">3</div>
+            <div class="defect-desc">核心功能阻断，需立即修复</div>
+          </div>
+          <div class="defect-card-item" style="border-left:4px solid #D4A574">
+            <div class="defect-level">Major</div>
+            <div class="defect-count" style="color:#D4A574">5</div>
+            <div class="defect-desc">主要功能异常，影响使用体验</div>
+          </div>
+          <div class="defect-card-item" style="border-left:4px solid #8B7355">
+            <div class="defect-level">Minor</div>
+            <div class="defect-count" style="color:#8B7355">2</div>
+            <div class="defect-desc">次要问题，可后续优化</div>
+          </div>
+        </div>
+        <div style="margin-top:20px">
+          <div class="tab-section-title">缺陷趋势</div>
+          <div style="padding:20px;border:var(--border);border-radius:8px;background:rgba(180,150,120,0.03);text-align:center">
+            <svg width="100%" height="120" viewBox="0 0 600 120" style="max-width:600px">
+              <polyline points="0,90 100,70 200,80 300,50 400,60 500,30 600,40" fill="none" stroke="#C67B5C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="0,100 100,85 200,90 300,70 400,75 500,50 600,55" fill="none" stroke="#D4A574" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3"/>
+              <circle cx="500" cy="30" r="4" fill="#C67B5C"/>
+              <circle cx="500" cy="50" r="3" fill="#D4A574"/>
+              <text x="580" y="34" font-size="10" fill="#8B7355">Critical</text>
+              <text x="580" y="58" font-size="10" fill="#8B7355">Major</text>
+            </svg>
+            <div style="display:flex;justify-content:center;gap:24px;font-size:11px;color:var(--text-muted);margin-top:4px">
+              <span>1月</span><span>2月</span><span>3月</span><span>4月</span><span>5月</span><span>6月</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: 改进建议 -->
+      <div class="tab-content" id="tab-suggestions">
+        <div class="tab-section-title">AI 智能改进建议</div>
+        <div style="padding:14px;background:rgba(198,123,92,0.06);border-radius:8px;border:1px solid rgba(198,123,92,0.15);margin-bottom:16px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:20px">🤖</span>
+          <span style="font-size:13px;color:var(--text-secondary);line-height:1.5">基于本次测试结果，AI 分析了以下改进方向，建议优先处理高优先级的 3 项。</span>
+        </div>
+        <div class="suggestion-list">
+          <div class="suggestion-item">
+            <span class="suggestion-num">1</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">补充异常登录场景</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">当前账号锁定场景失败率较高，建议增加连续失败次数限制测试、验证码过期测试、多设备登录冲突测试。</div>
+            </div>
+            <span class="tag tag-p0">高优先级</span>
+          </div>
+          <div class="suggestion-item">
+            <span class="suggestion-num">2</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">支付回调超时处理</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">支付回调签名验证多次超时失败，建议补充网络异常场景测试及回调重试机制验证。</div>
+            </div>
+            <span class="tag tag-p0">高优先级</span>
+          </div>
+          <div class="suggestion-item">
+            <span class="suggestion-num">3</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">权限边界验证</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">角色分配功能存在权限校验边界不完整，建议补充越权访问、角色继承链过长等测试场景。</div>
+            </div>
+            <span class="tag tag-p0">高优先级</span>
+          </div>
+          <div class="suggestion-item">
+            <span class="suggestion-num">4</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">库存并发处理</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">库存不足场景虽已标记阻塞，但缺少高并发下的超卖场景测试，建议补充并发下订单创建测试。</div>
+            </div>
+            <span class="tag tag-p1">中优先级</span>
+          </div>
+          <div class="suggestion-item">
+            <span class="suggestion-num">5</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">大数据量导出优化</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">报表导出耗时 4.5s，建议补充大数据量导出测试及分页导出验证。</div>
+            </div>
+            <span class="tag tag-p2">低优先级</span>
+          </div>
+          <div class="suggestion-item">
+            <span class="suggestion-num">6</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">消息推送覆盖</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">批量发送已通过，但缺少推送失败重试、推送内容格式异常、接收方不可达等场景。</div>
+            </div>
+            <span class="tag tag-p2">低优先级</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ 预览模态框 ═══ -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal-box" style="max-width:720px">
+    <div class="modal-head">
+      <h3>📄 报告预览</h3>
+      <button class="modal-close" onclick="closePreview()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="previewContent" style="background:#fff;border-radius:8px;padding:24px;box-shadow:0 0 0 1px rgba(180,150,120,0.08)">
+        <h2 style="font-size:18px;color:#3D2E1F;text-align:center;margin-bottom:8px">AI 测试报告</h2>
+        <p style="text-align:center;font-size:12px;color:#8B7355;margin-bottom:20px">RPT-2026-0612-001 | 2026-06-12 14:32</p>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px">
+          <div style="background:#FBF7F0;padding:12px;border-radius:6px;text-align:center"><div style="font-size:20px;font-weight:700;color:#3D2E1F">100</div><div style="font-size:11px;color:#8B7355">总用例</div></div>
+          <div style="background:#FBF7F0;padding:12px;border-radius:6px;text-align:center"><div style="font-size:20px;font-weight:700;color:#7BA87D">73%</div><div style="font-size:11px;color:#8B7355">通过率</div></div>
+          <div style="background:#FBF7F0;padding:12px;border-radius:6px;text-align:center"><div style="font-size:20px;font-weight:700;color:#C67B5C">85</div><div style="font-size:11px;color:#8B7355">AI评分</div></div>
+          <div style="background:#FBF7F0;padding:12px;border-radius:6px;text-align:center"><div style="font-size:20px;font-weight:700;color:#3D2E1F">98%</div><div style="font-size:11px;color:#8B7355">执行率</div></div>
+        </div>
+        <div style="border-top:1px solid rgba(180,150,120,0.12);padding-top:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px">各模块执行结果</div>
+          <table style="width:100%;font-size:12px;border-collapse:collapse">
+            <tr><th style="text-align:left;padding:6px 8px;background:#F6F0E7">模块</th><th style="text-align:left;padding:6px 8px;background:#F6F0E7">总数</th><th style="text-align:left;padding:6px 8px;background:#F6F0E7">通过</th><th style="text-align:left;padding:6px 8px;background:#F6F0E7">失败</th><th style="text-align:left;padding:6px 8px;background:#F6F0E7">通过率</th></tr>
+            <tr><td style="padding:6px 8px">用户管理</td><td style="padding:6px 8px">28</td><td style="padding:6px 8px">26</td><td style="padding:6px 8px">2</td><td style="padding:6px 8px">92.9%</td></tr>
+            <tr><td style="padding:6px 8px">订单系统</td><td style="padding:6px 8px">24</td><td style="padding:6px 8px">20</td><td style="padding:6px 8px">4</td><td style="padding:6px 8px">83.3%</td></tr>
+            <tr><td style="padding:6px 8px">支付模块</td><td style="padding:6px 8px">18</td><td style="padding:6px 8px">10</td><td style="padding:6px 8px">8</td><td style="padding:6px 8px">55.6%</td></tr>
+            <tr><td style="padding:6px 8px">消息推送</td><td style="padding:6px 8px">14</td><td style="padding:6px 8px">12</td><td style="padding:6px 8px">2</td><td style="padding:6px 8px">85.7%</td></tr>
+            <tr><td style="padding:6px 8px">数据分析</td><td style="padding:6px 8px">10</td><td style="padding:6px 8px">3</td><td style="padding:6px 8px">7</td><td style="padding:6px 8px">30.0%</td></tr>
+          </table>
+        </div>
+        <div style="border-top:1px solid rgba(180,150,120,0.12);padding-top:12px;margin-top:12px;text-align:center;font-size:11px;color:#8B7355">由 AI-HUB 智能工作台自动生成</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePreview()">关闭</button>
+      <button class="btn btn-primary" onclick="closePreview();showToast('报告导出中...','success')">📥 导出 PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 分享模态框 ═══ -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-head">
+      <h3>📤 分享报告</h3>
+      <button class="modal-close" onclick="closeShare()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">分享链接</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" readonly value="https://ai-hub.test/report/RPT-2026-0612-001" style="flex:1;padding:8px 12px;border:var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--sidebar-bg);outline:none;font-family:inherit">
+          <button class="btn btn-primary" onclick="copyLink()">复制</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">分享范围</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)"><input type="radio" name="scope" checked style="accent-color:#C67B5C"> 仅团队内部</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)"><input type="radio" name="scope" style="accent-color:#C67B5C"> 项目组成员</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)"><input type="radio" name="scope" style="accent-color:#C67B5C"> 公开链接</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeShare()">取消</button>
+      <button class="btn btn-primary" onclick="closeShare();showToast('分享链接已生成','success')">生成分享</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════
+// Tab 切换
+// ══════════════════════════════════
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+    this.classList.add('active');
+    document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+  });
+});
+
+// ══════════════════════════════════
+// 页面进入动画：进度条和柱状图
+// ══════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  // 延迟动画确保渲染
+  setTimeout(function() {
+    // 状态进度条
+    document.querySelectorAll('.sbf').forEach(function(el) {
+      el.style.width = el.dataset.width + '%';
+    });
+    // 柱状图
+    document.querySelectorAll('.bf-chart').forEach(function(el) {
+      el.style.width = el.dataset.width + '%';
+    });
+    // 评分条
+    document.querySelectorAll('.score-bar-fill').forEach(function(el) {
+      el.style.width = el.style.width || el.style.width;
+    });
+  }, 200);
+
+  // 环形图 conic-gradient
+  var donut = document.getElementById('donutChart');
+  if (donut) {
+    donut.style.background = 'conic-gradient(#7BA87D 0deg 262.8deg, #D4745C 262.8deg 327.6deg, #D4A574 327.6deg 345.6deg, #8B7355 345.6deg 360deg)';
+  }
+});
+
+// ══════════════════════════════════
+// Toast 通知
+// ══════════════════════════════════
+function showToast(msg, type) {
+  type = type || 'success';
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.innerHTML = (type === 'success' ? '✅ ' : 'ℹ️ ') + msg;
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 2500);
+}
+
+// ══════════════════════════════════
+// 预览
+// ══════════════════════════════════
+function openPreview() {
+  document.getElementById('previewModal').classList.add('active');
+}
+
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('active');
+}
+
+// ══════════════════════════════════
+// 分享
+// ══════════════════════════════════
+function shareReport() {
+  document.getElementById('shareModal').classList.add('active');
+}
+
+function closeShare() {
+  document.getElementById('shareModal').classList.remove('active');
+}
+
+function copyLink() {
+  var input = document.querySelector('#shareModal input[type="text"]');
+  if (input) {
+    input.select();
+    document.execCommand('copy');
+    showToast('链接已复制', 'success');
+  }
+}
+
+// ══════════════════════════════════
+// 导出报告
+// ══════════════════════════════════
+function exportReport() {
+  showToast('📥 报告导出中，请稍候...', 'info');
+  setTimeout(function() {
+    showToast('报告已导出为 PDF', 'success');
+  }, 1500);
+}
+
+// ══════════════════════════════════
+// 点击模态框外部关闭
+// ══════════════════════════════════
+document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) {
+      this.classList.remove('active');
+    }
+  });
+});
+</script>
+
+</body>
+</html>

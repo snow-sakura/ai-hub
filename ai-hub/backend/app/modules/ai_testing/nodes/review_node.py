@@ -5,7 +5,7 @@ import logging
 
 from pydantic import BaseModel, Field
 
-from app.shared.core.llm_factory import LLMFactory
+from app.common.core.llm_factory import LLMFactory
 from app.modules.ai_testing.prompts import review_prompt
 
 logger = logging.getLogger(__name__)
@@ -61,6 +61,7 @@ async def review_node(state: dict) -> dict:
   llm = LLMFactory.create(
     state.get("model_provider", "deepseek"),
     state.get("model_name", ""),
+    reasoning_effort="high",
     api_key=state.get("model_api_key") or None,
   )
 

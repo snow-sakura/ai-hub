@@ -104,9 +104,9 @@ export const useProjectStore = defineStore('testing-project', () => {
   }
 
   /** 添加成员 */
-  async function addMember(projectId: string, name: string, role: string = 'tester') {
+  async function addMember(projectId: string, name: string, role: MemberRole = 'tester') {
     try {
-      await projectApi.addMember(projectId, { name, role: role as any })
+      await projectApi.addMember(projectId, { name, role })
       await fetchMembers(projectId)
       await fetchProjects()
       return true
@@ -116,10 +116,10 @@ export const useProjectStore = defineStore('testing-project', () => {
     }
   }
 
-  /** 移除成员 */
+  /** 从项目中移除成员关联（多对多，仅解绑不删除成员） */
   async function removeMember(memberId: string, projectId: string) {
     try {
-      await projectApi.removeMember(memberId)
+      await projectApi.unlinkMemberFromProject(memberId, projectId)
       await fetchMembers(projectId)
       await fetchProjects()
       return true

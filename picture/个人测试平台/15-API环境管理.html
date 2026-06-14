@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API接口测试 - 环境管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);
+  --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;
+  --text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);
+  --success:#7BA87D;--danger:#D4745C;--warning:#D4A574;--radius:8px;
+}
+body{font-family:-apple-system,PingFang SC,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;background:var(--sidebar-bg);height:100vh;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:var(--border)}
+.sidebar-header .logo{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.sidebar-header span{font-weight:600;font-size:15px;color:var(--text)}
+.sidebar-search{margin:10px 16px;padding:7px 12px;background:rgba(255,255,255,0.6);border:var(--border);border-radius:6px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)}
+.sidebar-search:before{content:'🔍'}
+.sidebar-nav{flex:1;padding:8px 0}
+.nav-group-header{padding:8px 20px 8px 16px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border-left:3px solid transparent}
+.nav-group-header:hover{color:var(--primary)}
+.nav-group-header.active{border-left-color:var(--primary);color:var(--primary)}
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.topbar-right .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)}
+.topbar-right .avatar{width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+.content{padding:20px 24px;overflow-y:auto;flex:1}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-header h1{font-size:18px;font-weight:700}
+.btn-primary{padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-primary:hover{background:var(--primary-light)}
+.btn-sm{padding:5px 12px;border:none;border-radius:5px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+.btn-outline:hover{background:var(--primary-bg)}
+/* Environment cards row */
+.env-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.env-card{width:calc(25% - 9px);min-width:200px;background:var(--card-bg);border-radius:12px;padding:18px;box-shadow:var(--shadow);border:2px solid transparent;cursor:pointer;transition:border-color .2s;position:relative}
+.env-card:hover{box-shadow:0 6px 20px rgba(60,40,20,0.1)}
+.env-card.active{border-color:var(--primary)}
+.env-card.active:after{content:'✓ 当前使用';position:absolute;top:10px;right:12px;font-size:11px;color:var(--primary);font-weight:500}
+.env-card .env-name{font-size:16px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.env-card .env-type{display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.env-type-global{background:rgba(198,123,92,0.1);color:var(--primary)}
+.env-type-local{background:rgba(212,165,116,0.15);color:#a0845c}
+.env-card .env-meta{font-size:12px;color:var(--text-muted);margin-top:8px}
+.env-card .env-meta span{display:flex;align-items:center;gap:4px;margin-top:4px}
+.env-card .env-toggle{position:absolute;top:14px;right:14px}
+/* Toggle switch */
+.toggle{position:relative;width:36px;height:20px;display:inline-block}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;cursor:pointer;inset:0;background:#ddd;border-radius:10px;transition:.3s}
+.toggle .slider:before{content:'';position:absolute;height:16px;width:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.3s}
+.toggle input:checked + .slider{background:var(--success)}
+.toggle input:checked + .slider:before{transform:translateX(16px)}
+/* Expanded detail */
+.env-detail{display:none;margin-bottom:20px;background:var(--card-bg);border-radius:12px;padding:20px;box-shadow:var(--shadow);border:1px solid rgba(198,123,92,0.15)}
+.env-detail.open{display:block}
+.env-detail-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.env-detail-header h3{font-size:15px;font-weight:600}
+/* variable table */
+.var-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}
+.var-table th{padding:8px 10px;text-align:left;font-weight:500;color:var(--text-muted);font-size:12px;border-bottom:var(--border);background:rgba(246,240,231,0.3)}
+.var-table td{padding:6px 10px;border-bottom:var(--border)}
+.var-table input{width:100%;padding:6px 8px;border:1px solid transparent;border-radius:4px;font-size:13px;background:transparent;outline:none}
+.var-table input:focus{border-color:rgba(198,123,92,0.3);background:var(--primary-bg)}
+.var-table .ref-badge{display:inline-block;padding:1px 8px;background:rgba(198,123,92,0.08);color:var(--primary);border-radius:4px;font-size:12px;font-family:monospace}
+.var-table .del-btn{color:var(--danger);cursor:pointer;font-size:14px;opacity:.5;background:none;border:none}
+.var-table .del-btn:hover{opacity:1}
+.add-var{font-size:13px;color:var(--primary);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-bottom:14px}
+.add-var:hover{color:var(--primary-light)}
+.env-detail-footer{display:flex;gap:8px;padding-top:12px;border-top:var(--border)}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">T</div>
+    <span>TestHub Pro</span>
+  </div>
+  <div class="sidebar-search">搜索功能模块...</div>
+  <div class="sidebar-nav">
+    <div class="nav-group-header"><span>📊</span> 数据看板</div>
+    <div class="nav-group-header"><span>🔗</span> 接口管理</div>
+    <div class="nav-group-header"><span>🤖</span> 自动化测试</div>
+    <div class="nav-group-header active"><span>🌐</span> 环境管理</div>
+    <div class="nav-group-header"><span>⏱</span> 定时任务</div>
+    <div class="nav-group-header"><span>📋</span> 测试报告</div>
+    <div class="nav-group-header"><span>⚙️</span> 配置中心</div>
+  </div>
+</div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">🌐 API环境管理</div>
+    <div class="topbar-right">
+      <span style="font-size:16px;cursor:pointer">🔔</span>
+      <div class="user">
+        <div class="avatar">张</div>
+        <span>张三</span>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <h1>环境变量管理</h1>
+      <button class="btn-primary">＋ 新建环境</button>
+    </div>
+
+    <!-- Environment Cards -->
+    <div class="env-row">
+      <div class="env-card active" onclick="toggleEnv('env-dev')">
+        <span class="env-toggle">
+          <label class="toggle">
+            <input type="checkbox" checked><span class="slider"></span>
+          </label>
+        </span>
+        <div class="env-name">
+          开发环境
+          <span class="env-type env-type-local">local</span>
+        </div>
+        <div class="env-meta">
+          <span>📦 12 个变量</span>
+          <span>👤 张三 创建</span>
+        </div>
+      </div>
+      <div class="env-card" onclick="toggleEnv('env-test')">
+        <span class="env-toggle">
+          <label class="toggle">
+            <input type="checkbox"><span class="slider"></span>
+          </label>
+        </span>
+        <div class="env-name">
+          测试环境
+          <span class="env-type env-type-global">global</span>
+        </div>
+        <div class="env-meta">
+          <span>📦 18 个变量</span>
+          <span>👤 李四 创建</span>
+        </div>
+      </div>
+      <div class="env-card" onclick="toggleEnv('env-staging')">
+        <span class="env-toggle">
+          <label class="toggle">
+            <input type="checkbox"><span class="slider"></span>
+          </label>
+        </span>
+        <div class="env-name">
+          预发布环境
+          <span class="env-type env-type-global">global</span>
+        </div>
+        <div class="env-meta">
+          <span>📦 15 个变量</span>
+          <span>👤 李四 创建</span>
+        </div>
+      </div>
+      <div class="env-card" onclick="toggleEnv('env-prod')">
+        <span class="env-toggle">
+          <label class="toggle">
+            <input type="checkbox"><span class="slider"></span>
+          </label>
+        </span>
+        <div class="env-name">
+          生产环境
+          <span class="env-type env-type-global">global</span>
+        </div>
+        <div class="env-meta">
+          <span>📦 20 个变量</span>
+          <span>👤 王五 创建</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expanded Detail: 开发环境 -->
+    <div class="env-detail open" id="env-dev">
+      <div class="env-detail-header">
+        <h3>开发环境 - 变量列表</h3>
+        <span style="font-size:12px;color:var(--text-muted)">🔗 基础URL: <span class="ref-badge">{{base_url}}</span> → http://dev-api.example.com</span>
+      </div>
+      <table class="var-table">
+        <thead>
+          <tr><th style="width:22%">变量名</th><th style="width:28%">变量值</th><th style="width:35%">描述</th><th style="width:15%">操作</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ref-badge">base_url</span></td>
+            <td><input value="http://dev-api.example.com"></td>
+            <td><input value="API基础地址"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="ref-badge">auth_token</span></td>
+            <td><input value="dev_token_abc123"></td>
+            <td><input value="认证Token"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="ref-badge">db_host</span></td>
+            <td><input value="localhost:3306"></td>
+            <td><input value="数据库地址"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="ref-badge">db_name</span></td>
+            <td><input value="testhub_dev"></td>
+            <td><input value="数据库名"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="ref-badge">redis_host</span></td>
+            <td><input value="localhost:6379"></td>
+            <td><input value="Redis地址"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="ref-badge">api_version</span></td>
+            <td><input value="v1"></td>
+            <td><input value="API版本号"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="add-var">＋ 添加变量</div>
+      <div class="env-detail-footer">
+        <button class="btn-primary" style="font-size:12px;padding:7px 16px">💾 保存环境</button>
+        <button class="btn-sm btn-outline">重置</button>
+      </div>
+    </div>
+
+    <!-- Expanded Detail: 测试环境 -->
+    <div class="env-detail" id="env-test">
+      <div class="env-detail-header">
+        <h3>测试环境 - 变量列表</h3>
+        <span style="font-size:12px;color:var(--text-muted)">🔗 基础URL: <span class="ref-badge">{{base_url}}</span> → https://test-api.example.com</span>
+      </div>
+      <table class="var-table">
+        <thead>
+          <tr><th style="width:22%">变量名</th><th style="width:28%">变量值</th><th style="width:35%">描述</th><th style="width:15%">操作</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ref-badge">base_url</span></td>
+            <td><input value="https://test-api.example.com"></td>
+            <td><input value="API基础地址"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="ref-badge">auth_token</span></td>
+            <td><input value="test_token_xyz456"></td>
+            <td><input value="认证Token"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+          <tr>
+            <td><span class="ref-badge">db_host</span></td>
+            <td><input value="10.0.1.100:3306"></td>
+            <td><input value="数据库地址"></td>
+            <td><button class="del-btn">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="add-var">＋ 添加变量</div>
+      <div class="env-detail-footer">
+        <button class="btn-primary" style="font-size:12px;padding:7px 16px">💾 保存环境</button>
+        <button class="btn-sm btn-outline">重置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleEnv(id){
+  const detail = document.getElementById(id);
+  const cards = document.querySelectorAll('.env-card');
+  const details = document.querySelectorAll('.env-detail');
+  // Close all
+  details.forEach(d => d.classList.remove('open'));
+  cards.forEach(c => c.classList.remove('active'));
+  // Open selected
+  detail.classList.add('open');
+  // Find the card index and activate it
+  const idx = Array.from(details).indexOf(detail);
+  if(cards[idx]) cards[idx].classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@ import type {
   MemberCreate,
   MemberUpdate,
   ProjectListData,
+  DashboardStats,
 } from '@/modules/ai_testing/types/project'
 
 // ─── 项目 CRUD ──────────────────────────────────
@@ -44,6 +45,16 @@ export function deleteProject(id: string): Promise<ApiResponse<boolean>> {
 
 // ─── 项目成员 ──────────────────────────────────────
 
+/** 获取所有成员（独立模块） */
+export function getAllMembers(): Promise<ApiResponse<ProjectMember[]>> {
+  return request.get('/testing/members')
+}
+
+/** 添加成员（独立模块） */
+export function addMemberStandalone(data: MemberCreate): Promise<ApiResponse<ProjectMember>> {
+  return request.post('/testing/members', data)
+}
+
 /** 获取项目成员列表 */
 export function getProjectMembers(projectId: string): Promise<ApiResponse<ProjectMember[]>> {
   return request.get(`/testing/projects/${projectId}/members`)
@@ -63,3 +74,27 @@ export function removeMember(memberId: string): Promise<ApiResponse<boolean>> {
 export function updateMemberRole(memberId: string, data: MemberUpdate): Promise<ApiResponse<boolean>> {
   return request.put(`/testing/members/${memberId}`, data)
 }
+
+// ─── 关联版本/成员到项目 ──────────────────────────────
+
+/** 关联已有版本到项目 */
+export function linkVersionToProject(versionId: string, projectId: string): Promise<ApiResponse<boolean>> {
+  return request.put(`/testing/versions/${versionId}/link-project`, { project_id: projectId })
+}
+
+/** 关联已有成员到项目 */
+export function linkMemberToProject(memberId: string, projectId: string): Promise<ApiResponse<boolean>> {
+  return request.put(`/testing/members/${memberId}/link-project`, { project_id: projectId })
+}
+
+/** 从项目中移除成员关联 */
+export function unlinkMemberFromProject(memberId: string, projectId: string): Promise<ApiResponse<boolean>> {
+  return request.delete(`/testing/members/${memberId}/unlink-project`, { params: { project_id: projectId } })
+}
+
+// ─── 仪表盘 ────────────────────────────────────────
+
+export function getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
+  return request.get('/testing/dashboard/stats')
+}
+

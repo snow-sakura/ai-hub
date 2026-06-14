@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import type { Conversation } from '@/shared/types/conversation'
 import { getConversations, createConversation, renameConversation, deleteConversation, getMessages } from '@/shared/api/conversation'
 import type { PaginatedMessages } from '@/shared/api/conversation'
-import { useChatStore } from '@/modules/chat/stores/chat'
 
 export const useConversationStore = defineStore('conversation', () => {
   const conversations = ref<Conversation[]>([])
@@ -52,6 +51,7 @@ export const useConversationStore = defineStore('conversation', () => {
       }
       conversations.value.unshift(conv)
       activeConversationId.value = conv.id
+      const { useChatStore } = await import('@/modules/chat/stores/chat')
       const chatStore = useChatStore()
       chatStore.clearMessages()
       return conv
@@ -68,6 +68,7 @@ export const useConversationStore = defineStore('conversation', () => {
     const conv = conversations.value.find(c => c.id === id)
     // 哄哄类型会话不加载到 chatStore（防止混合）
     if (conv?.type === 'comfort') return
+    const { useChatStore } = await import('@/modules/chat/stores/chat')
     const chatStore = useChatStore()
     // 清理非当前对话的流状态，释放内存
     const keepId = id
@@ -105,6 +106,7 @@ export const useConversationStore = defineStore('conversation', () => {
     try {
       const res = await getMessages(activeConversationId.value, nextPage, PAGE_SIZE)
       const data = res.data as unknown as PaginatedMessages
+      const { useChatStore } = await import('@/modules/chat/stores/chat')
       const chatStore = useChatStore()
       // 后端 DESC 返回，反转后 prepend（更早的消息在数组前）
       chatStore.prependMessages((data.items || []).reverse() as any)
@@ -140,6 +142,7 @@ export const useConversationStore = defineStore('conversation', () => {
         if (activeConversationId.value) {
           await selectConversation(activeConversationId.value)
         } else {
+          const { useChatStore } = await import('@/modules/chat/stores/chat')
           const chatStore = useChatStore()
           chatStore.clearMessages()
         }

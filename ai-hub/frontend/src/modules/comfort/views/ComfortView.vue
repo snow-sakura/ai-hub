@@ -191,7 +191,7 @@ function handleKeydown(e: KeyboardEvent) {
   padding: 10px 20px;
   background: var(--bg-card);
   border-bottom: 1px solid rgba(180, 150, 120, 0.08);
-  box-shadow: 0 1px 4px rgba(60, 40, 20, 0.03);
+  box-shadow: var(--shadow-sm);
   flex-shrink: 0;
 }
 
@@ -203,11 +203,12 @@ function handleKeydown(e: KeyboardEvent) {
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 6px;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .back-btn:hover {
-  background: var(--hover-color);
+  background: var(--accent-bg);
+  color: var(--accent);
 }
 
 .header-center {
@@ -293,23 +294,24 @@ function handleKeydown(e: KeyboardEvent) {
   margin-bottom: 28px;
   background: linear-gradient(
     135deg,
-    rgba(198, 123, 92, 0.05),
-    rgba(212, 165, 116, 0.05)
+    rgba(198, 123, 92, 0.08),
+    rgba(212, 165, 116, 0.08)
   );
   border: 1px solid rgba(180, 150, 120, 0.10);
   border-radius: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
 .hero-emoji {
   font-size: 56px;
   display: block;
   margin-bottom: 12px;
-  animation: floatEmoji 3s ease-in-out infinite;
+  animation: floatEmoji 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes floatEmoji {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  50% { transform: translateY(-8px); }
 }
 
 .hero-title {

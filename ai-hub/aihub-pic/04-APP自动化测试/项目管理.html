@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP自动化测试 - 项目管理</title>
+<style>
+:root {
+  --primary:#C67B5C; --primary-light:#D49472; --accent:#D4A574;
+  --bg:#FBF7F0; --card-bg:#FFFDF9; --sidebar-bg:#F6F0E7;
+  --text:#3D2E1F; --text-secondary:#5C4A38; --text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);
+  --radius:8px; --radius-lg:12px;
+  --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+.sidebar { width:220px; background:var(--sidebar-bg); border-right:var(--border); padding:24px 0; flex-shrink:0; }
+.logo { padding:0 20px 24px; border-bottom:var(--border); margin-bottom:16px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--text-secondary); text-decoration:none; font-size:14px; transition:all .2s; border-right:3px solid transparent; }
+.nav-item:hover { background:rgba(198,123,92,0.06); color:var(--text); }
+.nav-item.active { background:rgba(198,123,92,0.1); color:var(--primary); border-right-color:var(--primary); font-weight:600; }
+.nav-item svg { flex-shrink:0; }
+.nav-section { font-size:11px; color:var(--text-muted); padding:16px 20px 6px; text-transform:uppercase; letter-spacing:.5px; }
+.main { flex:1; overflow-y:auto; }
+.topbar { display:flex; justify-content:space-between; align-items:center; padding:16px 32px; border-bottom:var(--border); background:var(--card-bg); }
+.page-title { font-size:20px; font-weight:600; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.notif-btn { position:relative; background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px; }
+.notif-dot { position:absolute; top:0; right:0; width:8px; height:8px; background:#E8735A; border-radius:50%; border:2px solid var(--card-bg); }
+.avatar { width:32px; height:32px; border-radius:50%; background:var(--primary-light); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; }
+.content { padding:24px 32px; }
+.section-title { font-size:15px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+
+/* Toolbar */
+.toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.search-box { display:flex; align-items:center; background:var(--card-bg); border:var(--border); border-radius:var(--radius); padding:8px 12px; width:280px; }
+.search-box input { border:none; outline:none; background:transparent; margin-left:8px; flex:1; font-size:13px; color:var(--text); }
+.search-box input::placeholder { color:var(--text-muted); }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:var(--radius); font-size:13px; cursor:pointer; border:none; font-weight:500; transition:all .2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-light); }
+.btn-sm { padding:5px 12px; font-size:12px; }
+
+/* Project Grid */
+.project-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.project-card { background:var(--card-bg); border:var(--border); border-radius:var(--radius-lg); padding:20px; transition:all .2s; }
+.project-card:hover { box-shadow:0 2px 12px rgba(198,123,92,0.08); transform:translateY(-1px); }
+.project-card .pheader { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.project-card .picon { width:40px; height:40px; border-radius:var(--radius); display:flex; align-items:center; justify-content:center; }
+.project-card .pname { font-size:15px; font-weight:600; }
+.project-card .ppackage { font-size:12px; color:var(--text-muted); margin-top:2px; font-family:monospace; }
+.project-card .pmeta { display:flex; gap:16px; padding-top:12px; border-top:var(--border); margin-top:12px; font-size:12px; color:var(--text-muted); }
+.project-card .pmeta span { display:flex; align-items:center; gap:4px; }
+.platform-tag { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; border-radius:4px; }
+.ios-tag { background:#E3F2FD; color:#1565C0; }
+.android-tag { background:#E8F5E9; color:#2E7D32; }
+
+/* Modal */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal { background:var(--card-bg); border-radius:var(--radius-lg); width:480px; max-height:80vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.12); }
+.modal-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:var(--border); }
+.modal-header h3 { font-size:15px; }
+.modal-close { background:none; border:none; cursor:pointer; color:var(--text-muted); padding:4px; }
+.modal-body { padding:20px; }
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-size:13px; color:var(--text-secondary); margin-bottom:4px; font-weight:500; }
+.form-group input, .form-group select { width:100%; padding:8px 12px; border:var(--border); border-radius:var(--radius); font-size:13px; background:var(--card-bg); color:var(--text); outline:none; }
+.form-group select { cursor:pointer; }
+.form-group input:focus, .form-group select:focus { border-color:var(--primary); }
+.form-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
+.btn-outline { background:transparent; border:var(--border); color:var(--text-secondary); }
+.btn-outline:hover { background:var(--bg); }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C67B5C"/><path d="M8 12h16v2H8zm0 6h12v2H8zm0-3h16v2H8z" fill="#FFFDF9"/></svg></div>
+  <div class="nav-section">测试模块</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> UI自动化</a>
+  <a href="#" class="nav-item active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> APP自动化</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> API自动化</a>
+  <div class="nav-section">平台管理</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设备管理</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 通知列表</a>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <h1 class="page-title">APP项目管理</h1>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="alert('通知列表')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <div class="avatar">张</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="搜索项目名称...">
+      </div>
+      <button class="btn btn-primary" onclick="document.getElementById('addProjectModal').classList.add('show')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        新增项目
+      </button>
+    </div>
+
+    <div class="project-grid">
+      <!-- 项目1 -->
+      <div class="project-card">
+        <div class="pheader">
+          <div class="picon" style="background:linear-gradient(135deg,#C67B5C,#D4A574);color:#fff;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          </div>
+          <div>
+            <div class="pname">电商平台APP</div>
+            <div class="ppackage">com.example.ecshop</div>
+          </div>
+        </div>
+        <div class="pmeta">
+          <span><span class="platform-tag ios-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1565C0"><path d="M18.71 19.5a.6.6 0 0 0 .29-.5V7a.6.6 0 0 0-.29-.5l-8-5a.6.6 0 0 0-.42-.1.6.6 0 0 0-.29.1l-8 5A.6.6 0 0 0 2 7v12a.6.6 0 0 0 .29.5l8 5a.6.6 0 0 0 .42.1.6.6 0 0 0 .29-.1l8-5z"/></svg> iOS</span></span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 86个用例</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> 3台设备</span>
+        </div>
+      </div>
+
+      <!-- 项目2 -->
+      <div class="project-card">
+        <div class="pheader">
+          <div class="picon" style="background:#E8F5E9;color:#2E7D32;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+          </div>
+          <div>
+            <div class="pname">社交聊天APP</div>
+            <div class="ppackage">com.example.social</div>
+          </div>
+        </div>
+        <div class="pmeta">
+          <span><span class="platform-tag android-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="#2E7D32"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-9.5-3.5c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm8 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-9-4.5c0-1.1.9-2 2-2h2V4h2v4h2c1.1 0 2 .9 2 2v4H6.5v-4z"/></svg> Android</span></span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 124个用例</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> 2台设备</span>
+        </div>
+      </div>
+
+      <!-- 项目3 -->
+      <div class="project-card">
+        <div class="pheader">
+          <div class="picon" style="background:linear-gradient(135deg,#C67B5C,#D4A574);color:#fff;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+          </div>
+          <div>
+            <div class="pname">视频直播APP</div>
+            <div class="ppackage">com.example.live</div>
+          </div>
+        </div>
+        <div class="pmeta">
+          <span><span class="platform-tag ios-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1565C0"><path d="M18.71 19.5a.6.6 0 0 0 .29-.5V7a.6.6 0 0 0-.29-.5l-8-5a.6.6 0 0 0-.42-.1.6.6 0 0 0-.29.1l-8 5A.6.6 0 0 0 2 7v12a.6.6 0 0 0 .29.5l8 5a.6.6 0 0 0 .42.1.6.6 0 0 0 .29-.1l8-5z"/></svg> iOS</span></span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 52个用例</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> 2台设备</span>
+        </div>
+      </div>
+
+      <!-- 项目4 -->
+      <div class="project-card">
+        <div class="pheader">
+          <div class="picon" style="background:#FFF3E0;color:#E65100;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          </div>
+          <div>
+            <div class="pname">金融理财APP</div>
+            <div class="ppackage">com.example.finance</div>
+          </div>
+        </div>
+        <div class="pmeta">
+          <span><span class="platform-tag android-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="#2E7D32"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-9.5-3.5c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm8 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-9-4.5c0-1.1.9-2 2-2h2V4h2v4h2c1.1 0 2 .9 2 2v4H6.5v-4z"/></svg> Android</span></span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 38个用例</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> 1台设备</span>
+        </div>
+      </div>
+
+      <!-- 项目5 -->
+      <div class="project-card">
+        <div class="pheader">
+          <div class="picon" style="background:linear-gradient(135deg,#C67B5C,#D4A574);color:#fff;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h18v18H3z"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+          </div>
+          <div>
+            <div class="pname">出行打车APP</div>
+            <div class="ppackage">com.example.ride</div>
+          </div>
+        </div>
+        <div class="pmeta">
+          <span><span class="platform-tag ios-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1565C0"><path d="M18.71 19.5a.6.6 0 0 0 .29-.5V7a.6.6 0 0 0-.29-.5l-8-5a.6.6 0 0 0-.42-.1.6.6 0 0 0-.29.1l-8 5A.6.6 0 0 0 2 7v12a.6.6 0 0 0 .29.5l8 5a.6.6 0 0 0 .42.1.6.6 0 0 0 .29-.1l8-5z"/></svg> iOS</span> + <span class="platform-tag android-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="#2E7D32"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-9.5-3.5c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm8 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-9-4.5c0-1.1.9-2 2-2h2V4h2v4h2c1.1 0 2 .9 2 2v4H6.5v-4z"/></svg> Android</span></span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 42个用例</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> 4台设备</span>
+        </div>
+      </div>
+
+      <!-- 项目6 -->
+      <div class="project-card" style="border:2px dashed rgba(180,150,120,0.3);background:transparent;display:flex;align-items:center;justify-content:center;min-height:160px;cursor:pointer;" onclick="document.getElementById('addProjectModal').classList.add('show')">
+        <div style="text-align:center;color:var(--text-muted);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span style="font-size:13px;">新建APP项目</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 新增项目弹窗 -->
+<div class="modal-overlay" id="addProjectModal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>新增APP项目</h3>
+      <button class="modal-close" onclick="document.getElementById('addProjectModal').classList.remove('show')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>项目名称</label>
+        <input type="text" placeholder="例如：电商平台APP">
+      </div>
+      <div class="form-group">
+        <label>平台选择</label>
+        <select>
+          <option>iOS</option>
+          <option>Android</option>
+          <option>iOS + Android</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>包名 / Bundle ID</label>
+        <input type="text" placeholder="com.example.app">
+      </div>
+      <div class="form-group">
+        <label>应用版本</label>
+        <input type="text" placeholder="1.0.0">
+      </div>
+      <div class="form-group">
+        <label>项目描述</label>
+        <input type="text" placeholder="可选，描述项目用途">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="document.getElementById('addProjectModal').classList.remove('show')">取消</button>
+        <button class="btn btn-primary" onclick="alert('项目已创建');document.getElementById('addProjectModal').classList.remove('show')">创建项目</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

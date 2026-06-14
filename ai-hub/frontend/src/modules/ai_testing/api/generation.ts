@@ -57,6 +57,26 @@ export function updateTaskStatus(taskId: string, status: string): Promise<ApiRes
   return request.put(`/testing/generate/tasks/${taskId}/status`, { status })
 }
 
+/** 触发非流式后台执行生成任务 */
+export function executeGenerationTask(taskId: string): Promise<ApiResponse<{ task_id: string; status: string }>> {
+  return request.post(`/testing/generate/${taskId}/execute`)
+}
+
+/** 取消生成任务 */
+export function cancelGenerationTask(taskId: string): Promise<ApiResponse<boolean>> {
+  return request.post(`/testing/generate/${taskId}/cancel`)
+}
+
+/** 修订生成：复用已有分析/草稿，仅重新执行评审+修订 */
+export function reviseGenerationTask(
+  taskId: string,
+  customSuggestions: string[],
+): Promise<ApiResponse<{ task_id: string; status: string; generated_count: number }>> {
+  return request.post(`/testing/generate/${taskId}/revise`, {
+    custom_suggestions: customSuggestions,
+  })
+}
+
 /** 上传文档并解析内容 */
 export function uploadDocument(
   file: File
@@ -88,4 +108,14 @@ export function checkConfig(): Promise<ApiResponse<ConfigCheckResponse>> {
 /** 获取配置默认值（默认提示词 + 可用模型列表） */
 export function getConfigDefaults(): Promise<ApiResponse<ConfigDefaults>> {
   return request.get('/testing/config/defaults')
+}
+
+/** 测试 LLM 连接 */
+export function testConnection(data: {
+  provider: string
+  model_name?: string
+  api_key?: string
+  base_url?: string
+}): Promise<ApiResponse<{ reply: string; success: boolean }>> {
+  return request.post('/testing/config/test-connection', data)
 }

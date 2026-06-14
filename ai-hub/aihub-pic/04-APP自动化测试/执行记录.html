@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP自动化测试 - 执行记录</title>
+<style>
+:root {
+  --primary:#C67B5C; --primary-light:#D49472; --accent:#D4A574;
+  --bg:#FBF7F0; --card-bg:#FFFDF9; --sidebar-bg:#F6F0E7;
+  --text:#3D2E1F; --text-secondary:#5C4A38; --text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);
+  --radius:8px; --radius-lg:12px;
+  --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+.sidebar { width:220px; background:var(--sidebar-bg); border-right:var(--border); padding:24px 0; flex-shrink:0; }
+.logo { padding:0 20px 24px; border-bottom:var(--border); margin-bottom:16px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--text-secondary); text-decoration:none; font-size:14px; transition:all .2s; border-right:3px solid transparent; }
+.nav-item:hover { background:rgba(198,123,92,0.06); color:var(--text); }
+.nav-item.active { background:rgba(198,123,92,0.1); color:var(--primary); border-right-color:var(--primary); font-weight:600; }
+.nav-item svg { flex-shrink:0; }
+.nav-section { font-size:11px; color:var(--text-muted); padding:16px 20px 6px; text-transform:uppercase; letter-spacing:.5px; }
+.main { flex:1; overflow-y:auto; }
+.topbar { display:flex; justify-content:space-between; align-items:center; padding:16px 32px; border-bottom:var(--border); background:var(--card-bg); }
+.page-title { font-size:20px; font-weight:600; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.notif-btn { position:relative; background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px; }
+.notif-dot { position:absolute; top:0; right:0; width:8px; height:8px; background:#E8735A; border-radius:50%; border:2px solid var(--card-bg); }
+.avatar { width:32px; height:32px; border-radius:50%; background:var(--primary-light); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; }
+.content { padding:24px 32px; }
+.toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.search-box { display:flex; align-items:center; background:var(--card-bg); border:var(--border); border-radius:var(--radius); padding:8px 12px; width:260px; }
+.search-box input { border:none; outline:none; background:transparent; margin-left:8px; flex:1; font-size:13px; color:var(--text); }
+.search-box input::placeholder { color:var(--text-muted); }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:var(--radius); font-size:13px; cursor:pointer; border:none; font-weight:500; transition:all .2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-light); }
+.btn-outline { background:transparent; border:var(--border); color:var(--text-secondary); }
+.btn-sm { padding:5px 12px; font-size:12px; }
+.btn-ghost { background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:4px; }
+.btn-ghost:hover { color:var(--primary); }
+.filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.filter-select { padding:6px 12px; border:var(--border); border-radius:var(--radius); font-size:12px; background:var(--card-bg); color:var(--text); outline:none; cursor:pointer; }
+table { width:100%; border-collapse:collapse; background:var(--card-bg); border-radius:var(--radius-lg); overflow:hidden; }
+th, td { padding:12px 16px; text-align:left; font-size:13px; }
+th { background:var(--sidebar-bg); color:var(--text-secondary); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.3px; }
+tr:not(:last-child) td { border-bottom:var(--border); }
+tbody tr:hover { background:rgba(198,123,92,0.02); }
+tbody tr:nth-child(even) { background:rgba(246,240,231,0.4); }
+tbody tr:nth-child(even):hover { background:rgba(198,123,92,0.03); }
+.status-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; }
+.status-pass { background:#E8F5E9; color:#2E7D32; }
+.status-fail { background:#FFEBEE; color:#C62828; }
+.status-running { background:#FFF3E0; color:#E65100; }
+.status-queued { background:#E3F2FD; color:#1565C0; }
+.exec-id { font-family:monospace; font-size:12px; color:var(--text-muted); }
+
+/* Detail panel */
+.detail-panel { display:none; background:var(--card-bg); border:var(--border); border-radius:var(--radius-lg); margin-top:16px; overflow:hidden; }
+.detail-panel.show { display:block; }
+.detail-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:var(--border); }
+.detail-body { padding:20px; }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.detail-item label { font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px; }
+.detail-item .value { font-size:13px; font-weight:500; }
+.detail-steps { border-top:var(--border); padding-top:16px; }
+.detail-steps .ds-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:var(--border); font-size:13px; }
+.detail-steps .ds-row:last-child { border-bottom:none; }
+.ds-status { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.ds-pass { background:#2E7D32; }
+.ds-fail { background:#C62828; }
+.screenshot-thumb { width:60px; height:100px; background:var(--sidebar-bg); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--text-muted); cursor:pointer; flex-shrink:0; }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C67B5C"/><path d="M8 12h16v2H8zm0 6h12v2H8zm0-3h16v2H8z" fill="#FFFDF9"/></svg></div>
+  <div class="nav-section">测试模块</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> UI自动化</a>
+  <a href="#" class="nav-item active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> APP自动化</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> API自动化</a>
+  <div class="nav-section">平台管理</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设备管理</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 通知列表</a>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <h1 class="page-title">APP执行记录</h1>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="alert('通知列表')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <div class="avatar">张</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="搜索执行记录...">
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="alert('导出记录')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出
+      </button>
+    </div>
+
+    <div class="filters">
+      <select class="filter-select"><option>所有项目</option><option>电商平台APP</option><option>社交聊天APP</option></select>
+      <select class="filter-select"><option>所有状态</option><option>通过</option><option>失败</option><option>执行中</option><option>排队</option></select>
+      <select class="filter-select"><option>最近7天</option><option>最近30天</option><option>最近90天</option></select>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>记录ID</th>
+          <th>套件 / 用例</th>
+          <th>项目</th>
+          <th>设备</th>
+          <th>状态</th>
+          <th>通过/总数</th>
+          <th>耗时</th>
+          <th>执行时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="exec-id">EXEC-20260614-001</span></td>
+          <td><strong>电商APP回归测试套件</strong></td>
+          <td>电商平台APP</td>
+          <td>iPhone 15 Pro</td>
+          <td><span class="status-badge status-pass">通过</span></td>
+          <td>42/42</td>
+          <td>3m 28s</td>
+          <td style="font-size:12px;color:var(--text-muted);">10:30:15</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="toggleDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+        </tr>
+        <tr>
+          <td><span class="exec-id">EXEC-20260614-002</span></td>
+          <td><strong>社交通讯冒烟测试</strong></td>
+          <td>社交聊天APP</td>
+          <td>Xiaomi 14 Pro</td>
+          <td><span class="status-badge status-running">执行中</span></td>
+          <td>14/18</td>
+          <td>2m 05s</td>
+          <td style="font-size:12px;color:var(--text-muted);">10:45:00</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="toggleDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+        </tr>
+        <tr>
+          <td><span class="exec-id">EXEC-20260614-003</span></td>
+          <td><strong>支付模块回归测试</strong></td>
+          <td>电商平台APP</td>
+          <td>Samsung S24</td>
+          <td><span class="status-badge status-fail">失败</span></td>
+          <td>9/12</td>
+          <td>4m 12s</td>
+          <td style="font-size:12px;color:var(--text-muted);">09:15:30</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="toggleDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+        </tr>
+        <tr>
+          <td><span class="exec-id">EXEC-20260613-015</span></td>
+          <td><strong>全平台定时回归</strong></td>
+          <td>电商平台APP</td>
+          <td>多设备</td>
+          <td><span class="status-badge status-pass">通过</span></td>
+          <td>86/86</td>
+          <td>12m 45s</td>
+          <td style="font-size:12px;color:var(--text-muted);">2026-06-13 23:00</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="toggleDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+        </tr>
+        <tr>
+          <td><span class="exec-id">EXEC-20260613-012</span></td>
+          <td><strong>视频APP播放流程</strong></td>
+          <td>视频直播APP</td>
+          <td>iPad Pro 12.9"</td>
+          <td><span class="status-badge status-pass">通过</span></td>
+          <td>15/15</td>
+          <td>5m 30s</td>
+          <td style="font-size:12px;color:var(--text-muted);">2026-06-13 16:20</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="toggleDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;color:var(--text-muted);">
+      <span>共 1,247 条记录，当前显示 5 条</span>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-outline btn-sm" disabled>&lt;</button>
+        <button class="btn btn-primary btn-sm">1</button>
+        <button class="btn btn-outline btn-sm" onclick="alert('翻页')">2</button>
+        <button class="btn btn-outline btn-sm" onclick="alert('翻页')">3</button>
+        <button class="btn btn-outline btn-sm" onclick="alert('翻页')">...</button>
+        <button class="btn btn-outline btn-sm" onclick="alert('翻页')">&gt;</button>
+      </div>
+    </div>
+
+    <!-- 详情面板 -->
+    <div class="detail-panel show" id="detailPanel">
+      <div class="detail-header">
+        <h3 style="font-size:15px;display:flex;align-items:center;gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          执行详情 - EXEC-20260614-001
+        </h3>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('detailPanel').classList.toggle('show')">收起</button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-grid">
+          <div class="detail-item"><label>套件名称</label><div class="value">电商APP回归测试套件</div></div>
+          <div class="detail-item"><label>执行设备</label><div class="value">iPhone 15 Pro (iOS 17.3)</div></div>
+          <div class="detail-item"><label>执行状态</label><div class="value"><span class="status-badge status-pass">通过</span></div></div>
+          <div class="detail-item"><label>执行耗时</label><div class="value">3 分 28 秒</div></div>
+          <div class="detail-item"><label>开始时间</label><div class="value">2026-06-14 10:30:15</div></div>
+          <div class="detail-item"><label>结束时间</label><div class="value">2026-06-14 10:33:43</div></div>
+        </div>
+
+        <div class="detail-steps">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;">执行步骤明细</div>
+          <div class="ds-row">
+            <span class="ds-status ds-pass"></span>
+            <span style="width:50px;font-size:11px;color:var(--text-muted);">步骤 1</span>
+            <span style="width:50px;"><span class="type-badge" style="background:#E3F2FD;color:#1565C0;font-size:10px;padding:2px 6px;border-radius:3px;">点击</span></span>
+            <span style="flex:1;font-size:12px;">点击「登录按钮」</span>
+            <span style="font-size:11px;color:var(--text-muted);">0.3s</span>
+            <div class="screenshot-thumb" onclick="alert('查看截图')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+          </div>
+          <div class="ds-row">
+            <span class="ds-status ds-pass"></span>
+            <span style="width:50px;font-size:11px;color:var(--text-muted);">步骤 2</span>
+            <span style="width:50px;"><span class="type-badge" style="background:#FFF3E0;color:#E65100;font-size:10px;padding:2px 6px;border-radius:3px;">输入</span></span>
+            <span style="flex:1;font-size:12px;">在「用户名输入框」输入 "testuser"</span>
+            <span style="font-size:11px;color:var(--text-muted);">0.5s</span>
+            <div class="screenshot-thumb" onclick="alert('查看截图')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+          </div>
+          <div class="ds-row">
+            <span class="ds-status ds-pass"></span>
+            <span style="width:50px;font-size:11px;color:var(--text-muted);">步骤 3</span>
+            <span style="width:50px;"><span class="type-badge" style="background:#FFF3E0;color:#E65100;font-size:10px;padding:2px 6px;border-radius:3px;">输入</span></span>
+            <span style="flex:1;font-size:12px;">在「密码输入框」输入 "Test@123456"</span>
+            <span style="font-size:11px;color:var(--text-muted);">0.5s</span>
+            <div class="screenshot-thumb" onclick="alert('查看截图')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+          </div>
+          <div class="ds-row">
+            <span class="ds-status ds-pass"></span>
+            <span style="width:50px;font-size:11px;color:var(--text-muted);">步骤 4</span>
+            <span style="width:50px;"><span class="type-badge" style="background:#E3F2FD;color:#1565C0;font-size:10px;padding:2px 6px;border-radius:3px;">点击</span></span>
+            <span style="flex:1;font-size:12px;">点击「登录按钮」</span>
+            <span style="font-size:11px;color:var(--text-muted);">0.8s</span>
+            <div class="screenshot-thumb" onclick="alert('查看截图')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+          </div>
+          <div class="ds-row">
+            <span class="ds-status ds-pass"></span>
+            <span style="width:50px;font-size:11px;color:var(--text-muted);">步骤 5</span>
+            <span style="width:50px;"><span class="type-badge" style="background:#E8F5E9;color:#2E7D32;font-size:10px;padding:2px 6px;border-radius:3px;">等待</span></span>
+            <span style="flex:1;font-size:12px;">等待 3 秒，加载首页内容</span>
+            <span style="font-size:11px;color:var(--text-muted);">3.0s</span>
+            <div class="screenshot-thumb" onclick="alert('查看截图')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+          </div>
+          <div class="ds-row">
+            <span class="ds-status ds-pass"></span>
+            <span style="width:50px;font-size:11px;color:var(--text-muted);">步骤 6</span>
+            <span style="width:50px;"><span class="type-badge" style="background:#E8EAF6;color:#283593;font-size:10px;padding:2px 6px;border-radius:3px;">断言</span></span>
+            <span style="flex:1;font-size:12px;">验证「首页标题」文本为 "欢迎回来，testuser"</span>
+            <span style="font-size:11px;color:var(--text-muted);">0.2s</span>
+            <div class="screenshot-thumb" onclick="alert('查看截图')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+function toggleDetail() {
+  var panel = document.getElementById('detailPanel');
+  panel.classList.toggle('show');
+}
+</script>
+</body>
+</html>

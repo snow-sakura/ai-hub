@@ -1,0 +1,1127 @@
+/* =========================================
+   APP 自动化模块 - 暖橙棕主题
+   基于原型设计系统 #C67B5C
+   ========================================= */
+
+:root {
+  --app-primary: #C67B5C;
+  --app-primary-light: #D49472;
+  --app-primary-bg: rgba(198, 123, 92, 0.08);
+  --app-accent: #D4A574;
+  --app-bg: #FBF7F0;
+  --app-card-bg: #FFFDF9;
+  --app-sidebar-bg: #F6F0E7;
+  --app-text: #3D2E1F;
+  --app-text-secondary: #5C4A38;
+  --app-text-muted: #8B7355;
+  --app-border: 1px solid rgba(180, 150, 120, 0.12);
+  --app-shadow: 0 4px 14px rgba(60, 40, 20, 0.06);
+  --app-success: #7BA87D;
+  --app-danger: #D4745C;
+  --app-info: #5B8DEF;
+  --app-radius: 8px;
+  --app-font-mono: ui-monospace, 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ========== Element Plus 覆盖 ========== */
+.app-auto {
+  --el-color-primary: var(--app-primary);
+  --el-color-primary-light-3: var(--app-primary-light);
+  --el-color-primary-light-5: rgba(198, 123, 92, 0.25);
+  --el-color-primary-light-7: rgba(198, 123, 92, 0.15);
+  --el-color-primary-light-8: rgba(198, 123, 92, 0.10);
+  --el-color-primary-light-9: rgba(198, 123, 92, 0.06);
+  --el-color-primary-dark-2: #B06548;
+  --el-fill-color-light: var(--app-bg);
+  --el-border-color: rgba(180, 150, 120, 0.18);
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-text-color-primary: var(--app-text);
+  --el-text-color-secondary: var(--app-text-secondary);
+  --el-text-color-placeholder: var(--app-text-muted);
+  --el-bg-color: var(--app-bg);
+  --el-bg-color-overlay: var(--app-card-bg);
+  --el-mask-color: rgba(30, 20, 10, 0.35);
+
+  background: var(--app-bg);
+  min-height: 100vh;
+  padding: 20px;
+
+  /* Element Plus Card */
+  .el-card {
+    background: var(--app-card-bg);
+    border: var(--app-border);
+    border-radius: 12px;
+    box-shadow: var(--app-shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+    --el-card-border-color: transparent;
+    --el-card-bg-color: var(--app-card-bg);
+  }
+
+  .el-card__header {
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--app-text);
+    border-bottom: var(--app-border);
+  }
+
+  .el-card__body {
+    padding: 0;
+  }
+
+  /* Element Plus Table */
+  .el-table {
+    --el-table-border-color: rgba(180, 150, 120, 0.12);
+    --el-table-header-bg-color: var(--app-sidebar-bg);
+    --el-table-tr-bg-color: var(--app-card-bg);
+    --el-table-row-hover-bg-color: var(--app-primary-bg);
+    font-size: 13px;
+
+    th.el-table__cell {
+      background: var(--app-sidebar-bg);
+      color: var(--app-text-secondary);
+      font-weight: 600;
+      font-size: 12px;
+      padding: 10px 12px;
+    }
+
+    td.el-table__cell {
+      padding: 10px 12px;
+      color: var(--app-text);
+      border-bottom: var(--app-border);
+    }
+
+    .el-table__body tr:nth-child(even) td {
+      background: rgba(180, 150, 120, 0.03);
+    }
+  }
+
+  .el-table--enable-row-hover .el-table__body tr:hover > td {
+    background: var(--app-primary-bg);
+  }
+
+  /* Element Plus Button */
+  .el-button--primary {
+    --el-button-bg-color: var(--app-primary);
+    --el-button-border-color: var(--app-primary);
+    --el-button-hover-bg-color: var(--app-primary-light);
+    --el-button-hover-border-color: var(--app-primary-light);
+    --el-button-active-bg-color: #B06548;
+    --el-button-active-border-color: #B06548;
+  }
+
+  .el-button--primary.is-link,
+  .el-button--primary.is-plain {
+    --el-button-bg-color: var(--app-primary-bg);
+    --el-button-border-color: var(--app-primary);
+    --el-button-text-color: var(--app-primary);
+    --el-button-hover-text-color: #fff;
+    --el-button-hover-bg-color: var(--app-primary);
+  }
+
+  /* Element Plus Dialog */
+  .el-dialog {
+    --el-dialog-bg-color: var(--app-card-bg);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(30, 20, 10, 0.18);
+  }
+
+  .el-dialog__header {
+    padding: 16px 20px;
+    border-bottom: var(--app-border);
+    margin-right: 0;
+  }
+
+  .el-dialog__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--app-text);
+  }
+
+  .el-dialog__body {
+    padding: 20px;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 20px;
+    border-top: var(--app-border);
+  }
+
+  /* Element Plus Switch */
+  .el-switch {
+    --el-switch-on-color: var(--app-primary);
+    --el-switch-off-color: #ccc;
+  }
+
+  /* Element Plus Tag */
+  .el-tag--success {
+    --el-tag-bg-color: rgba(123, 168, 125, 0.12);
+    --el-tag-text-color: var(--app-success);
+    --el-tag-border-color: transparent;
+  }
+
+  .el-tag--danger {
+    --el-tag-bg-color: rgba(212, 116, 92, 0.12);
+    --el-tag-text-color: var(--app-danger);
+    --el-tag-border-color: transparent;
+  }
+
+  .el-tag--warning {
+    --el-tag-bg-color: rgba(212, 165, 116, 0.12);
+    --el-tag-text-color: #B8860B;
+    --el-tag-border-color: transparent;
+  }
+
+  .el-tag--info {
+    --el-tag-bg-color: rgba(91, 141, 239, 0.12);
+    --el-tag-text-color: var(--app-info);
+    --el-tag-border-color: transparent;
+  }
+
+  /* Element Plus Select / Input */
+  .el-select, .el-input {
+    --el-input-bg-color: var(--app-card-bg);
+    --el-input-border-color: rgba(180, 150, 120, 0.18);
+    --el-input-hover-border-color: var(--app-primary);
+    --el-input-focus-border-color: var(--app-primary);
+    --el-select-border-color-hover: var(--app-primary);
+    --el-select-input-focus-border-color: var(--app-primary);
+  }
+
+  /* Element Plus Drawer */
+  .el-drawer {
+    --el-drawer-bg-color: var(--app-card-bg);
+  }
+}
+
+/* ========== 通用组件样式 ========== */
+
+/* 页面头 */
+.app-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.app-page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--app-text);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.app-page-subtitle {
+  font-size: 13px;
+  color: var(--app-text-muted);
+  margin: 6px 0 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ========== 统计卡片行 ========== */
+.app-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.app-stat-card {
+  background: var(--app-card-bg);
+  border: var(--app-border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.app-stat-body {
+  flex: 1;
+}
+
+.app-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--app-text);
+  line-height: 1.2;
+}
+
+.app-stat-label {
+  font-size: 12px;
+  color: var(--app-text-muted);
+  margin-top: 2px;
+}
+
+.app-stat-change {
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.stat-up { color: var(--app-success); }
+.stat-down { color: var(--app-danger); }
+
+/* ========== 双列布局 ========== */
+.app-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+/* ========== 自定义卡片 ========== */
+.app-card {
+  background: var(--app-card-bg);
+  border: var(--app-border);
+  border-radius: 12px;
+  box-shadow: var(--app-shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.app-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--app-text);
+  border-bottom: var(--app-border);
+}
+
+.app-card-body {
+  padding: 16px 20px;
+}
+
+.app-card-body-no-pad {
+  padding: 0;
+}
+
+/* ========== 标签系统 ========== */
+.app-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.app-tag-pass {
+  background: rgba(123, 168, 125, 0.12);
+  color: var(--app-success);
+}
+
+.app-tag-fail {
+  background: rgba(212, 116, 92, 0.12);
+  color: var(--app-danger);
+}
+
+.app-tag-running {
+  background: rgba(91, 141, 239, 0.12);
+  color: var(--app-info);
+}
+
+.app-tag-pending {
+  background: rgba(180, 150, 120, 0.12);
+  color: var(--app-text-muted);
+}
+
+.app-tag-active {
+  background: rgba(123, 168, 125, 0.12);
+  color: var(--app-success);
+}
+
+.app-tag-paused {
+  background: rgba(212, 165, 116, 0.12);
+  color: #B8860B;
+}
+
+.app-tag-online {
+  background: rgba(123, 168, 125, 0.12);
+  color: var(--app-success);
+}
+
+.app-tag-offline {
+  background: rgba(180, 150, 120, 0.12);
+  color: var(--app-text-muted);
+}
+
+.app-tag-busy {
+  background: rgba(212, 165, 116, 0.12);
+  color: #B8860B;
+}
+
+.app-tag-android {
+  background: rgba(123, 168, 125, 0.12);
+  color: var(--app-success);
+}
+
+.app-tag-ios {
+  background: rgba(91, 141, 239, 0.12);
+  color: var(--app-info);
+}
+
+.app-tag-both {
+  background: rgba(198, 123, 92, 0.12);
+  color: var(--app-primary);
+}
+
+.app-tag-id {
+  background: rgba(91, 141, 239, 0.12);
+  color: var(--app-info);
+}
+
+.app-tag-xpath {
+  background: rgba(212, 165, 116, 0.12);
+  color: #B8860B;
+}
+
+.app-tag-a11y {
+  background: rgba(123, 168, 125, 0.12);
+  color: var(--app-success);
+}
+
+.app-tag-class {
+  background: rgba(198, 123, 92, 0.12);
+  color: var(--app-primary);
+}
+
+.app-tag-ios-pred {
+  background: rgba(212, 116, 92, 0.12);
+  color: var(--app-danger);
+}
+
+/* ========== 按钮系统 ========== */
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.app-btn-primary {
+  background: var(--app-primary);
+  color: #fff;
+}
+
+.app-btn-primary:hover {
+  background: var(--app-primary-light);
+  box-shadow: 0 2px 8px rgba(198, 123, 92, 0.25);
+}
+
+.app-btn-secondary {
+  background: transparent;
+  color: var(--app-text-secondary);
+  border: var(--app-border);
+}
+
+.app-btn-secondary:hover {
+  background: var(--app-primary-bg);
+  color: var(--app-primary);
+}
+
+.app-btn-ghost {
+  background: transparent;
+  color: var(--app-text-secondary);
+  border: 1px solid rgba(180, 150, 120, 0.15);
+}
+
+.app-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.app-btn-xs {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.app-btn-sm {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.app-btn-rec {
+  background: var(--app-danger);
+  color: #fff;
+}
+
+.app-btn-rec:hover {
+  background: #C06048;
+}
+
+/* ========== 开关 ========== */
+.app-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.app-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.app-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ccc;
+  border-radius: 20px;
+  transition: 0.3s;
+}
+
+.app-switch .slider:before {
+  position: absolute;
+  content: '';
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.app-switch input:checked + .slider {
+  background: var(--app-primary);
+}
+
+.app-switch input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+/* ========== 输入框 ========== */
+.app-input {
+  height: 34px;
+  border: var(--app-border);
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--app-text);
+  font-family: inherit;
+  background: var(--app-card-bg);
+  outline: none;
+  width: 100%;
+}
+
+.app-input:focus {
+  border-color: var(--app-primary);
+}
+
+.app-input-mono {
+  font-family: var(--app-font-mono);
+}
+
+/* ========== 步骤流组件 ========== */
+.step-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: var(--app-border);
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: rgba(180, 150, 120, 0.04);
+}
+
+.step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--app-primary-bg);
+  color: var(--app-primary);
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-action {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.step-tap {
+  background: rgba(91, 141, 239, 0.12);
+  color: var(--app-info);
+}
+
+.step-input {
+  background: rgba(198, 123, 92, 0.12);
+  color: var(--app-primary);
+}
+
+.step-swipe {
+  background: rgba(212, 165, 116, 0.12);
+  color: #B8860B;
+}
+
+.step-assert {
+  background: rgba(123, 168, 125, 0.12);
+  color: var(--app-success);
+}
+
+.step-desc {
+  color: var(--app-text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========== 条形图 ========== */
+.app-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.app-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-bar-label {
+  width: 80px;
+  font-size: 13px;
+  color: var(--app-text-secondary);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.app-bar-track {
+  flex: 1;
+  height: 20px;
+  background: rgba(180, 150, 120, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.app-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  width: 0;
+  transition: width 0.5s ease;
+}
+
+.app-bar-value {
+  width: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-text);
+  text-align: right;
+}
+
+/* 柱状图 */
+.app-chart-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  padding-top: 10px;
+}
+
+.app-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-chart-col .bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+  transition: height 0.5s ease;
+}
+
+.app-chart-col .day-label {
+  font-size: 10px;
+  color: var(--app-text-muted);
+  white-space: nowrap;
+}
+
+/* ========== 模态框 ========== */
+.app-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 20, 10, 0.35);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.app-modal-overlay.active {
+  display: flex;
+}
+
+.app-modal-box {
+  background: var(--app-card-bg);
+  border-radius: 14px;
+  width: 92%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(30, 20, 10, 0.18);
+  animation: app-modalIn 0.2s ease;
+}
+
+@keyframes app-modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.app-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: var(--app-border);
+}
+
+.app-modal-head h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.app-modal-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.app-modal-close:hover {
+  background: var(--app-primary-bg);
+  color: var(--app-text);
+}
+
+.app-modal-body {
+  padding: 20px;
+}
+
+.app-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: var(--app-border);
+}
+
+/* ========== 抽屉 ========== */
+.app-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 20, 10, 0.35);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.app-drawer-overlay.active {
+  display: flex;
+}
+
+.app-drawer {
+  background: var(--app-card-bg);
+  width: 520px;
+  max-width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: -4px 0 30px rgba(30, 20, 10, 0.12);
+  animation: app-drawerIn 0.2s ease;
+}
+
+@keyframes app-drawerIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.app-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: var(--app-border);
+  position: sticky;
+  top: 0;
+  background: var(--app-card-bg);
+  z-index: 10;
+}
+
+.app-drawer-head h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.app-drawer-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.app-drawer-close:hover {
+  background: var(--app-primary-bg);
+  color: var(--app-text);
+}
+
+.app-drawer-body {
+  padding: 20px;
+}
+
+/* ========== 设备选择器（录制器用） ========== */
+.device-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.device-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: var(--app-border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+  background: var(--app-card-bg);
+}
+
+.device-option:hover {
+  border-color: var(--app-primary);
+  background: var(--app-primary-bg);
+}
+
+.device-option.active {
+  border-color: var(--app-primary);
+  background: var(--app-primary-bg);
+  color: var(--app-primary);
+  font-weight: 600;
+}
+
+/* ========== 手机框（录制器用） ========== */
+.phone-frame {
+  width: 280px;
+  height: 520px;
+  border: 3px solid #3D2E1F;
+  border-radius: 24px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  background: rgba(180, 150, 120, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.phone-notch {
+  width: 100px;
+  height: 20px;
+  background: #3D2E1F;
+  border-radius: 0 0 12px 12px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.phone-home-indicator {
+  width: 100px;
+  height: 4px;
+  background: rgba(60, 40, 20, 0.15);
+  border-radius: 2px;
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ========== 录制状态 ========== */
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(212, 116, 92, 0.08);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--app-danger);
+  animation: app-pulse 1s infinite;
+}
+
+@keyframes app-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ========== Toast 通知 ========== */
+.app-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 3000;
+  background: var(--app-card-bg);
+  border: var(--app-border);
+  border-radius: 10px;
+  padding: 12px 20px;
+  box-shadow: 0 8px 30px rgba(30, 20, 10, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  animation: app-slideIn 0.25s ease;
+  max-width: 360px;
+}
+
+.app-toast-success {
+  border-left: 4px solid var(--app-success);
+}
+
+.app-toast-info {
+  border-left: 4px solid var(--app-info);
+}
+
+@keyframes app-slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ========== 动画 ========== */
+.app-fade-in {
+  animation: app-fadeIn 0.4s ease;
+}
+
+@keyframes app-fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== 日志项目 ========== */
+.log-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(180, 150, 120, 0.06);
+}
+
+.log-time {
+  font-size: 11px;
+  color: var(--app-text-muted);
+  font-family: var(--app-font-mono);
+  width: 60px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.log-icon {
+  font-size: 14px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.log-content {
+  font-size: 13px;
+  color: var(--app-text);
+  flex: 1;
+}
+
+.log-content .fail {
+  color: var(--app-danger);
+}
+
+.log-content .pass {
+  color: var(--app-success);
+}
+
+/* ========== 摘要行（报告用） ========== */
+.summary-row {
+  display: flex;
+  align-items: center;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.summary-icon {
+  font-size: 28px;
+}
+
+.summary-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--app-text);
+  line-height: 1.2;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: var(--app-text-muted);
+  margin-top: 2px;
+}
+
+.summary-divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(180, 150, 120, 0.15);
+}
+
+/* ========== 通知项 ========== */
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.notif-item + .notif-item {
+  border-top: var(--app-border);
+}
+
+.notif-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.notif-info {
+  flex: 1;
+}
+
+.notif-info .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.notif-info .desc {
+  font-size: 12px;
+  color: var(--app-text-muted);
+  margin-top: 2px;
+}
+
+/* ========== 网格布局 ========== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 1100px) {
+  .app-stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .app-row-2col { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .app-drawer { width: 100%; }
+}
+
+@media (max-width: 768px) {
+  .app-stats-row { grid-template-columns: 1fr; }
+}

@@ -2,7 +2,7 @@
 
 import uuid
 
-from app.shared.core.database import get_db
+from app.common.core.database import get_db
 from app.modules.comfort.repository import ComfortRepo
 from app.modules.comfort.domain import ComfortScene, ComfortCharacter
 

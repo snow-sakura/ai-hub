@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-HUB 智能工作台</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+
+/* 极小化顶栏 — 语言切换 + 登录 */
+.top-actions{display:flex;align-items:center;justify-content:flex-end;padding:16px 36px 0;gap:12px}
+.lang-select{appearance:none;border:var(--border);background:var(--card-bg);border-radius:6px;padding:6px 28px 6px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238B7355'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color 0.15s}
+.lang-select:hover{border-color:var(--primary-light)}
+.lang-select:focus{outline:none;border-color:var(--primary)}
+.lang-option{padding:4px 8px}
+.login-btn{font-size:12px;color:var(--primary);cursor:pointer;background:transparent;border:1px solid var(--primary);border-radius:6px;padding:5px 14px;font-family:inherit;transition:all 0.15s;white-space:nowrap}
+.login-btn:hover{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.user-badge{display:none;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary)}
+.user-badge.active{display:flex}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.user-avatar:hover{opacity:0.8}
+.logout-link{font-size:11px;color:var(--text-muted);cursor:pointer;text-decoration:none}
+.logout-link:hover{color:var(--primary)}
+
+.content{max-width:860px;margin:0 auto;padding:40px 32px}
+.welcome{text-align:center;margin-bottom:32px}
+.welcome h1{font-size:24px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:-0.02em;display:flex;align-items:center;justify-content:center;gap:10px}
+.welcome .brand-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800;flex-shrink:0;box-shadow:0 3px 8px rgba(198,123,92,0.2)}
+.welcome .page-sub{font-size:13px;color:var(--text-muted);line-height:1.6}
+
+/* 大模块卡片网格 - 三列 */
+.module-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mod-card{background:var(--card-bg);border:var(--border);border-radius:12px;padding:20px 16px;cursor:pointer;transition:all 0.25s;text-decoration:none;color:inherit;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative}
+.mod-card:hover{box-shadow:0 6px 20px rgba(60,40,20,0.10);transform:translateY(-2px);border-color:var(--primary-light)}
+.mod-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px;transition:transform 0.3s}
+.mod-card:hover .mod-icon{transform:scale(1.08)}
+.mod-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.mod-desc{font-size:12px;color:var(--text-muted);line-height:1.4}
+.mod-count{font-size:11px;color:var(--text-muted);margin-top:8px;padding:2px 10px;background:var(--bg);border-radius:10px}
+.fade-in{animation:fadeIn 0.5s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* 语言切换下拉菜单（模拟） */
+.lang-menu{position:relative;display:inline-block}
+.lang-dropdown{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:var(--card-bg);border:var(--border);border-radius:8px;box-shadow:var(--shadow);z-index:200;min-width:120px;overflow:hidden}
+.lang-dropdown.show{display:block}
+.lang-item{padding:8px 14px;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:background 0.1s}
+.lang-item:hover{background:var(--primary-bg);color:var(--primary)}
+.lang-item.active{color:var(--primary);font-weight:600}
+
+@media(max-width:720px){.module-grid{grid-template-columns:repeat(2,1fr)}.content{padding:28px 20px}.top-actions{padding:12px 20px 0}}
+@media(max-width:480px){.module-grid{grid-template-columns:1fr}.content{padding:24px 16px}.top-actions{padding:10px 16px 0;gap:8px}}
+</style>
+</head>
+<body>
+
+<div class="top-actions fade-in">
+  <div class="lang-menu" id="langMenu">
+    <select class="lang-select" onchange="switchLang(this.value)">
+      <option value="zh">🌐 中文</option>
+      <option value="en">🌐 English</option>
+    </select>
+  </div>
+  <!-- 未登录状态 -->
+  <button class="login-btn" id="loginBtn" onclick="toggleLogin()">登录 / 注册</button>
+  <!-- 已登录状态（默认隐藏，登录后显示） -->
+  <div class="user-badge" id="userBadge">
+    <span id="userName">张明远</span>
+    <div class="user-avatar">张</div>
+    <a class="logout-link" onclick="toggleLogin()">退出</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="welcome fade-in">
+    <h1><span class="brand-icon">AI</span>AI-HUB 智能工作台</h1>
+    <p class="page-sub">智能对话 · 知识管理 · 创意无限 · 智能测试 · 质量看板 · 系统管理</p>
+  </div>
+  <div class="module-grid fade-in">
+    <a class="mod-card" href="测试管理/56-测试管理模块.html">
+      <div class="mod-icon" style="background:rgba(212,116,92,0.12);color:var(--danger)">📋</div>
+      <div class="mod-name">测试管理</div>
+      <div class="mod-desc">项目 · 版本 · 成员 · 数据看板</div>
+      <div class="mod-count">4 个功能模块</div>
+    </a>
+    <a class="mod-card" href="AI智能测试/50-AI智能测试模块.html">
+      <div class="mod-icon" style="background:rgba(198,123,92,0.12);color:var(--primary)">🤖</div>
+      <div class="mod-name">AI 智能测试</div>
+      <div class="mod-desc">AI 用例生成 · 评测师 · 测试报告</div>
+      <div class="mod-count">3 个功能模块</div>
+    </a>
+    <a class="mod-card" href="AI聊天室/42-AI聊天室.html">
+      <div class="mod-icon" style="background:rgba(91,141,239,0.12);color:var(--info)">💬</div>
+      <div class="mod-name">AI聊天室</div>
+      <div class="mod-desc">AI 对话 · 智能问答 · 场景交互</div>
+      <div class="mod-count">1 个功能模块</div>
+    </a>
+    <a class="mod-card" href="接口测试/51-接口测试模块.html">
+      <div class="mod-icon" style="background:rgba(91,141,239,0.12);color:var(--info)">🔌</div>
+      <div class="mod-name">接口测试</div>
+      <div class="mod-desc">接口管理 · 自动化 · Mock · 环境 · 定时任务</div>
+      <div class="mod-count">8 个功能模块</div>
+    </a>
+    <a class="mod-card" href="UI自动化/52-UI自动化模块.html">
+      <div class="mod-icon" style="background:rgba(123,168,125,0.12);color:var(--success)">🖥️</div>
+      <div class="mod-name">UI 自动化</div>
+      <div class="mod-desc">元素管理 · 用例录制 · 套件 · 报告 · 设备</div>
+      <div class="mod-count">10 个功能模块</div>
+    </a>
+    <a class="mod-card" href="APP自动化/53-APP自动化模块.html">
+      <div class="mod-icon" style="background:rgba(212,165,116,0.12);color:#B8860B">📱</div>
+      <div class="mod-name">APP 自动化</div>
+      <div class="mod-desc">用例编排 · 设备管理 · 多平台 · 定时回归</div>
+      <div class="mod-count">10 个功能模块</div>
+    </a>
+    <a class="mod-card" href="知识管理/54-知识管理模块.html">
+      <div class="mod-icon" style="background:rgba(180,150,120,0.12);color:var(--text-muted)">📚</div>
+      <div class="mod-name">知识管理</div>
+      <div class="mod-desc">知识库 · 技术文档 · 测试资料</div>
+      <div class="mod-count">1 个功能模块</div>
+    </a>
+    <a class="mod-card" href="哄哄模拟器/44-哄哄模拟器.html">
+      <div class="mod-icon" style="background:rgba(212,116,92,0.12);color:var(--danger)">🎭</div>
+      <div class="mod-name">哄哄模拟器</div>
+      <div class="mod-desc">AI 情景模拟 · 沟通技巧 · 安抚练习</div>
+      <div class="mod-count">1 个功能模块</div>
+    </a>
+    <a class="mod-card" href="系统管理/55-系统管理模块.html">
+      <div class="mod-icon" style="background:rgba(180,150,120,0.12);color:var(--text-muted)">⚙️</div>
+      <div class="mod-name">系统管理</div>
+      <div class="mod-desc">配置中心 · 用户 · 权限 · 日志 · 集成</div>
+      <div class="mod-count">6 个功能模块</div>
+    </a>
+  </div>
+</div>
+
+<script>
+// 语言切换（前端演示，实际接入 i18n）
+function switchLang(val) {
+  if (val === 'en') {
+    document.title = 'AI-HUB Intelligent Workbench';
+    document.querySelector('.brand-icon').textContent = 'AI';
+    document.querySelector('h1').textContent = 'AI-HUB Intelligent Workbench';
+    document.querySelector('.page-sub').textContent = 'Smart Chat · Knowledge Management · Unlimited Creativity · AI Testing · Quality Dashboard · System Admin';
+    document.querySelector('.login-btn').textContent = 'Sign In / Register';
+    document.querySelector('[value=\"zh\"]').textContent = '🌐 中文';
+    document.querySelector('[value=\"en\"]').textContent = '🌐 English';
+  } else {
+    document.title = 'AI-HUB 智能工作台';
+    document.querySelector('.brand-icon').textContent = 'AI';
+    document.querySelector('h1').textContent = 'AI-HUB 智能工作台';
+    document.querySelector('.page-sub').textContent = '智能对话 · 知识管理 · 创意无限 · 智能测试 · 质量看板 · 系统管理';
+    document.querySelector('.login-btn').textContent = '登录 / 注册';
+    document.querySelector('[value=\"zh\"]').textContent = '🌐 中文';
+    document.querySelector('[value=\"en\"]').textContent = '🌐 English';
+  }
+}
+
+// 登录/退出切换
+var loggedIn = false;
+function toggleLogin() {
+  loggedIn = !loggedIn;
+  var btn = document.getElementById('loginBtn');
+  var badge = document.getElementById('userBadge');
+  if (loggedIn) {
+    btn.style.display = 'none';
+    badge.classList.add('active');
+  } else {
+    btn.style.display = '';
+    badge.classList.remove('active');
+  }
+}
+</script>
+</body>
+</html>

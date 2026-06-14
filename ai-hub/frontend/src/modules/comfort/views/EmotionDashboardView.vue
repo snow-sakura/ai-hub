@@ -270,14 +270,19 @@ function formatDate(date: string): string {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .dash-card {
   background: var(--bg-card);
   border: 1px solid rgba(180, 150, 120, 0.12);
   border-radius: 12px;
-  padding: 20px;
+  padding: 24px;
+  transition: box-shadow 0.2s ease;
+}
+
+.dash-card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .card-title {
@@ -305,15 +310,15 @@ function formatDate(date: string): string {
 
 .emotion-bar-track {
   flex: 1;
-  height: 26px;
+  height: 20px;
   background: rgba(180, 150, 120, 0.08);
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
 .emotion-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 8px;
   transition: width 0.5s ease;
 }
 

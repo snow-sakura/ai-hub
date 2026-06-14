@@ -1,23 +1,21 @@
 # TestHub 智能测试管理平台
 
-<div align="center">
-
-**基于 AI 驱动的全栈测试管理平台**
+基于 AI 驱动的全栈测试管理平台
 
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-4.2-green.svg)](https://www.djangoproject.com/)
 [![Vue](https://img.shields.io/badge/Vue-3.3-brightgreen.svg)](https://vuejs.org/)
-[![License](https://img.shields.io/badge/License-GPL_v3-blue.svg)](LICENSE)
-
-</div>
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 📖 项目简介
 
-TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求分析**、**测试用例管理**、**API 测试**、**UI 自动化测试** 等多个模块，旨在提升测试效率和质量。平台采用 Django + Vue3 技术栈，提供现代化的用户界面和丰富的功能特性。
+TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求分析**、**测试用例管理**、**API 测试**、**UI 自动化测试** 等多个模块，旨在提升测试效率和质量。
+平台采用 Django + Vue3 技术栈，提供现代化的用户界面和丰富的功能特性。
 
 ## ✨ 核心特性
 
 ### 🤖 AI 智能化能力
+
 - **AI 需求分析**: 自动解析需求文档（PDF/Word/TXT），智能提取业务需求
 - **智能测试用例生成**: 基于需求自动生成测试用例，支持多种测试类型
 - **智能助手**: 集成 Dify AI 助手，提供测试咨询和问题解答
@@ -25,30 +23,35 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
 - **AI 智能模式**: 基于 Browser-use 的智能浏览器自动化，AI 理解页面并自动完成测试
 
 ### 🔐 安全机制
+
 - **JWT 认证**: 采用企业级 JWT 双 Token 安全机制
 - **自动刷新**: Access Token 过期前自动刷新，无感续期
 - **Token 黑名单**: 登出时自动将 Token 加入黑名单，防止重放攻击
 - **请求队列**: Token 刷新期间请求自动排队等待，确保请求不丢失
 
 ### ⚙️ 统一配置中心
+
 - **环境检测**: 自动检测系统浏览器和 Playwright 环境
 - **驱动管理**: 一键安装和更新浏览器驱动
 - **AI 模型配置**: 统一管理多种 AI 模型的 API 配置
 - **连接测试**: 支持 AI 模型连接测试和验证
 
 ### 📋 测试用例管理
+
 - **完整的用例生命周期管理**: 创建、编辑、版本控制、归档
 - **灵活的用例组织**: 支持项目、版本、标签等多维度分类
 - **详细的用例步骤**: 支持步骤化用例设计，包含前置条件、操作步骤、预期结果
 - **附件和评论**: 支持用例附件上传和团队协作评论
 
 ### 🔍 测试用例评审
+
 - **评审流程管理**: 支持多人评审、评审模板、检查清单
 - **评审状态跟踪**: 待评审、评审中、已通过、已拒绝等状态管理
 - **评审意见记录**: 支持整体意见、用例意见、步骤意见等多层级反馈
 - **评审模板**: 可自定义评审检查清单和默认评审人
 
 ### 🌐 API 测试
+
 - **项目和集合管理**: 支持 HTTP/WebSocket 协议，树形结构组织 API
 - **请求管理**: 支持 GET/POST/PUT/DELETE/PATCH 等多种 HTTP 方法
 - **环境变量**: 全局和局部环境变量管理，支持变量替换
@@ -58,6 +61,7 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
 - **测试报告**: 自动生成 Allure 测试报告
 
 ### 🖥️ UI 自动化测试（Web）
+
 - **双引擎支持**: 支持 Selenium 和 Playwright 两种自动化引擎
 - **元素管理**: 元素库管理，支持多种定位策略（ID、XPath、CSS 等）
 - **页面对象模式**: 支持 POM 设计模式，提高脚本可维护性
@@ -73,6 +77,7 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
   - 智能任务规划和步骤自动生成
 
 ### 📱 APP 自动化测试（Android）**新增** ✅ **【已完整实现】**
+
 - **Airtest 框架**: 基于图像识别的 Android APP 自动化测试
 - **设备管理**: 支持本地模拟器和远程设备，设备资源池管理
 - **设备锁定**: 多用户环境下的设备锁定机制，避免资源冲突
@@ -93,6 +98,7 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
 - **实时更新**: 执行记录自动刷新，实时进度展示
 
 ### 📊 测试执行与报告
+
 - **测试计划**: 创建测试计划，关联项目、版本和测试用例
 - **测试执行**: 手动和自动化测试执行，实时记录测试结果
 - **执行历史**: 完整的执行历史追踪和结果对比
@@ -100,6 +106,7 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
 - **Allure 集成**: 支持生成专业的 Allure 测试报告
 
 ### 🏭 数据工厂
+
 - **字符工具**（9个功能）: 字符串处理、文本对比、正则表达式测试、字数统计、大小写转换
 - **编码工具**（12个功能）: Base64编解码、时间戳转换、Unicode转换、进制转换、颜色值转换、URL编解码、JWT解码、条形码/二维码生成、图片Base64转换
 - **随机工具**（6个功能）: 随机数、随机字符串、UUID、随机布尔值、随机列表元素
@@ -113,6 +120,7 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
 - **数据引用**: 在接口测试（请求参数、断言、前置条件）和UI测试（测试步骤、输入数据、断言）中引用数据工厂数据
 
 ### 👥 项目与团队管理
+
 - **项目管理**: 多项目支持，项目成员和角色管理
 - **版本管理**: 版本规划和测试用例关联
 - **权限控制**: 基于项目的成员角色权限管理
@@ -121,6 +129,7 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
 ## 🏗️ 技术架构
 
 ### 后端技术栈
+
 - **框架**: Django 4.2 + Django REST Framework
 - **数据库**: MySQL 8.0+ (PyMySQL)
 - **API 文档**: drf-spectacular (Swagger/ReDoc)
@@ -134,6 +143,7 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
 - **定时任务**: Django APScheduler
 
 ### 前端技术栈
+
 - **框架**: Vue 3.3 + Composition API
 - **构建工具**: Vite 4.4
 - **UI 组件**: Element Plus 2.3
@@ -146,7 +156,7 @@ TestHub 是一个功能强大的智能测试管理平台，集成了 **AI 需求
 
 ## 📁 项目结构
 
-```
+```text
 testhub_platform/
 ├── apps/                           # Django 应用模块
 │   ├── users/                      # 用户管理
@@ -218,12 +228,14 @@ testhub_platform/
 ### 后端部署
 
 1. **克隆项目**
+
 ```bash
 git clone <repository-url>
 cd testhub_platform
 ```
 
-2. **创建虚拟环境**
+1. **创建虚拟环境**
+
 ```bash
 python -m venv venv
 # Windows
@@ -232,19 +244,22 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-3. **安装依赖**
+1. **安装依赖**
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **配置环境变量**
+1. **配置环境变量**
+
 ```bash
 # 复制示例配置文件到 .env 文件
 # 按照.env文件模板配置你的数据库连接信息等
 cp .env.example .env
 ```
 
-5. **初始化数据库**
+1. **初始化数据库**
+
 ```bash
 # 创建数据库
 mysql -u root -p
@@ -263,29 +278,36 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-6. **初始化UI自动化测试定位策略**
+1. **初始化UI自动化测试定位策略**
+
 ```bash
 # 根目录执行
 python manage.py init_locator_strategies
 ```
-7. **初始化app自动化组件库**
+
+1. **初始化app自动化组件库**
+
 ```bash
 # 根目录执行
 python manage.py load_component_pack
 ```
 
-8. **启动定时任务**
+1. **启动定时任务**
+
 ```bash
 # 启动统一任务调度器(同时管理API和UI模块)
 python manage.py run_all_scheduled_tasks
 ```
 
-9. **启动服务**
+1. **启动服务**
+
 ```bash
 # 启动 Django 开发服务器
 python manage.py runserver
 ```
-10. **启动Celery服务**
+
+1. **启动Celery服务**
+
 ```bash
 # 启动 Celery 开发服务(可选，用于处理APP自动化任务)
 celery -A backend worker -l info
@@ -308,27 +330,30 @@ python manage.py migrate data_factory
 ### 前端部署
 
 1. **安装依赖**
+
 ```bash
 cd frontend
 npm install
 ```
 
-2. **启动开发服务器**
+1. **启动开发服务器**
+
 ```bash
 npm run dev
 ```
 
-3. **构建生产版本**
+1. **构建生产版本**
+
 ```bash
 npm run build
 ```
 
 ### 访问应用
 
-- **前端**: http://localhost:3000
-- **后端 API**: http://localhost:8000
-- **API 文档**: http://localhost:8000/api/docs/
-- **Admin 后台**: http://localhost:8000/admin/
+- **前端**: <http://localhost:3000>
+- **后端 API**: <http://localhost:8000>
+- **API 文档**: <http://localhost:8000/api/docs/>
+- **Admin 后台**: <http://localhost:8000/admin/>
 
 ## 📄 文档
 
@@ -350,6 +375,7 @@ npm run build
 `core` 模块是跨模块的通用功能模块，提供全局共享的管理命令和统一配置管理。
 
 **管理命令**:
+
 - `run_all_scheduled_tasks`: 统一定时任务调度器
   - 同时调度 API 测试和 UI 自动化模块的定时任务
   - 支持自定义检查间隔（默认60秒）
@@ -368,6 +394,7 @@ npm run build
   - 自动缓存，后续使用更快
 
 **数据模型**:
+
 - `UnifiedNotificationConfig`: 统一通知配置
   - 支持企业微信、钉钉、飞书等多种 Webhook 机器人
   - 每个机器人可独立配置启用状态
@@ -375,14 +402,17 @@ npm run build
   - JSON 格式存储多个机器人配置
 
 **API 路由**:
+
 - `/api/core/notification-configs/`: 统一通知配置管理
 
 **日志文件**:
+
 - `logs/scheduler.log`: 统一调度器运行日志
 
 ### 2. AI 需求分析模块 (`requirement_analysis`)
 
 **功能**:
+
 - 上传需求文档（PDF/Word/TXT）
 - AI 自动解析需求文档内容
 - 提取业务需求和功能点
@@ -390,6 +420,7 @@ npm run build
 - 支持多种 AI 模型配置
 
 **数据模型**:
+
 - `RequirementDocument`: 需求文档
 - `RequirementAnalysis`: 需求分析记录
 - `BusinessRequirement`: 业务需求
@@ -400,12 +431,14 @@ npm run build
 ### 3. 智能助手模块 (`assistant`)
 
 **功能**:
+
 - 集成 Dify AI 助手
 - 多会话管理
 - 聊天历史记录
 - 测试咨询和问题解答
 
 **数据模型**:
+
 - `DifyConfig`: Dify API 配置
 - `AssistantSession`: 助手会话
 - `ChatMessage`: 聊天消息
@@ -413,6 +446,7 @@ npm run build
 ### 4. API 测试模块 (`api_testing`)
 
 **功能**:
+
 - API 项目和集合管理
 - HTTP/WebSocket 请求管理
 - 环境变量管理
@@ -422,6 +456,7 @@ npm run build
 - Allure 报告生成
 
 **数据模型**:
+
 - `ApiProject`: API 项目
 - `ApiCollection`: API 集合
 - `ApiRequest`: API 请求
@@ -431,9 +466,10 @@ npm run build
 - `ApiScheduledTask`: 定时任务
 - `ApiNotificationConfig`: 通知配置
 
-### 4.5. 数据工厂模块 (`data_factory`)
+### 5. 数据工厂模块 (`data_factory`)
 
 **功能**:
+
 - **字符工具**（9个功能）: 去除空格换行、字符串替换、转义反转义、字数统计、文本对比、正则测试、大小写转换、字符串格式化
 - **编码工具**（12个功能）: 生成条形码/二维码、时间戳转换、进制转换、Unicode/ASCII转换、颜色值转换、Base64编解码、URL编解码、JWT解码、图片Base64转换
 - **随机工具**（6个功能）: 随机整数/浮点数、随机字符串、UUID生成、随机布尔值、随机列表元素
@@ -447,6 +483,7 @@ npm run build
 - **数据引用**: 在接口测试（请求参数、断言、前置条件）和UI测试（测试步骤、输入数据、断言）中引用数据工厂数据
 
 **核心特性**:
+
 - **51个实用工具**: 覆盖字符处理、编码转换、随机数据、加密解密、测试数据、JSON处理、Crontab管理等多个场景
 - **标签管理**: 每条数据记录可添加多个标签，支持按标签筛选和管理
 - **数据引用**: 在接口测试和UI测试中通过DataFactorySelector组件引用带标签的数据
@@ -455,6 +492,7 @@ npm run build
 - **状态持久化**: JSON格式化的展开/折叠状态自动保存到localStorage
 
 **数据模型**:
+
 - `DataFactoryRecord`: 数据工厂使用记录
   - `tool_name`: 工具名称
   - `tool_category`: 工具分类（string/encoding/random/encryption/test_data/json/crontab）
@@ -467,15 +505,17 @@ npm run build
   - `updated_at`: 更新时间
 
 **API 路由**:
+
 - `/api/data-factory/`: 数据工厂记录管理（CRUD）
 - `/api/data-factory/execute/`: 执行工具
 - `/api/data-factory/download_static_file/{filename}/`: 下载生成的文件（条形码、二维码等）
 
 **详细使用说明**: 请查看 [数据工厂使用说明.md](./数据工厂使用说明.md) 获取完整的功能介绍、使用技巧和最佳实践。
 
-### 5. UI 自动化测试模块 (`ui_automation`)
+### 6. UI 自动化测试模块 (`ui_automation`)
 
 **功能**:
+
 - 元素库管理（支持多种定位策略）
 - 页面对象模式（POM）
 - 测试脚本编辑和执行
@@ -491,11 +531,13 @@ npm run build
   - 执行过程实时日志记录
 
 **核心组件**:
+
 - `ai_base.py`: Browser-use 基础框架和补丁
 - `ai_agent.py`: AI Agent 实现（BrowserAgent 类）
 - `ai_models.py`: 多 AI 模型统一接口
 
 **数据模型**:
+
 - `UiProject`: UI 项目
 - `Element`: 元素
 - `ElementGroup`: 元素分组
@@ -508,9 +550,10 @@ npm run build
 - `AICase`: AI 智能用例
 - `AIIntelligentModeConfig`: AI 智能模式配置
 
-### 6. 统一配置中心模块 (`configuration`)
+### 7. 统一配置中心模块 (`configuration`)
 
 **功能**:
+
 - **环境检测**: 自动检测系统已安装的浏览器
 - **驱动管理**: 一键安装 Playwright 浏览器驱动
 - **AI 模型配置**:
@@ -520,12 +563,14 @@ npm run build
   - 连接测试功能
 
 **API 路由**:
+
 - `/api/ui-automation/config/environment/`: 环境配置
 - `/api/ui-automation/config/ai-mode/`: AI 智能模式配置
 
-### 7. 测试用例评审模块 (`reviews`)
+### 8. 测试用例评审模块 (`reviews`)
 
 **功能**:
+
 - 创建评审任务
 - 分配评审人员
 - 评审意见记录
@@ -533,20 +578,23 @@ npm run build
 - 评审状态跟踪
 
 **数据模型**:
+
 - `TestCaseReview`: 测试用例评审
 - `ReviewAssignment`: 评审分配
 - `TestCaseReviewComment`: 评审意见
 - `ReviewTemplate`: 评审模板
 
-### 8. 测试执行模块 (`executions`)
+### 9. 测试执行模块 (`executions`)
 
 **功能**:
+
 - 测试计划管理
 - 测试执行记录
 - 执行历史追踪
 - 执行结果统计
 
 **数据模型**:
+
 - `TestPlan`: 测试计划
 - `TestRun`: 测试执行
 - `TestRunCase`: 测试执行用例
@@ -559,6 +607,7 @@ npm run build
 项目采用企业级 JWT 双 Token 安全机制：
 
 **后端配置** (`backend/settings.py`):
+
 ```python
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Access Token 30分钟
@@ -572,6 +621,7 @@ SIMPLE_JWT = {
 ```
 
 **安全特性**:
+
 - 双 Token 机制：短期 Access Token + 长期 Refresh Token
 - 自动刷新：Token 过期前 5 分钟自动刷新，无感续期
 - Token 黑名单：登出时将 Refresh Token 加入黑名单，防止重放攻击
@@ -579,6 +629,7 @@ SIMPLE_JWT = {
 - 防循环机制：logout 函数包含防循环调用保护
 
 **前端 Token 管理**:
+
 - Token 存储在 localStorage
 - 请求拦截器自动添加 Bearer Token
 - 响应拦截器处理 401 错误并自动刷新 Token
@@ -588,6 +639,7 @@ SIMPLE_JWT = {
 在统一配置中心可以配置多种 AI 模型：
 
 **支持的 AI 提供商**:
+
 - **OpenAI**: GPT-4、GPT-3.5 等模型
 - **Azure OpenAI**: Azure 托管的 OpenAI 服务
 - **Anthropic**: Claude 系列模型
@@ -596,12 +648,14 @@ SIMPLE_JWT = {
 - **硅基流动**: 聚合多种 AI 模型
 
 **配置角色**:
+
 - `testcase_writer`: 测试用例编写
 - `testcase_reviewer`: 测试用例评审
 - `browser_use_text`: Browser Use 文本模式（DOM 解析）
 - `browser_use_vision`: Browser Use 视觉模式（截图识别）- 暂未实现
 
 **配置参数**:
+
 - API Key: API 访问密钥
 - Base URL: API 端点地址（可选）
 - Model Name: 模型名称
@@ -653,11 +707,18 @@ SIMPLE_JWT = {
 - **测试执行**: `test_plans`, `test_runs`, `test_run_cases`
 - **用例评审**: `testcase_reviews`, `review_assignments`, `review_comments`
 - **核心配置**: `core_unifiednotificationconfig` - 统一通知配置
-- **需求分析**: `requirement_documents`, `requirement_analyses`, `business_requirements`, `generated_test_cases`
+- **需求分析**: `requirement_documents`, `requirement_analyses`,
+  `business_requirements`, `generated_test_cases`
 - **AI 配置**: `ai_model_configs`, `prompt_configs` - AI 模型和提示词配置
-- **智能助手**: `dify_configs`, `assistant_sessions`, `chat_messages`
-- **API 测试**: `api_projects`, `api_collections`, `api_requests`, `api_environments`, `test_suites`, `request_history`, `api_scheduled_tasks`
-- **UI 自动化**: `ui_projects`, `ui_elements`, `element_groups`, `ui_page_objects`, `ui_test_scripts`, `ui_test_cases`, `ui_test_suites`, `ui_test_executions`, `ui_scheduled_tasks`, `ai_cases`, `ai_intelligent_mode_configs`
+- **智能助手**:
+  - `dify_configs`
+  - `assistant_sessions`
+  - `chat_messages`
+- **API 测试**: `api_projects`, `api_collections`, `api_requests`,
+  `api_environments`, `test_suites`, `request_history`, `api_scheduled_tasks`
+- **UI 自动化**: `ui_projects`, `ui_elements`, `element_groups`, `ui_page_objects`,
+  `ui_test_scripts`, `ui_test_cases`, `ui_test_suites`, `ui_test_executions`,
+  `ui_scheduled_tasks`, `ai_cases`, `ai_intelligent_mode_configs`
 - **数据工厂**: `data_factory_record` - 工具使用记录表
 - **JWT 安全**: `blacklisted_token`, `outstanding_token` - Token 黑名单管理
 
@@ -681,6 +742,4 @@ SIMPLE_JWT = {
 
 ---
 
-<div align="center">
 Made with ❤️ by 大刚（公众号：测试开发实战）
-</div>

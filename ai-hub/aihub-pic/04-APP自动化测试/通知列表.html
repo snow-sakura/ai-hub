@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP自动化测试 - 通知列表</title>
+<style>
+:root {
+  --primary:#C67B5C; --primary-light:#D49472; --accent:#D4A574;
+  --bg:#FBF7F0; --card-bg:#FFFDF9; --sidebar-bg:#F6F0E7;
+  --text:#3D2E1F; --text-secondary:#5C4A38; --text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);
+  --radius:8px; --radius-lg:12px;
+  --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+.sidebar { width:220px; background:var(--sidebar-bg); border-right:var(--border); padding:24px 0; flex-shrink:0; }
+.logo { padding:0 20px 24px; border-bottom:var(--border); margin-bottom:16px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--text-secondary); text-decoration:none; font-size:14px; transition:all .2s; border-right:3px solid transparent; }
+.nav-item:hover { background:rgba(198,123,92,0.06); color:var(--text); }
+.nav-item.active { background:rgba(198,123,92,0.1); color:var(--primary); border-right-color:var(--primary); font-weight:600; }
+.nav-item svg { flex-shrink:0; }
+.nav-section { font-size:11px; color:var(--text-muted); padding:16px 20px 6px; text-transform:uppercase; letter-spacing:.5px; }
+.main { flex:1; overflow-y:auto; }
+.topbar { display:flex; justify-content:space-between; align-items:center; padding:16px 32px; border-bottom:var(--border); background:var(--card-bg); }
+.page-title { font-size:20px; font-weight:600; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.notif-btn { position:relative; background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px; }
+.notif-dot { position:absolute; top:0; right:0; width:8px; height:8px; background:#E8735A; border-radius:50%; border:2px solid var(--card-bg); }
+.avatar { width:32px; height:32px; border-radius:50%; background:var(--primary-light); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; }
+.content { padding:24px 32px; }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:var(--radius); font-size:13px; cursor:pointer; border:none; font-weight:500; transition:all .2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-light); }
+.btn-outline { background:transparent; border:var(--border); color:var(--text-secondary); }
+.btn-sm { padding:5px 12px; font-size:12px; }
+.btn-text { background:transparent; border:none; color:var(--primary); cursor:pointer; font-size:13px; }
+
+/* Filter tabs */
+.notif-tabs { display:flex; gap:0; margin-bottom:16px; border-bottom:var(--border); }
+.notif-tab { padding:10px 20px; font-size:13px; cursor:pointer; border-bottom:2px solid transparent; color:var(--text-muted); transition:all .2s; }
+.notif-tab:hover { color:var(--text); }
+.notif-tab.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:600; }
+.notif-tab .badge { display:inline-block; background:var(--sidebar-bg); padding:1px 6px; border-radius:8px; font-size:10px; margin-left:4px; color:var(--text-muted); }
+.notif-tab.active .badge { background:rgba(198,123,92,0.1); color:var(--primary); }
+
+/* Notification list */
+.notif-list { background:var(--card-bg); border:var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+.notif-item { display:flex; gap:14px; padding:16px 20px; border-bottom:var(--border); transition:all .2s; }
+.notif-item:last-child { border-bottom:none; }
+.notif-item:hover { background:rgba(198,123,92,0.02); }
+.notif-item.unread { background:rgba(198,123,92,0.04); }
+.notif-item.unread .notif-title { font-weight:600; }
+.notif-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.notif-icon.success { background:#E8F5E9; color:#2E7D32; }
+.notif-icon.fail { background:#FFEBEE; color:#C62828; }
+.notif-icon.info { background:#E3F2FD; color:#1565C0; }
+.notif-icon.warn { background:#FFF3E0; color:#E65100; }
+.notif-content { flex:1; }
+.notif-title { font-size:14px; margin-bottom:2px; }
+.notif-desc { font-size:12px; color:var(--text-muted); line-height:1.4; }
+.notif-time { font-size:11px; color:var(--text-muted); flex-shrink:0; }
+.notif-marker { width:8px; height:8px; border-radius:50%; background:var(--primary); flex-shrink:0; margin-top:4px; }
+.notif-item:not(.unread) .notif-marker { background:transparent; }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C67B5C"/><path d="M8 12h16v2H8zm0 6h12v2H8zm0-3h16v2H8z" fill="#FFFDF9"/></svg></div>
+  <div class="nav-section">测试模块</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> UI自动化</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> APP自动化</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> API自动化</a>
+  <div class="nav-section">平台管理</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设备管理</a>
+  <a href="#" class="nav-item active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 通知列表</a>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <h1 class="page-title">通知列表</h1>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="alert('通知列表')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <div class="avatar">张</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="notif-tabs">
+      <span class="notif-tab active" onclick="document.querySelectorAll('.notif-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">全部 <span class="badge">12</span></span>
+      <span class="notif-tab" onclick="document.querySelectorAll('.notif-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">未读 <span class="badge">5</span></span>
+      <span class="notif-tab" onclick="document.querySelectorAll('.notif-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">执行通知</span>
+      <span class="notif-tab" onclick="document.querySelectorAll('.notif-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">设备通知</span>
+      <span class="notif-tab" onclick="document.querySelectorAll('.notif-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">系统通知</span>
+      <div style="margin-left:auto;">
+        <button class="btn btn-text btn-sm" onclick="alert('全部标为已读')">全部标为已读</button>
+      </div>
+    </div>
+
+    <div class="notif-list">
+      <!-- 通知 1 -->
+      <div class="notif-item unread">
+        <div class="notif-icon success">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">电商APP回归测试全部通过</div>
+          <div class="notif-desc">电商APP回归测试套件 (42/42) 全部通过，耗时 3m 28s，设备: iPhone 15 Pro</div>
+        </div>
+        <div class="notif-time">2分钟前</div>
+      </div>
+
+      <!-- 通知 2 -->
+      <div class="notif-item unread">
+        <div class="notif-icon fail">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">社交APP冒烟测试执行失败</div>
+          <div class="notif-desc">社交通讯冒烟测试执行失败 (14/18)，4条断言失败，请查看报告详情及时处理。</div>
+        </div>
+        <div class="notif-time">15分钟前</div>
+      </div>
+
+      <!-- 通知 3 -->
+      <div class="notif-item unread">
+        <div class="notif-icon info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">新设备已连接: iPhone 15 Pro</div>
+          <div class="notif-desc">设备 iPhone 15 Pro (iOS 17.3) 已通过 USB 成功连接到设备池，已标记为空闲状态。</div>
+        </div>
+        <div class="notif-time">1小时前</div>
+      </div>
+
+      <!-- 通知 4 -->
+      <div class="notif-item unread">
+        <div class="notif-icon warn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">设备离线: OPPO Find X7</div>
+          <div class="notif-desc">设备 OPPO Find X7 (ColorOS 14) 已离线超过 30 分钟，请检查 USB 连接或 WiFi 状态。</div>
+        </div>
+        <div class="notif-time">2小时前</div>
+      </div>
+
+      <!-- 通知 5 -->
+      <div class="notif-item unread">
+        <div class="notif-icon info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">定时任务即将执行</div>
+          <div class="notif-desc">全平台周度回归将在 5 分钟后 (06:00) 开始执行，涉及 4 台设备、86 个测试用例。</div>
+        </div>
+        <div class="notif-time">3小时前</div>
+      </div>
+
+      <!-- 通知 6 -->
+      <div class="notif-item">
+        <div class="notif-icon success">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">全平台定时回归完成</div>
+          <div class="notif-desc">全平台定时回归套件 (86/86) 全部通过，耗时 12m 45s，覆盖 4 台设备。</div>
+        </div>
+        <div class="notif-time">昨天 23:12</div>
+      </div>
+
+      <!-- 通知 7 -->
+      <div class="notif-item">
+        <div class="notif-icon info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">测试报告已生成</div>
+          <div class="notif-desc">电商APP回归测试报告已生成完毕，点击查看详细测试结果与统计数据。</div>
+        </div>
+        <div class="notif-time">昨天 10:35</div>
+      </div>
+
+      <!-- 通知 8 -->
+      <div class="notif-item">
+        <div class="notif-icon info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">新版本待测试: 电商APP v4.2.1</div>
+          <div class="notif-desc">电商平台APP 新版本 v4.2.1 已上传，建议尽快安排回归测试验证。</div>
+        </div>
+        <div class="notif-time">昨天 09:00</div>
+      </div>
+
+      <!-- 通知 9 -->
+      <div class="notif-item">
+        <div class="notif-icon success">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="notif-marker"></div>
+        <div class="notif-content">
+          <div class="notif-title">金融APP转账测试通过</div>
+          <div class="notif-desc">金融理财APP转账流程 (12/12) 全部通过，验证了转账、余额查询、交易记录功能。</div>
+        </div>
+        <div class="notif-time">2天前</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="alert('加载更多')">加载更多</button>
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -147,7 +147,9 @@ import type { DataTableColumns } from 'naive-ui'
 import type { GenerationTask } from '@/modules/ai_testing/types/generation'
 import { useGenerationStore } from '@/modules/ai_testing/stores/generation'
 import { useProjectStore } from '@/modules/ai_testing/stores/project'
+import { usePolling } from '@/shared/composables/usePolling'
 import * as taskDetailApi from '@/modules/ai_testing/api/taskDetail'
+import { listGenerationTasks } from '@/modules/ai_testing/api/generation'
 
 const router = useRouter()
 const dialog = useDialog()
@@ -228,14 +230,20 @@ const columns: DataTableColumns<GenerationTask> = [
     key: 'status',
     width: 90,
     render(row) {
+      const isSaved = row.has_saved_cases
       const map: Record<string, { label: string; type: 'success' | 'error' | 'info' | 'default' | 'warning' }> = {
-        completed: { label: '已完成', type: 'success' },
+        completed: { label: isSaved ? '已保存' : '已完成', type: isSaved ? 'success' : 'success' },
         failed: { label: '失败', type: 'error' },
         running: { label: '运行中', type: 'info' },
         pending: { label: '等待中', type: 'default' },
       }
       const s = map[row.status] || { label: row.status, type: 'default' as const }
-      return h(NTag, { size: 'small', type: s.type, round: true, bordered: false }, { default: () => s.label })
+      return h('div', { style: 'display: flex; align-items: center; gap: 4px;' }, [
+        h(NTag, { size: 'small', type: s.type, round: true, bordered: false }, { default: () => s.label }),
+        isSaved && row.status === 'completed'
+          ? h('span', { style: 'font-size: 11px; color: #22a163; margin-left: 2px;' }, '· 已保存')
+          : null,
+      ])
     },
   },
   {
@@ -278,51 +286,28 @@ const columns: DataTableColumns<GenerationTask> = [
   },
 ]
 
-// ── 实时记录轮询（带指数退避） ──────────────────────────────
-let pollTimeoutId: ReturnType<typeof setTimeout> | null = null
-let pollDelayMs = 5000
-const POLL_MIN_MS = 5000
-const POLL_MAX_MS = 30000
-
-async function fetchRealtimeTasks() {
-  realtimeLoading.value = true
-  try {
-    const { listGenerationTasks } = await import('@/modules/ai_testing/api/generation')
-    const res = await listGenerationTasks({ status: 'running', page: 1, page_size: 50 })
-    const running = res.data.items || []
-    // 再查 pending 的任务
-    const pendingRes = await listGenerationTasks({ status: 'pending', page: 1, page_size: 50 })
-    const pending = pendingRes.data.items || []
-    realtimeTasks.value = [...running, ...pending].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-    pollDelayMs = POLL_MIN_MS // 成功时重置间隔
-  } catch (e) {
-    console.error('获取实时任务失败:', e)
-    // 指数退避，上限 30s
-    pollDelayMs = Math.min(pollDelayMs * 2, POLL_MAX_MS)
-  } finally {
-    realtimeLoading.value = false
-  }
-}
-
-function scheduleNextPoll() {
-  if (pollTimeoutId) clearTimeout(pollTimeoutId)
-  pollTimeoutId = setTimeout(fetchRealtimeTasks, pollDelayMs)
-}
-
-function startPolling() {
-  stopPolling()
-  pollDelayMs = POLL_MIN_MS
-  fetchRealtimeTasks().then(() => scheduleNextPoll())
-}
-
-function stopPolling() {
-  if (pollTimeoutId) {
-    clearTimeout(pollTimeoutId)
-    pollTimeoutId = null
-  }
-}
+// ── 实时记录轮询（使用通用 usePolling composable） ──────────────
+const { start: startPolling, stop: stopPolling, refresh: refreshPolling } = usePolling(
+  async () => {
+    realtimeLoading.value = true
+    try {
+      const [runningRes, pendingRes] = await Promise.all([
+        listGenerationTasks({ status: 'running', page: 1, page_size: 50 }),
+        listGenerationTasks({ status: 'pending', page: 1, page_size: 50 }),
+      ])
+      const running = runningRes.data.items || []
+      const pending = pendingRes.data.items || []
+      realtimeTasks.value = [...running, ...pending].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+    } catch (e) {
+      console.error('获取实时任务失败:', e)
+    } finally {
+      realtimeLoading.value = false
+    }
+  },
+  { immediate: true },
+)
 
 // ── 事件处理 ────────────────────────────────────────────────
 function handleTabChange(tab: string) {
@@ -389,7 +374,7 @@ function handleDelete(task: GenerationTask) {
 
 function refreshAll() {
   if (activeTab.value === 'realtime') {
-    fetchRealtimeTasks()
+    refreshPolling()
   } else {
     store.fetchTasks()
   }
@@ -407,8 +392,7 @@ function formatTime(iso: string) {
 onMounted(() => {
   projectStore.fetchProjects()
   fetchGenStats()
-  // 默认显示实时记录，开始轮询
-  startPolling()
+  // usePolling 的 immediate: true 会自动开始轮询
 })
 
 onUnmounted(() => {
@@ -628,5 +612,14 @@ onUnmounted(() => {
   padding-top: 12px;
   display: flex;
   justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .page-wrap { padding: 16px 12px 48px; }
+  .page-header { flex-wrap: wrap; gap: 10px; }
+  .stats-row { gap: 10px; }
+  .filter-section { flex-direction: column; align-items: stretch; }
+  .filter-section > * { width: 100%; }
+  :deep(.n-data-table-wrapper) { overflow-x: auto; }
 }
 </style>

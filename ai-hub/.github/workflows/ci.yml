@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - "**/*.md"
+      - "**/.env*"
+      - ".gitignore"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "**/.env*"
+      - ".gitignore"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "18"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  frontend:
+    name: Frontend (TypeCheck + Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-hub/frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: ai-hub/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx vue-tsc -b
+
+      - name: Build
+        run: npm run build
+
+  backend:
+    name: Backend (Lint + Test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-hub/backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: ai-hub/backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with ruff
+        uses: chartboost/ruff-action@v1
+        with:
+          src: ai-hub/backend/app
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --no-header
+        env:
+          JWT_SECRET: "ci-test-jwt-secret-key-must-be-at-least-32-char"
+          ADMIN_PASSWORD: "ci-test-admin-password-over-16-chars"

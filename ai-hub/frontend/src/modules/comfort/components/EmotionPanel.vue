@@ -102,9 +102,18 @@ const panelClass = computed(() => {
 })
 
 /** 情绪变化时触发动画 */
+let _emotionTimer: ReturnType<typeof setTimeout> | null = null
 watch(() => props.emotion, () => {
   isAnimating.value = true
-  setTimeout(() => { isAnimating.value = false }, 600)
+  if (_emotionTimer) clearTimeout(_emotionTimer)
+  _emotionTimer = setTimeout(() => {
+    isAnimating.value = false
+    _emotionTimer = null
+  }, 600)
+})
+
+onUnmounted(() => {
+  if (_emotionTimer) clearTimeout(_emotionTimer)
 })
 </script>
 
@@ -122,7 +131,7 @@ watch(() => props.emotion, () => {
 
 .panel-glow {
   border-color: rgba(123, 168, 125, 0.3);
-  box-shadow: 0 0 0 2px rgba(123, 168, 125, 0.08);
+  box-shadow: 0 0 0 2px rgba(123, 168, 125, 0.08), inset 0 0 0 1px rgba(123, 168, 125, 0.15);
 }
 
 .panel-shake {
@@ -130,11 +139,11 @@ watch(() => props.emotion, () => {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-2px); }
-  40% { transform: translateX(2px); }
-  60% { transform: translateX(-1px); }
-  80% { transform: translateX(1px); }
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20% { transform: translateX(-2px) rotate(-0.5deg); }
+  40% { transform: translateX(2px) rotate(0.5deg); }
+  60% { transform: translateX(-1px) rotate(-0.25deg); }
+  80% { transform: translateX(1px) rotate(0.25deg); }
 }
 
 /* 头部行 */
@@ -180,7 +189,7 @@ watch(() => props.emotion, () => {
 }
 
 .animate-pulse {
-  animation: emotionPop 0.5s ease;
+  animation: emotionPop 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes emotionPop {
@@ -229,7 +238,7 @@ watch(() => props.emotion, () => {
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .forgiveness-delta {

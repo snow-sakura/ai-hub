@@ -3,11 +3,11 @@
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
 
-from app.shared.agent.state import AgentState
-from app.shared.agent.nodes.agent_node import agent_node
-from app.shared.agent.nodes.tool_node import tool_node
-from app.shared.agent.nodes.rag_node import rag_node
-from app.shared.core.managed_graph import ManagedGraphBase
+from app.common.agent.state import AgentState
+from app.common.agent.nodes.agent_node import agent_node
+from app.common.agent.nodes.tool_node import tool_node
+from app.common.agent.nodes.rag_node import rag_node
+from app.common.core.managed_graph import ManagedGraphBase
 
 
 def should_continue(state: AgentState) -> Literal["tool_node", END]:
@@ -29,6 +29,9 @@ def should_rag(state: AgentState) -> Literal["rag_node", "agent"]:
 
 class ManagedAgentGraph(ManagedGraphBase):
   """管理 LangGraph Agent 图的生命周期（包括数据库连接）"""
+
+  def __init__(self):
+    super().__init__(db_suffix='_graph', use_mysql_checkpoint=True)
 
   def _build_graph(self) -> StateGraph:
     builder = StateGraph(AgentState)

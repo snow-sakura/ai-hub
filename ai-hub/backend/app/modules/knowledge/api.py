@@ -2,14 +2,14 @@
 
 from io import BytesIO
 from typing import Any
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, Request, UploadFile, File, HTTPException
 from starlette.datastructures import UploadFile as StarletteUploadFile
 
-from app.shared.api.schemas.common import ApiResponse
-from app.shared.api.schemas.knowledge import KnowledgeUploadResponse, KnowledgeItemResponse
-from app.shared.service.knowledge_service import KnowledgeService
-from app.shared.core.logging import get_logger
-from app.shared.utils.file_validator import (
+from app.common.api.schemas.common import ApiResponse
+from app.common.api.schemas.knowledge import KnowledgeUploadResponse, KnowledgeItemResponse
+from app.common.service.knowledge_service import KnowledgeService
+from app.common.logs import get_logger
+from app.common.utils.file_validator import (
   validate_file_magic,
   has_path_traversal,
   safe_filename,
@@ -32,7 +32,7 @@ KNOWLEDGE_ALLOWED_MIME_TYPES = {
 
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...)) -> ApiResponse[KnowledgeUploadResponse]:
+async def upload_document(request: Request, file: UploadFile = File(...)) -> ApiResponse[KnowledgeUploadResponse]:
   """上传文档到知识库
 
   安全校验：
@@ -56,7 +56,15 @@ async def upload_document(file: UploadFile = File(...)) -> ApiResponse[Knowledge
       detail=f"不支持的文件类型: {ext}。允许的格式: {', '.join(sorted(KNOWLEDGE_ALLOWED_EXTENSIONS))}"
     )
 
-  # 3. 读取文件内容并检查大小
+  # 3. Content-Length 预检
+  content_length = file.size
+  if content_length is not None and content_length > KNOWLEDGE_MAX_FILE_SIZE:
+    raise HTTPException(
+      status_code=413,
+      detail=f"文件过大（{content_length / 1024 / 1024:.1f}MB）。最大允许 {KNOWLEDGE_MAX_FILE_SIZE / 1024 / 1024}MB"
+    )
+
+  # 4. 读取文件内容并检查大小
   content = await file.read()
   if len(content) > KNOWLEDGE_MAX_FILE_SIZE:
     raise HTTPException(
@@ -71,11 +79,15 @@ async def upload_document(file: UploadFile = File(...)) -> ApiResponse[Knowledge
       detail="文件内容与扩展名不符，请检查文件格式"
     )
 
-  # 5. 检查 MIME 类型
-  if file.content_type and file.content_type not in KNOWLEDGE_ALLOWED_MIME_TYPES:
-    logger.warning("未知的 MIME 类型: %s (文件: %s)", file.content_type, raw_name)
+  # 6. 检查 MIME 类型（严格校验）
+  mime_type = file.content_type or "application/octet-stream"
+  if mime_type not in KNOWLEDGE_ALLOWED_MIME_TYPES:
+    raise HTTPException(
+      status_code=400,
+      detail=f"不支持的 MIME 类型: {mime_type}"
+    )
 
-  # 6. 处理文件（需要重新构造 UploadFile，因为已经读取了内容）
+  # 7. 处理文件
   new_file = StarletteUploadFile(
     filename=raw_name,
     file=BytesIO(content),

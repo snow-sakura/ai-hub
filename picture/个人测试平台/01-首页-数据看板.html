@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据看板 - AI测试平台</title>
+<style>
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --radius: 8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,PingFang SC,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100}
+.sidebar-logo{padding:16px 20px;font-size:18px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo::before{content:"🧪";font-size:22px}
+.sidebar-menu{padding:12px 0}
+.menu-group-title{padding:8px 20px;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.menu-item{display:flex;align-items:center;padding:10px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:10px}
+.menu-item:hover{background:rgba(198,123,92,0.06)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:20px;text-align:center;font-size:16px}
+
+.main{margin-left:240px;flex:1}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.content{padding:24px}
+
+/* Greeting */
+.greeting{font-size:24px;font-weight:700;color:var(--text);margin-bottom:6px}
+.greeting-sub{font-size:14px;color:var(--text-muted);margin-bottom:24px}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);border:var(--border);padding:18px 20px;position:relative;overflow:hidden}
+.stat-card .icon-bg{position:absolute;top:-8px;right:-8px;width:64px;height:64px;border-radius:50%;opacity:0.08}
+.stat-card .label{font-size:13px;color:var(--text-muted);margin-bottom:6px;position:relative}
+.stat-card .value{font-size:26px;font-weight:700;position:relative}
+.stat-card .trend{font-size:12px;margin-top:4px;display:flex;align-items:center;gap:4px;position:relative}
+.trend-up{color:var(--success)}
+.trend-down{color:var(--danger)}
+
+/* Charts Row */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);border:var(--border);padding:18px 20px}
+.chart-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.chart-title .period{font-size:12px;color:var(--text-muted);font-weight:400}
+
+/* SVG Line Chart */
+.chart-svg{width:100%;height:160px}
+.chart-svg polyline{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.chart-svg .grid-line{stroke:rgba(180,150,120,0.08);stroke-width:1}
+.chart-x-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:4px;padding:0 8px}
+
+/* Donut Chart */
+.donut-wrap{display:flex;align-items:center;justify-content:center;gap:24px;height:160px}
+.donut-svg{width:140px;height:140px;transform:rotate(-90deg)}
+.donut-svg circle{fill:none;stroke-width:28;cx:70;cy:70;r:42}
+.donut-legend{display:flex;flex-direction:column;gap:8px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-item .val{font-weight:600;color:var(--text);margin-left:auto}
+
+/* Bottom Row */
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.section-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);border:var(--border);padding:18px 20px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.section-title{font-size:15px;font-weight:600}
+.section-link{font-size:12px;color:var(--primary);cursor:pointer;text-decoration:none}
+.section-link:hover{text-decoration:underline}
+
+/* Execution Table */
+.exec-table{width:100%;border-collapse:collapse;font-size:13px}
+.exec-table th{padding:8px 10px;text-align:left;font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;border-bottom:var(--border)}
+.exec-table td{padding:8px 10px;border-bottom:var(--border);color:var(--text-secondary);font-size:12px}
+.exec-table tr:hover td{background:var(--primary-bg)}
+.badge-pass{color:var(--success);font-weight:600}
+.badge-fail{color:var(--danger);font-weight:600}
+.badge-running{color:#5B8DEF;font-weight:600}
+
+/* Todo List */
+.todo-list{display:flex;flex-direction:column;gap:8px}
+.todo-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--sidebar-bg);border-radius:var(--radius);font-size:13px;cursor:pointer;transition:all .2s}
+.todo-item:hover{background:var(--primary-bg)}
+.todo-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.todo-dot.orange{background:var(--accent)}
+.todo-dot.blue{background:#5B8DEF}
+.todo-dot.green{background:var(--success)}
+.todo-text{flex:1;color:var(--text)}
+.todo-count{font-size:12px;color:var(--text-muted);background:var(--card-bg);padding:2px 8px;border-radius:10px}
+
+/* Quick Actions */
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.quick-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .2s;background:var(--sidebar-bg);color:var(--text-secondary)}
+.quick-btn:hover{background:var(--primary-bg);color:var(--primary)}
+.quick-btn.primary{background:var(--primary);color:#fff}
+.quick-btn.primary:hover{background:var(--primary-light)}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">AI测试平台</div>
+  <div class="sidebar-menu">
+    <div class="menu-group">
+      <a class="menu-item active" href="01-首页-数据看板.html"><span class="icon">📊</span>数据看板</a>
+      <a class="menu-item" href="02-项目管理-列表.html"><span class="icon">📁</span>项目管理</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">测试管理</div>
+      <a class="menu-item" href="04-用例管理-列表.html"><span class="icon">📋</span>用例管理</a>
+      <a class="menu-item" href="06-用例评审-管理.html"><span class="icon">✅</span>用例评审</a>
+      <a class="menu-item" href="07-测试套件-管理.html"><span class="icon">📦</span>测试套件</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">AI能力</div>
+      <a class="menu-item" href="#"><span class="icon">🤖</span>AI用例生成</a>
+      <a class="menu-item" href="#"><span class="icon">🔍</span>AI评测师</a>
+      <a class="menu-item" href="#"><span class="icon">🧠</span>智能模式</a>
+    </div>
+    <div class="menu-group"><div class="menu-group-title">自动化</div>
+      <a class="menu-item" href="#"><span class="icon">🔌</span>API测试</a>
+      <a class="menu-item" href="#"><span class="icon">🖥</span>UI自动化</a>
+      <a class="menu-item" href="#"><span class="icon">📱</span>APP自动化</a>
+    </div>
+    <div class="menu-group"><div class="menu-group-title">系统</div>
+      <a class="menu-item" href="#"><span class="icon">⚙️</span>配置中心</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb">首页 / <span>数据看板</span></div>
+  </div>
+  <div class="content">
+    <div class="greeting">☀️ 早上好，张明</div>
+    <div class="greeting-sub">今天是 2026年6月12日，有 3 项待办事项等待处理</div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="icon-bg" style="background:var(--primary);"></div>
+        <div class="label">总项目数</div>
+        <div class="value">24</div>
+        <div class="trend trend-up">📁 ↑ 较上月 +3</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon-bg" style="background:#5B8DEF;"></div>
+        <div class="label">总用例数</div>
+        <div class="value">1,284</div>
+        <div class="trend trend-up">📋 ↑ 较上月 +56</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon-bg" style="background:var(--accent);"></div>
+        <div class="label">API 接口数</div>
+        <div class="value">328</div>
+        <div class="trend trend-up">🔌 ↑ 较上月 +12</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon-bg" style="background:var(--success);"></div>
+        <div class="label">执行通过率</div>
+        <div class="value">92.3%</div>
+        <div class="trend trend-up">✅ ↑ 较上月 +2.1%</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <!-- Line Chart -->
+      <div class="chart-card">
+        <div class="chart-title">用例趋势 <span class="period">近 6 个月</span></div>
+        <svg class="chart-svg" viewBox="0 0 340 160">
+          <!-- Grid -->
+          <line class="grid-line" x1="30" y1="130" x2="330" y2="130"></line>
+          <line class="grid-line" x1="30" y1="100" x2="330" y2="100"></line>
+          <line class="grid-line" x1="30" y1="70" x2="330" y2="70"></line>
+          <line class="grid-line" x1="30" y1="40" x2="330" y2="40"></line>
+          <line class="grid-line" x1="30" y1="10" x2="330" y2="10"></line>
+
+          <!-- Area fill -->
+          <polygon points="40,130 80,110 125,115 170,90 215,70 260,60 310,50 310,130" fill="rgba(198,123,92,0.06)"></polygon>
+
+          <!-- Line -->
+          <polyline points="40,130 80,110 125,115 170,90 215,70 260,60 310,50" stroke="var(--primary)"></polyline>
+
+          <!-- Data dots -->
+          <circle cx="40" cy="130" r="3" fill="var(--primary)"></circle>
+          <circle cx="80" cy="110" r="3" fill="var(--primary)"></circle>
+          <circle cx="125" cy="115" r="3" fill="var(--primary)"></circle>
+          <circle cx="170" cy="90" r="3" fill="var(--primary)"></circle>
+          <circle cx="215" cy="70" r="3" fill="var(--primary)"></circle>
+          <circle cx="260" cy="60" r="3" fill="var(--primary)"></circle>
+          <circle cx="310" cy="50" r="4" fill="var(--primary)" stroke="#fff" stroke-width="2"></circle>
+        </svg>
+        <div class="chart-x-labels">
+          <span>1月</span><span>2月</span><span>3月</span><span>4月</span><span>5月</span><span>6月</span>
+        </div>
+      </div>
+
+      <!-- Donut Chart -->
+      <div class="chart-card">
+        <div class="chart-title">用例类型分布</div>
+        <div class="donut-wrap">
+          <svg class="donut-svg" viewBox="0 0 140 140">
+            <!-- Background -->
+            <circle stroke="rgba(180,150,120,0.1)" stroke-dasharray="264"></circle>
+            <!-- 功能测试 45% - ~119deg -->
+            <circle stroke="#C67B5C" stroke-dasharray="118.8 145.2" stroke-dashoffset="0"></circle>
+            <!-- 性能测试 25% -->
+            <circle stroke="#5B8DEF" stroke-dasharray="66 198" stroke-dashoffset="-118.8"></circle>
+            <!-- 安全测试 18% -->
+            <circle stroke="#7BA87D" stroke-dasharray="47.5 216.5" stroke-dashoffset="-184.8"></circle>
+            <!-- 兼容性 12% -->
+            <circle stroke="#D4A574" stroke-dasharray="31.7 232.3" stroke-dashoffset="-232.3"></circle>
+          </svg>
+          <div class="donut-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#C67B5C;"></span>功能测试 <span class="val">45%</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#5B8DEF;"></span>性能测试 <span class="val">25%</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#7BA87D;"></span>安全测试 <span class="val">18%</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#D4A574;"></span>兼容性 <span class="val">12%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <!-- Recent Executions -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">最近执行记录</div>
+          <a class="section-link">查看更多 →</a>
+        </div>
+        <table class="exec-table">
+          <thead><tr><th>套件名称</th><th>结果</th><th>通过率</th><th>耗时</th></tr></thead>
+          <tbody>
+            <tr><td>电商回归测试套件</td><td class="badge-pass">✓ 通过</td><td>95.8%</td><td>3m 24s</td></tr>
+            <tr><td>金融风控安全套件</td><td class="badge-pass">✓ 通过</td><td>100%</td><td>2m 10s</td></tr>
+            <tr><td>移动端兼容性套件</td><td class="badge-fail">✗ 失败</td><td>78.6%</td><td>4m 05s</td></tr>
+            <tr><td>CRM冒烟测试套件</td><td class="badge-pass">✓ 通过</td><td>100%</td><td>1m 30s</td></tr>
+            <tr><td>性能压测高并发套件</td><td class="badge-running">◌ 运行中</td><td>—</td><td>2m 15s</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Todo & Quick Actions -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">待办事项</div>
+          <a class="section-link">全部 →</a>
+        </div>
+        <div class="todo-list">
+          <div class="todo-item">
+            <span class="todo-dot orange"></span>
+            <span class="todo-text">待评审的用例</span>
+            <span class="todo-count">3</span>
+          </div>
+          <div class="todo-item">
+            <span class="todo-dot blue"></span>
+            <span class="todo-text">待执行的测试套件</span>
+            <span class="todo-count">2</span>
+          </div>
+          <div class="todo-item">
+            <span class="todo-dot green"></span>
+            <span class="todo-text">待修复的失败用例</span>
+            <span class="todo-count">5</span>
+          </div>
+        </div>
+        <div class="quick-actions">
+          <button class="quick-btn primary">🤖 AI生成用例</button>
+          <button class="quick-btn">📋 新建用例</button>
+          <button class="quick-btn">▶ 执行套件</button>
+          <button class="quick-btn">📊 查看报告</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

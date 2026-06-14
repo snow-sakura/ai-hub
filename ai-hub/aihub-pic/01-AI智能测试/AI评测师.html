@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI评测师 - AI智能测试</title>
+<style>
+  :root {
+    --primary:#C67B5C; --primary-light:#D49472; --accent:#D4A574;
+    --bg:#FBF7F0; --card-bg:#FFFDF9; --sidebar-bg:#F6F0E7;
+    --text:#3D2E1F; --text-secondary:#5C4A38; --text-muted:#8B7355;
+    --border:1px solid rgba(180,150,120,0.12);
+    --radius:8px; --radius-lg:12px;
+    --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:var(--font); background:var(--bg); color:var(--text);
+    display:flex; min-height:100vh;
+  }
+
+  /* ===== Sidebar (same as page 1) ===== */
+  .sidebar {
+    width:240px; background:var(--sidebar-bg); border-right:var(--border);
+    display:flex; flex-direction:column; position:fixed; top:0; left:0;
+    height:100vh; z-index:100;
+  }
+  .sidebar-logo {
+    padding:20px 24px; border-bottom:var(--border);
+    display:flex; align-items:center; gap:10px;
+  }
+  .sidebar-logo h1 {
+    font-size:16px; font-weight:600; color:var(--text); letter-spacing:0.5px;
+  }
+  .sidebar-logo span {
+    font-size:11px; color:var(--text-muted); display:block;
+  }
+  .sidebar-nav { flex:1; padding:12px 0; overflow-y:auto; }
+  .nav-section {
+    padding:8px 24px 4px; font-size:11px; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:1px; font-weight:500;
+  }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 24px;
+    color:var(--text-secondary); text-decoration:none; font-size:14px;
+    cursor:pointer; transition:all 0.2s; border-left:3px solid transparent;
+  }
+  .nav-item:hover { background:rgba(180,150,120,0.08); color:var(--text); }
+  .nav-item.active {
+    background:rgba(198,123,92,0.1); color:var(--primary);
+    border-left-color:var(--primary); font-weight:500;
+  }
+  .nav-item svg { flex-shrink:0; opacity:0.7; }
+  .nav-item.active svg { opacity:1; }
+  .sidebar-footer {
+    padding:16px 24px; border-top:var(--border);
+    font-size:12px; color:var(--text-muted);
+  }
+
+  /* ===== Main ===== */
+  .main { margin-left:240px; flex:1; min-height:100vh; }
+  .topbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 32px; background:var(--card-bg);
+    border-bottom:var(--border); position:sticky; top:0; z-index:50;
+  }
+  .topbar h2 { font-size:18px; font-weight:600; }
+  .topbar-right { display:flex; align-items:center; gap:16px; }
+  .topbar-right .user-info {
+    display:flex; align-items:center; gap:8px; font-size:13px;
+    color:var(--text-secondary);
+  }
+  .avatar {
+    width:32px; height:32px; border-radius:50%;
+    background:linear-gradient(135deg,var(--primary),var(--accent));
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:13px; font-weight:500;
+  }
+
+  /* ===== Content ===== */
+  .content { padding:24px 32px; }
+  .content-layout {
+    display:grid; grid-template-columns:1fr 1.3fr; gap:24px;
+  }
+
+  /* ===== Card ===== */
+  .card {
+    background:var(--card-bg); border-radius:var(--radius-lg);
+    border:var(--border); padding:20px; margin-bottom:20px;
+  }
+  .card-title {
+    font-size:15px; font-weight:600; margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
+  }
+
+  /* ===== Form ===== */
+  .form-group { margin-bottom:16px; }
+  .form-label {
+    display:block; font-size:13px; font-weight:500;
+    color:var(--text-secondary); margin-bottom:6px;
+  }
+  .form-select {
+    width:100%; padding:9px 12px; font-size:14px; font-family:var(--font);
+    background:var(--bg); border:var(--border); border-radius:var(--radius);
+    color:var(--text); transition:all 0.2s; outline:none;
+  }
+  .form-select:focus {
+    border-color:var(--primary); box-shadow:0 0 0 3px rgba(198,123,92,0.1);
+  }
+
+  /* ===== Checkbox ===== */
+  .checkbox-list { max-height:300px; overflow-y:auto; }
+  .checkbox-item {
+    display:flex; align-items:center; gap:10px; padding:8px 10px;
+    border-radius:var(--radius); cursor:pointer; transition:background 0.15s;
+    border-bottom:1px solid rgba(180,150,120,0.06);
+  }
+  .checkbox-item:hover { background:rgba(180,150,120,0.04); }
+  .checkbox-item input[type="checkbox"] {
+    width:16px; height:16px; accent-color:var(--primary); cursor:pointer;
+  }
+  .checkbox-item .case-info { flex:1; }
+  .checkbox-item .case-title { font-size:13px; font-weight:500; }
+  .checkbox-item .case-meta { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .checkbox-item .case-tag { font-size:11px; padding:1px 8px; border-radius:10px; background:rgba(198,123,92,0.1); color:var(--primary); margin-left:auto; }
+
+  /* ===== Criteria tags ===== */
+  .criteria-group { display:flex; flex-wrap:wrap; gap:8px; }
+  .criteria-tag {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:7px 16px; border-radius:20px; font-size:13px;
+    background:var(--bg); border:var(--border); cursor:pointer;
+    transition:all 0.2s; user-select:none;
+  }
+  .criteria-tag:hover { border-color:var(--primary); }
+  .criteria-tag.active {
+    background:rgba(198,123,92,0.1); border-color:var(--primary);
+    color:var(--primary); font-weight:500;
+  }
+  .criteria-tag input { display:none; }
+
+  /* ===== Button ===== */
+  .btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    gap:6px; padding:9px 20px; font-size:14px; font-family:var(--font);
+    border:none; border-radius:var(--radius); cursor:pointer;
+    transition:all 0.2s; font-weight:500; white-space:nowrap;
+  }
+  .btn-primary {
+    background:var(--primary); color:#fff;
+  }
+  .btn-primary:hover { background:var(--primary-light); transform:translateY(-1px); box-shadow:0 4px 12px rgba(198,123,92,0.25); }
+  .btn-primary:active { transform:translateY(0); }
+  .btn-outline {
+    background:transparent; color:var(--primary);
+    border:1px solid var(--primary);
+  }
+  .btn-outline:hover { background:rgba(198,123,92,0.06); }
+  .btn-success {
+    background:#27ae60; color:#fff;
+  }
+  .btn-success:hover { background:#2ecc71; transform:translateY(-1px); box-shadow:0 4px 12px rgba(39,174,96,0.25); }
+  .btn-sm { padding:6px 14px; font-size:12px; }
+  .btn-group { display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* ===== Score Card ===== */
+  .score-summary {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+    margin-bottom:20px;
+  }
+  .score-item {
+    text-align:center; padding:16px 8px;
+    background:var(--bg); border-radius:var(--radius);
+    border:var(--border);
+  }
+  .score-item .score-value {
+    font-size:28px; font-weight:700; color:var(--primary);
+    line-height:1.2;
+  }
+  .score-item .score-value.good { color:#27ae60; }
+  .score-item .score-value.warn { color:#e67e22; }
+  .score-item .score-value.bad { color:#c0392b; }
+  .score-item .score-label {
+    font-size:12px; color:var(--text-muted); margin-top:4px;
+  }
+
+  /* ===== Issue Card ===== */
+  .issue-list { display:flex; flex-direction:column; gap:12px; }
+  .issue-card {
+    border:var(--border); border-radius:var(--radius);
+    padding:14px 16px; transition:all 0.2s;
+  }
+  .issue-card:hover { border-color:rgba(198,123,92,0.3); box-shadow:0 2px 8px rgba(180,150,120,0.08); }
+  .issue-header {
+    display:flex; align-items:center; gap:8px; margin-bottom:6px;
+  }
+  .issue-severity {
+    font-size:11px; padding:2px 10px; border-radius:10px;
+    font-weight:500;
+  }
+  .issue-severity.high { background:rgba(192,57,43,0.1); color:#c0392b; }
+  .issue-severity.mid { background:rgba(230,126,34,0.1); color:#e67e22; }
+  .issue-severity.low { background:rgba(39,174,96,0.1); color:#27ae60; }
+  .issue-title { font-size:13px; font-weight:600; flex:1; }
+  .issue-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+  .issue-fix {
+    margin-top:8px; padding:8px 12px; background:rgba(212,165,116,0.08);
+    border-radius:var(--radius); font-size:12px; color:var(--text-secondary);
+    border-left:3px solid var(--accent);
+  }
+  .issue-fix strong { color:var(--text); }
+
+  /* ===== Loading ===== */
+  .loading-indicator {
+    display:none; align-items:center; justify-content:center;
+    gap:8px; padding:20px; color:var(--text-muted); font-size:13px;
+  }
+  .loading-indicator.show { display:flex; }
+  .spinner {
+    width:18px; height:18px; border:2px solid rgba(198,123,92,0.2);
+    border-top-color:var(--primary); border-radius:50%;
+    animation:spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ===== Scrollbar ===== */
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:rgba(180,150,120,0.25); border-radius:3px; }
+
+  /* ===== Responsive ===== */
+  @media (max-width:1024px) {
+    .content-layout { grid-template-columns:1fr; }
+    .score-summary { grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width:768px) {
+    .sidebar { width:60px; }
+    .sidebar-logo h1, .sidebar-logo span, .nav-item span, .nav-section, .sidebar-footer { display:none; }
+    .nav-item { justify-content:center; padding:12px; border-left:none; }
+    .nav-item.active { border-left:none; background:rgba(198,123,92,0.1); }
+    .sidebar-logo { padding:12px; justify-content:center; }
+    .main { margin-left:60px; }
+    .content { padding:16px; }
+    .topbar { padding:12px 16px; }
+  }
+
+  /* ===== Select All Bar ===== */
+  .select-all-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:10px; font-size:13px; color:var(--text-secondary);
+  }
+  .select-all-bar label { display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .select-all-bar input { accent-color:var(--primary); }
+
+  /* ===== Empty State ===== */
+  .empty-state {
+    text-align:center; padding:40px 20px; color:var(--text-muted);
+  }
+  .empty-state p { font-size:13px; line-height:1.8; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="6" fill="url(#logoGrad)"/>
+      <path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <defs><linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#C67B5C"/><stop offset="1" stop-color="#D4A574"/></linearGradient></defs>
+    </svg>
+    <div>
+      <h1>AI-HUB</h1>
+      <span>智能测试平台</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">导航菜单</div>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="14" height="14" rx="2"/><path d="M6 2v14M12 2v14M2 6h14M2 12h14"/></svg>
+      <span>控制台</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l7-3 7 3v8l-7 3-7-3V5z"/><path d="M2 5l7 3M9 2v11"/><path d="M16 5l-7 3"/></svg>
+      <span>测试用例</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l3 2"/></svg>
+      <span>测试执行</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14l3-3 2 2 5-5"/><circle cx="9" cy="9" r="7"/></svg>
+      <span>测试报告</span>
+    </a>
+    <div class="nav-section" style="padding-top:16px;">AI 智能测试</div>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v14M2 9h14"/><circle cx="9" cy="9" r="6"/></svg>
+      <span>AI 用例生成</span>
+    </a>
+    <a class="nav-item active" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2a7 7 0 017 7M9 2a7 7 0 00-7 7M9 2v14M9 16a7 7 0 007-7M9 16a7 7 0 01-7-7M2 9h14"/></svg>
+      <span>AI 评测师</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h14M2 9h14M2 13h14"/><rect x="2" y="3" width="14" height="12" rx="1.5"/></svg>
+      <span>AI 测试报告</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="2"/><path d="M9 1v3M9 14v3M1 9h3M14 9h3M3.5 3.5l2 2M12.5 12.5l2 2M3.5 14.5l2-2M12.5 5.5l2-2"/></svg>
+      <span>智能配置</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0 · 智能测试</div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <h2>AI 评测师</h2>
+    <div class="topbar-right">
+      <span class="user-info">
+        <span>管理员</span>
+        <div class="avatar">管</div>
+      </span>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="content-layout">
+
+      <!-- Left: Config & Selection -->
+      <div>
+        <!-- 选择测试用例 -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l7-3 7 3v8l-7 3-7-3V5z"/><path d="M2 5l7 3M9 2v11"/><path d="M16 5l-7 3"/></svg>
+            选择测试用例
+            <span class="tag" style="background:rgba(198,123,92,0.1);color:var(--primary);font-size:11px;padding:1px 8px;border-radius:10px;margin-left:6px;">已选 4 条</span>
+          </div>
+          <div class="select-all-bar">
+            <label><input type="checkbox" checked onchange="toggleAll(this)"> 全选</label>
+            <span style="font-size:12px;color:var(--text-muted);">共 10 条用例</span>
+          </div>
+          <div class="checkbox-list">
+            <label class="checkbox-item">
+              <input type="checkbox" checked>
+              <div class="case-info">
+                <div class="case-title">TC-001 验证手机号+验证码登录成功</div>
+                <div class="case-meta">模块: 登录 · P0 · 创建: 2025-06-14</div>
+              </div>
+              <span class="case-tag">登录</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked>
+              <div class="case-info">
+                <div class="case-title">TC-002 验证验证码错误提示</div>
+                <div class="case-meta">模块: 登录 · P0 · 创建: 2025-06-14</div>
+              </div>
+              <span class="case-tag">登录</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked>
+              <div class="case-info">
+                <div class="case-title">TC-005 验证登录失败锁定机制</div>
+                <div class="case-meta">模块: 登录 · P0 · 创建: 2025-06-14</div>
+              </div>
+              <span class="case-tag">登录</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked>
+              <div class="case-info">
+                <div class="case-title">TC-101 验证商品搜索关键字高亮</div>
+                <div class="case-meta">模块: 搜索 · P1 · 创建: 2025-06-13</div>
+              </div>
+              <span class="case-tag">搜索</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox">
+              <div class="case-info">
+                <div class="case-title">TC-102 验证搜索为空时的提示</div>
+                <div class="case-meta">模块: 搜索 · P1 · 创建: 2025-06-13</div>
+              </div>
+              <span class="case-tag">搜索</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox">
+              <div class="case-info">
+                <div class="case-title">TC-201 验证订单提交成功流程</div>
+                <div class="case-meta">模块: 订单 · P0 · 创建: 2025-06-12</div>
+              </div>
+              <span class="case-tag">订单</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox">
+              <div class="case-info">
+                <div class="case-title">TC-202 验证订单金额计算准确性</div>
+                <div class="case-meta">模块: 订单 · P0 · 创建: 2025-06-12</div>
+              </div>
+              <span class="case-tag">订单</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox">
+              <div class="case-info">
+                <div class="case-title">TC-301 验证支付超时处理</div>
+                <div class="case-meta">模块: 支付 · P1 · 创建: 2025-06-11</div>
+              </div>
+              <span class="case-tag">支付</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox">
+              <div class="case-info">
+                <div class="case-title">TC-302 验证退款流程完整性</div>
+                <div class="case-meta">模块: 支付 · P2 · 创建: 2025-06-11</div>
+              </div>
+              <span class="case-tag">支付</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox">
+              <div class="case-info">
+                <div class="case-title">TC-401 验证用户权限隔离</div>
+                <div class="case-meta">模块: 权限 · P0 · 创建: 2025-06-10</div>
+              </div>
+              <span class="case-tag">权限</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- AI 评测配置 -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg>
+            评测配置
+          </div>
+          <div class="form-group">
+            <label class="form-label">评测标准</label>
+            <div class="criteria-group">
+              <label class="criteria-tag active">
+                <input type="checkbox" checked> 功能测试
+              </label>
+              <label class="criteria-tag">
+                <input type="checkbox"> 性能测试
+              </label>
+              <label class="criteria-tag">
+                <input type="checkbox"> 安全测试
+              </label>
+              <label class="criteria-tag">
+                <input type="checkbox"> 兼容性测试
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">AI 模型</label>
+            <select class="form-select">
+              <option>GPT-4o（推荐）</option>
+              <option>Claude 3.5 Sonnet</option>
+              <option>DeepSeek V3</option>
+            </select>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="startReview()">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1v14M1 8h14"/></svg>
+              开始评测
+            </button>
+          </div>
+          <div class="loading-indicator" id="reviewLoading">
+            <div class="spinner"></div>
+            <span>AI 正在评测中，请稍候...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Results -->
+      <div>
+        <!-- 评测结果总览 -->
+        <div class="card" id="resultArea">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14l3-3 2 2 5-5"/><circle cx="8" cy="8" r="7"/></svg>
+            评测结果
+            <div style="margin-left:auto;display:flex;gap:8px;">
+              <button class="btn btn-outline btn-sm">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l8-8M10 3h2v2M4 9l-1 2 2-1"/></svg>
+                导出报告
+              </button>
+            </div>
+          </div>
+
+          <!-- Score Summary -->
+          <div class="score-summary">
+            <div class="score-item">
+              <div class="score-value good">87</div>
+              <div class="score-label">综合评分</div>
+            </div>
+            <div class="score-item">
+              <div class="score-value">12</div>
+              <div class="score-label">发现问题</div>
+            </div>
+            <div class="score-item">
+              <div class="score-value good">4</div>
+              <div class="score-label">高风险</div>
+            </div>
+            <div class="score-item">
+              <div class="score-value warn">8</div>
+              <div class="score-label">建议改进</div>
+            </div>
+          </div>
+
+          <!-- Issue List -->
+          <div style="margin-bottom:12px;">
+            <span style="font-size:13px;font-weight:500;color:var(--text-secondary);">问题详情</span>
+          </div>
+          <div class="issue-list">
+
+            <div class="issue-card">
+              <div class="issue-header">
+                <span class="issue-severity high">高风险</span>
+                <span class="issue-title">登录锁定机制未校验特殊字符密码</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">TC-005</span>
+              </div>
+              <div class="issue-desc">
+                当密码包含特殊字符（如 SQL 注入语句）时，锁定计数器可能被绕过。测试用例未覆盖包含特殊字符的密码尝试场景。
+              </div>
+              <div class="issue-fix">
+                <strong>建议修复：</strong> 增加对包含特殊字符密码的测试场景，确保密码验证函数在所有输入情况下均正确触发锁定逻辑。建议对密码输入进行统一的 sanitization 处理后再校验。
+              </div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-header">
+                <span class="issue-severity high">高风险</span>
+                <span class="issue-title">手机号验证码无频率限制</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">TC-001</span>
+              </div>
+              <div class="issue-desc">
+                未限制验证码发送频率，存在短信轰炸风险。测试用例未覆盖频繁获取验证码的场景。
+              </div>
+              <div class="issue-fix">
+                <strong>建议修复：</strong> 增加验证码发送频率限制（如60秒内仅可发送一次），以及每日发送上限。补充频率限制相关的测试用例。
+              </div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-header">
+                <span class="issue-severity high">高风险</span>
+                <span class="issue-title">搜索功能未做 XSS 防护</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">TC-101</span>
+              </div>
+              <div class="issue-desc">
+                搜索关键字在页面中直接渲染未转义，搜索 &lt;script&gt;alert('xss')&lt;/script&gt; 将触发 XSS 攻击。
+              </div>
+              <div class="issue-fix">
+                <strong>建议修复：</strong> 对搜索关键字在前端和后端均进行 HTML 转义处理。补充 XSS 相关安全测试用例。
+              </div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-header">
+                <span class="issue-severity high">高风险</span>
+                <span class="issue-title">验证码有效期过长</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">TC-001</span>
+              </div>
+              <div class="issue-desc">
+                验证码有效期为5分钟，超过行业标准（通常3分钟），增加验证码泄露风险。
+              </div>
+              <div class="issue-fix">
+                <strong>建议修复：</strong> 将验证码有效期缩短至3分钟，并在测试用例中增加有效期边界的测试（0秒、刚好3分钟、超过3分钟）。
+              </div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-header">
+                <span class="issue-severity mid">中风险</span>
+                <span class="issue-title">缺少并发登录场景测试</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">TC-001~005</span>
+              </div>
+              <div class="issue-desc">
+                未覆盖同一账号在不同设备上同时登录的场景，无法验证会话冲突处理逻辑。
+              </div>
+              <div class="issue-fix">
+                <strong>建议修复：</strong> 增加并发登录测试用例，验证系统对重复登录的处理策略（踢下线 / 禁止登录 / 多设备共存）。
+              </div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-header">
+                <span class="issue-severity mid">中风险</span>
+                <span class="issue-title">搜索高亮存在性能隐患</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">TC-101</span>
+              </div>
+              <div class="issue-desc">
+                搜索结果高亮功能在前端对大文本内容进行正则替换，长文本（>1000字符）场景下可能出现页面卡顿。
+              </div>
+              <div class="issue-fix">
+                <strong>建议修复：</strong> 优化高亮算法，限制单条结果高亮替换的字数上限，或在高亮逻辑中增加性能监控。
+              </div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-header">
+                <span class="issue-severity mid">中风险</span>
+                <span class="issue-title">登录失败提示信息过于具体</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">TC-002, TC-004</span>
+              </div>
+              <div class="issue-desc">
+                登录失败时明确区分"账号不存在"和"密码错误"，存在用户枚举漏洞风险。
+              </div>
+              <div class="issue-fix">
+                <strong>建议修复：</strong> 统一返回"账号或密码错误"的模糊提示，避免暴露具体是哪个信息错误。
+              </div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-header">
+                <span class="issue-severity low">低风险</span>
+                <span class="issue-title">验证码倒计时未与服务器同步</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">TC-008</span>
+              </div>
+              <div class="issue-desc">
+                验证码倒计时仅在前端实现，刷新页面后倒计时重置。未与服务器时间同步。
+              </div>
+              <div class="issue-fix">
+                <strong>建议修复：</strong> 将验证码发送时间记录在服务端，前端倒计时与服务器时间对齐，防止页面刷新后绕过限制。
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleAll(master) {
+  const items = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+  items.forEach(cb => cb.checked = master.checked);
+}
+
+// Criteria tag toggle
+document.querySelectorAll('.criteria-tag').forEach(tag => {
+  tag.addEventListener('click', function(e) {
+    if (e.target.tagName !== 'INPUT') {
+      const cb = this.querySelector('input[type="checkbox"]');
+      cb.checked = !cb.checked;
+    }
+    this.classList.toggle('active', this.querySelector('input').checked);
+  });
+});
+
+// Count selected
+document.querySelectorAll('.checkbox-item input').forEach(cb => {
+  cb.addEventListener('change', updateCount);
+});
+function updateCount() {
+  const checked = document.querySelectorAll('.checkbox-item input:checked').length;
+  const label = document.querySelector('.card-title .tag');
+  if (label) label.textContent = '已选 ' + checked + ' 条';
+}
+
+function startReview() {
+  const loading = document.getElementById('reviewLoading');
+  loading.classList.add('show');
+  setTimeout(() => {
+    loading.classList.remove('show');
+  }, 3000);
+}
+</script>
+
+</body>
+</html>

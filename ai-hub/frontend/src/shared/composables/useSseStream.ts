@@ -108,8 +108,11 @@ function handleEvent(convId: string, event: { type: string; data: Record<string,
 }
 
 /** SSE 流式接收 Hook（支持多对话并行 + 断线重连） */
+
+// 模块级单例：跨所有 useSseStream 调用共享，确保 abort() 可取消任何对话的流
+const _controllers = new Map<string, AbortController>()
+
 export function useSseStream() {
-  const controllers = new Map<string, AbortController>()
   const MAX_RETRIES = 3
   const RETRY_DELAY_BASE = 1000
 
@@ -134,7 +137,7 @@ export function useSseStream() {
     const chatStore = useChatStore()
     const comfortStore = useComfortStore()
 
-    const existing = controllers.get(conversationId)
+    const existing = _controllers.get(conversationId)
     if (existing) existing.abort()
 
     // 哄哄对话由 comfortStore 管理，不在 convStore 中，跳过检查
@@ -156,7 +159,7 @@ export function useSseStream() {
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const controller = new AbortController()
-      controllers.set(conversationId, controller)
+      _controllers.set(conversationId, controller)
 
       let tokenBuffer = ''
       let rafId: number | null = null
@@ -235,10 +238,10 @@ export function useSseStream() {
         }
 
         if (rafId !== null) flushTokens()
-        controllers.delete(conversationId)
+        _controllers.delete(conversationId)
         return
       } catch (e: any) {
-        controllers.delete(conversationId)
+        _controllers.delete(conversationId)
 
         // 取消 RAF 防止写入已清理的状态
         if (rafId !== null) {
@@ -279,16 +282,16 @@ export function useSseStream() {
 
   /** 中止指定对话的流式请求 */
   function abort(conversationId: string) {
-    controllers.get(conversationId)?.abort()
-    controllers.delete(conversationId)
+    _controllers.get(conversationId)?.abort()
+    _controllers.delete(conversationId)
   }
 
   /** 清理所有进行中的流式请求（组件卸载时调用，防止内存泄漏） */
   function cleanupAll() {
-    for (const [id, controller] of controllers) {
+    for (const [id, controller] of _controllers) {
       controller.abort()
     }
-    controllers.clear()
+    _controllers.clear()
   }
 
   return { sendChat, abort, cleanupAll }

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用例详情 - AI测试平台</title>
+<style>
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --radius: 8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,PingFang SC,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100}
+.sidebar-logo{padding:16px 20px;font-size:18px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo::before{content:"🧪";font-size:22px}
+.sidebar-menu{padding:12px 0}
+.menu-group-title{padding:8px 20px;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.menu-item{display:flex;align-items:center;padding:10px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:10px}
+.menu-item:hover{background:rgba(198,123,92,0.06)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:20px;text-align:center;font-size:16px}
+
+.main{margin-left:240px;flex:1}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span.current{color:var(--primary);font-weight:500}
+.content{padding:24px}
+.page-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.back-btn{cursor:pointer;font-size:18px;padding:6px 10px;border-radius:var(--radius);background:var(--card-bg);border:var(--border);color:var(--text-secondary)}
+.back-btn:hover{background:var(--sidebar-bg);color:var(--primary)}
+.page-title{font-size:22px;font-weight:700;flex:1}
+.badge{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;display:inline-block}
+.badge-p0{background:rgba(212,116,92,0.12);color:var(--danger)}
+.badge-active{background:rgba(123,168,125,0.12);color:var(--success)}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:var(--border);margin-bottom:20px}
+.tab{padding:10px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--primary)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+
+/* Layout */
+.page-layout{display:flex;gap:20px}
+.main-area{flex:1}
+.side-panel{width:180px;flex-shrink:0}
+.action-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);border:var(--border);padding:16px}
+.action-card h4{font-size:14px;margin-bottom:12px;padding-bottom:8px;border-bottom:var(--border)}
+.action-card .btn{width:100%;margin-bottom:8px;padding:8px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;display:block;text-align:center;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light)}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary)}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger-outline{background:transparent;border:1px solid rgba(212,116,92,0.3);color:var(--danger)}
+
+/* Info Card */
+.info-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);border:var(--border);padding:20px}
+.form-row{display:flex;margin-bottom:14px}
+.form-row .label{width:100px;font-size:13px;color:var(--text-muted);flex-shrink:0;padding-top:4px}
+.form-row .value{font-size:14px;color:var(--text);flex:1}
+.desc-box{background:var(--sidebar-bg);border-radius:var(--radius);padding:12px;font-size:13px;line-height:1.6;margin-top:4px}
+
+/* Steps Table */
+.step-table table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.step-table th{background:var(--sidebar-bg);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:12px}
+.step-table td{padding:10px 12px;border-bottom:var(--border)}
+.step-table input{border:var(--border);border-radius:4px;padding:6px 10px;font-size:13px;width:100%;background:var(--card-bg);color:var(--text);outline:none}
+.step-table input:focus{border-color:var(--primary)}
+.add-step{display:flex;align-items:center;justify-content:center;padding:12px;border:2px dashed rgba(180,150,120,0.2);border-radius:var(--radius);margin-top:10px;cursor:pointer;color:var(--text-muted);font-size:13px;transition:all .2s}
+.add-step:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-bg)}
+
+/* Attachments */
+.attach-list .attach-item{display:flex;align-items:center;padding:10px 14px;border-bottom:var(--border);font-size:13px}
+.attach-item .name{flex:1;font-weight:500}
+.attach-item .meta{color:var(--text-muted);font-size:12px;margin:0 16px}
+.attach-item .dl-btn{padding:4px 12px;border:var(--border);border-radius:4px;font-size:12px;cursor:pointer;background:var(--card-bg);color:var(--text-secondary)}
+
+/* Comments */
+.comment-item{display:flex;gap:12px;padding:16px 0;border-bottom:var(--border)}
+.comment-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary-bg);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.comment-body{flex:1}
+.comment-header{display:flex;gap:8px;margin-bottom:6px}
+.comment-author{font-size:13px;font-weight:600}
+.comment-time{font-size:12px;color:var(--text-muted)}
+.comment-text{font-size:13px;line-height:1.5;color:var(--text-secondary)}
+.comment-input{display:flex;gap:10px;margin-top:16px}
+.comment-input input{flex:1;padding:10px 14px;border:var(--border);border-radius:var(--radius);font-size:13px;outline:none;background:var(--card-bg);color:var(--text)}
+.comment-input input:focus{border-color:var(--primary)}
+.comment-input .btn{padding:8px 20px;border-radius:var(--radius);background:var(--primary);color:#fff;border:none;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">AI测试平台</div>
+  <div class="sidebar-menu">
+    <div class="menu-group">
+      <a class="menu-item" href="01-首页-数据看板.html"><span class="icon">📊</span>数据看板</a>
+      <a class="menu-item" href="02-项目管理-列表.html"><span class="icon">📁</span>项目管理</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">测试管理</div>
+      <a class="menu-item active" href="04-用例管理-列表.html"><span class="icon">📋</span>用例管理</a>
+      <a class="menu-item" href="06-用例评审-管理.html"><span class="icon">✅</span>用例评审</a>
+      <a class="menu-item" href="07-测试套件-管理.html"><span class="icon">📦</span>测试套件</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">AI能力</div>
+      <a class="menu-item" href="#"><span class="icon">🤖</span>AI用例生成</a>
+      <a class="menu-item" href="#"><span class="icon">🔍</span>AI评测师</a>
+      <a class="menu-item" href="#"><span class="icon">🧠</span>智能模式</a>
+    </div>
+    <div class="menu-group"><div class="menu-group-title">自动化</div>
+      <a class="menu-item" href="#"><span class="icon">🔌</span>API测试</a>
+      <a class="menu-item" href="#"><span class="icon">🖥</span>UI自动化</a>
+      <a class="menu-item" href="#"><span class="icon">📱</span>APP自动化</a>
+    </div>
+    <div class="menu-group"><div class="menu-group-title">系统</div>
+      <a class="menu-item" href="#"><span class="icon">⚙️</span>配置中心</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb">首页 / <span>测试管理</span> / <span>用例管理</span> / <span class="current">用例详情</span></div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <div class="page-title">用户登录-正常流程</div>
+      <span class="badge badge-p0">P0</span>
+      <span class="badge badge-active" style="margin-left:4px;">激活</span>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active">基本信息</div>
+      <div class="tab">测试步骤</div>
+      <div class="tab">附件</div>
+      <div class="tab">评论</div>
+    </div>
+
+    <div class="page-layout">
+      <div class="main-area">
+        <!-- Tab1: 基本信息 -->
+        <div class="info-card tab-pane">
+          <div class="form-row">
+            <div class="label">用例标题</div>
+            <div class="value"><strong>用户登录-正常流程</strong></div>
+          </div>
+          <div class="form-row">
+            <div class="label">所属项目</div>
+            <div class="value">电商平台V3.0</div>
+          </div>
+          <div class="form-row">
+            <div class="label">前置条件</div>
+            <div class="value"><div class="desc-box">1. 用户已注册账号并激活<br>2. 浏览器已打开登录页面<br>3. 网络连接正常</div></div>
+          </div>
+          <div class="form-row">
+            <div class="label">用例描述</div>
+            <div class="value"><div class="desc-box">验证用户使用正确的账号密码可以成功登录系统。覆盖正常登录流程，包括输入框验证、密码加密传输验证、登录成功跳转验证等。</div></div>
+          </div>
+          <div class="form-row">
+            <div class="label">优先级</div>
+            <div class="value"><span class="badge badge-p0">P0</span> 核心流程</div>
+          </div>
+          <div class="form-row">
+            <div class="label">用例类型</div>
+            <div class="value">功能测试</div>
+          </div>
+          <div class="form-row">
+            <div class="label">用例状态</div>
+            <div class="value"><span class="badge badge-active">激活</span></div>
+          </div>
+          <div class="form-row">
+            <div class="label">创建信息</div>
+            <div class="value">创建人：张明 · 2026-05-12 10:30</div>
+          </div>
+        </div>
+
+        <!-- Tab2: 测试步骤 (hidden) -->
+        <div class="info-card tab-pane" style="display:none;">
+          <div class="step-table">
+            <table>
+              <thead><tr><th style="width:60px">编号</th><th>操作步骤</th><th>预期结果</th><th style="width:100px">实际结果</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td style="text-align:center;font-weight:600;">1</td>
+                  <td><input value="打开登录页面，输入正确的用户名和密码"></td>
+                  <td><input value="输入框正常显示，无报错信息"></td>
+                  <td><select style="border:var(--border);border-radius:4px;padding:6px;font-size:12px;background:var(--card-bg);color:var(--text);width:100%"><option>待执行</option><option>通过</option><option>失败</option></select></td>
+                </tr>
+                <tr>
+                  <td style="text-align:center;font-weight:600;">2</td>
+                  <td><input value="点击"登录"按钮"></td>
+                  <td><input value="页面跳转至首页，显示登录成功提示"></td>
+                  <td><select style="border:var(--border);border-radius:4px;padding:6px;font-size:12px;background:var(--card-bg);color:var(--text);width:100%"><option>待执行</option><option>通过</option><option>失败</option></select></td>
+                </tr>
+                <tr>
+                  <td style="text-align:center;font-weight:600;">3</td>
+                  <td><input value="点击退出登录"></td>
+                  <td><input value="页面跳转至登录页，会话已清除"></td>
+                  <td><select style="border:var(--border);border-radius:4px;padding:6px;font-size:12px;background:var(--card-bg);color:var(--text);width:100%"><option>待执行</option><option>通过</option><option>失败</option></select></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="add-step">＋ 添加测试步骤</div>
+          </div>
+        </div>
+
+        <!-- Tab3: 附件 (hidden) -->
+        <div class="info-card tab-pane" style="display:none;">
+          <div class="attach-list">
+            <div class="attach-item"><span class="name">📄 登录测试数据.xlsx</span><span class="meta">24 KB · 张明</span><span class="meta">2026-05-12</span><button class="dl-btn">下载</button></div>
+            <div class="attach-item"><span class="name">📸 登录页面截图.zip</span><span class="meta">1.2 MB · 李华</span><span class="meta">2026-05-11</span><button class="dl-btn">下载</button></div>
+            <div class="attach-item"><span class="name">📄 接口返回示例.json</span><span class="meta">8 KB · 王丽</span><span class="meta">2026-05-10</span><button class="dl-btn">下载</button></div>
+            <div class="attach-item" style="border-bottom:none;"><span class="name">📊 性能测试报告.pdf</span><span class="meta">3.5 MB · 赵雪</span><span class="meta">2026-05-09</span><button class="dl-btn">下载</button></div>
+          </div>
+        </div>
+
+        <!-- Tab4: 评论 (hidden) -->
+        <div class="info-card tab-pane" style="display:none;">
+          <div class="comment-item">
+            <div class="comment-avatar">张</div>
+            <div class="comment-body">
+              <div class="comment-header"><span class="comment-author">张明</span><span class="comment-time">10 分钟前</span></div>
+              <div class="comment-text">用例已更新前置条件，增加了"网络连接正常"这一条件。</div>
+            </div>
+          </div>
+          <div class="comment-item">
+            <div class="comment-avatar">李</div>
+            <div class="comment-body">
+              <div class="comment-header"><span class="comment-author">李华</span><span class="comment-time">2 小时前</span></div>
+              <div class="comment-text">这个用例建议考虑添加错误密码的场景作为单独的负向用例，P1级别即可。</div>
+            </div>
+          </div>
+          <div class="comment-item">
+            <div class="comment-avatar">王</div>
+            <div class="comment-body">
+              <div class="comment-header"><span class="comment-author">王丽</span><span class="comment-time">昨天 16:20</span></div>
+              <div class="comment-text">已评审通过，所有步骤均符合需求。</div>
+            </div>
+          </div>
+          <div class="comment-input">
+            <input type="text" placeholder="输入评论内容...">
+            <button class="btn">发表</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="action-card">
+          <h4>操作</h4>
+          <button class="btn btn-primary">✏️ 编辑用例</button>
+          <button class="btn btn-outline">📋 复制用例</button>
+          <button class="btn btn-outline">📤 导出用例</button>
+          <button class="btn btn-danger-outline">🗑 删除用例</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    const panes = document.querySelectorAll('.tab-pane');
+    panes.forEach(p => p.style.display='none');
+    const idx = Array.from(document.querySelectorAll('.tab')).indexOf(this);
+    if(panes[idx]) panes[idx].style.display='block';
+  });
+});
+</script>
+</body>
+</html>

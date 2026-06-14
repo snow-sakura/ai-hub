@@ -144,35 +144,27 @@
 
           <!-- APP自动化测试模块菜单 -->
           <template v-else-if="currentModule === 'app-automation'">
-            <el-menu-item index="/app-automation/dashboard">
+            <el-menu-item index="/app-automation/overview">
               <el-icon><Odometer /></el-icon>
-              <span>Dashboard</span>
+              <span>模块概览</span>
             </el-menu-item>
-            <el-menu-item index="/app-automation/projects">
-              <el-icon><Folder /></el-icon>
-              <span>项目管理</span>
-            </el-menu-item>
-            <el-menu-item index="/app-automation/devices">
-              <el-icon><Cellphone /></el-icon>
-              <span>设备管理</span>
-            </el-menu-item>
-            <el-menu-item index="/app-automation/packages">
-              <el-icon><Collection /></el-icon>
-              <span>包名管理</span>
-            </el-menu-item>
-            <el-menu-item index="/app-automation/elements">
-              <el-icon><Aim /></el-icon>
-              <span>元素管理</span>
-            </el-menu-item>
-            <el-menu-item index="/app-automation/scene-builder">
-              <el-icon><Connection /></el-icon>
-              <span>用例编排</span>
+            <el-menu-item index="/app-automation/dashboard">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>数据看板</span>
             </el-menu-item>
             <el-menu-item index="/app-automation/test-cases">
               <el-icon><Document /></el-icon>
               <span>测试用例</span>
             </el-menu-item>
-            <el-menu-item index="/app-automation/test-suites">
+            <el-menu-item index="/app-automation/elements">
+              <el-icon><Aim /></el-icon>
+              <span>元素管理</span>
+            </el-menu-item>
+            <el-menu-item index="/app-automation/recorder">
+              <el-icon><VideoPlay /></el-icon>
+              <span>用例录制</span>
+            </el-menu-item>
+            <el-menu-item index="/app-automation/suites">
               <el-icon><FolderOpened /></el-icon>
               <span>测试套件</span>
             </el-menu-item>
@@ -184,13 +176,21 @@
               <el-icon><DataAnalysis /></el-icon>
               <span>测试报告</span>
             </el-menu-item>
+            <el-menu-item index="/app-automation/devices">
+              <el-icon><Cellphone /></el-icon>
+              <span>设备管理</span>
+            </el-menu-item>
             <el-menu-item index="/app-automation/scheduled-tasks">
               <el-icon><AlarmClock /></el-icon>
               <span>定时任务</span>
             </el-menu-item>
-            <el-menu-item index="/app-automation/notification-logs">
+            <el-menu-item index="/app-automation/notifications">
               <el-icon><Bell /></el-icon>
-              <span>通知列表</span>
+              <span>通知配置</span>
+            </el-menu-item>
+            <el-menu-item index="/app-automation/environments">
+              <el-icon><Setting /></el-icon>
+              <span>测试环境</span>
             </el-menu-item>
           </template>
 
@@ -412,16 +412,16 @@ const breadcrumbTitle = computed(() => {
     '/ui-automation/notification-logs': t('menu.notificationList'),
 
     // APP自动化测试
-    '/app-automation/dashboard': 'Dashboard',
-    '/app-automation/projects': '项目管理',
+    '/app-automation/overview': '模块概览',
+    '/app-automation/dashboard': '数据看板',
     '/app-automation/devices': '设备管理',
-    '/app-automation/packages': '包名管理',
     '/app-automation/elements': '元素管理',
-    '/app-automation/scene-builder': '用例编排',
+    '/app-automation/recorder': '用例录制',
     '/app-automation/test-cases': '测试用例',
-    '/app-automation/test-suites': '测试套件',
+    '/app-automation/suites': '测试套件',
     '/app-automation/scheduled-tasks': '定时任务',
-    '/app-automation/notification-logs': '通知列表',
+    '/app-automation/notifications': '通知配置',
+    '/app-automation/environments': '测试环境',
     '/app-automation/executions': '执行记录',
     '/app-automation/reports': '测试报告',
 

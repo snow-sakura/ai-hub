@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>版本管理 · AI-HUB</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--info:#5B8DEF;--danger:#D4745C;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-logo{padding:16px 18px;font-size:14px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px;cursor:pointer}
+.sidebar-logo .logo-icon{width:24px;height:24px;background:var(--primary);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+.sidebar-menu{flex:1;padding:4px 0;overflow-y:auto}
+.menu-group-title{padding:14px 18px 6px;font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.menu-item{display:flex;align-items:center;padding:8px 18px;color:var(--text-secondary);font-size:13px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.12s}
+.menu-item:hover{background:var(--primary-bg)}.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:16px;text-align:center;font-size:13px;flex-shrink:0}
+.sidebar-footer{padding:10px 18px;border-top:var(--border);font-size:11px;color:var(--text-muted)}
+.main{margin-left:220px;flex:1}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.content{padding:24px}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:22px;font-weight:700;color:var(--text)}.page-sub{font-size:13px;color:var(--text-muted);margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 16px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.15s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-light)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:var(--border)}.btn-ghost:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}.btn-xs{height:24px;padding:0 8px;font-size:11px}
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:14px 18px}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.tag-active{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-paused{background:rgba(212,165,116,0.12);color:#B8860B}
+.tag-danger{background:rgba(212,116,92,0.12);color:var(--danger)}
+/* 版本列表 */
+.version-list{display:flex;flex-direction:column;gap:12px}
+.version-item{background:var(--card-bg);border:var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;transition:all 0.15s}
+.version-item:hover{box-shadow:var(--shadow)}
+.version-info{display:flex;align-items:center;gap:14px;flex:1}
+.version-tag{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.version-detail{flex:1}.version-name{font-size:14px;font-weight:600;color:var(--text)}.version-meta{font-size:12px;color:var(--text-muted);margin-top:2px}
+.version-actions{display:flex;gap:6px}
+.project-filter{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:6px;border:var(--border);background:var(--card-bg);font-size:12px;cursor:pointer;color:var(--text-secondary);font-family:inherit;transition:all 0.12s}
+.filter-btn:hover,.filter-btn.active{background:var(--primary-bg);color:var(--primary);border-color:var(--primary-light)}
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){
+.sidebar{width:60px}.sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}.sidebar-logo span,.menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}.sidebar-logo{padding:12px 0;justify-content:center}.menu-item{justify-content:center;padding:8px 0}.main{margin-left:60px}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">📋</div><span>测试管理</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group-title">测试管理</div>
+    <a class="menu-item" href="56-测试管理模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="01-仪表盘看板.html"><span class="icon">📊</span><span>数据看板</span></a>
+    <a class="menu-item" href="56-项目管理.html"><span class="icon">📁</span><span>项目管理</span></a>
+    <a class="menu-item active" href="56-版本管理.html"><span class="icon">🏷️</span><span>版本管理</span></a>
+    <a class="menu-item" href="56-成员管理.html"><span class="icon">👥</span><span>成员管理</span></a>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">测试管理 / <span>版本管理</span></div>
+    <div class="topbar-right"><span style="font-size:12px;color:var(--text-muted)">张明远</span><div class="avatar-sm">张</div></div>
+  </header>
+  <div class="content">
+    <div class="page-header fade-in">
+      <div><div class="page-title">🏷️ 版本管理</div><div class="page-sub">管理各项目版本迭代 · 共 12 个版本</div></div>
+      <div><button class="btn btn-primary btn-sm" onclick="showToast('新建版本')">+ 新建版本</button></div>
+    </div>
+    <div class="project-filter fade-in">
+      <button class="filter-btn active">全部项目</button>
+      <button class="filter-btn">电商APP</button>
+      <button class="filter-btn">管理后台</button>
+      <button class="filter-btn">支付网关</button>
+      <button class="filter-btn">用户中心</button>
+      <button class="filter-btn">IM通讯</button>
+    </div>
+    <div class="version-list fade-in">
+      <div class="version-item">
+        <div class="version-info">
+          <div class="version-tag" style="background:rgba(123,168,125,0.12);color:var(--success)">v2.5</div>
+          <div class="version-detail">
+            <div class="version-name">电商APP v2.5 <span class="tag tag-active">进行中</span></div>
+            <div class="version-meta">📁 电商APP · 🧑 张明远 · ⏱️ 2026-06-15 · 📋 36 用例 · ✅ 通过率 92%</div>
+          </div>
+        </div>
+        <div class="version-actions"><button class="btn btn-ghost btn-xs">详情</button><button class="btn btn-ghost btn-xs">发布</button></div>
+      </div>
+      <div class="version-item">
+        <div class="version-info">
+          <div class="version-tag" style="background:rgba(123,168,125,0.12);color:var(--success)">v2.4</div>
+          <div class="version-detail">
+            <div class="version-name">电商APP v2.4 <span class="tag tag-paused">已发布</span></div>
+            <div class="version-meta">📁 电商APP · 🧑 张明远 · ⏱️ 2026-05-20 · 📋 42 用例 · ✅ 通过率 95%</div>
+          </div>
+        </div>
+        <div class="version-actions"><button class="btn btn-ghost btn-xs">查看</button><button class="btn btn-ghost btn-xs">回滚</button></div>
+      </div>
+      <div class="version-item">
+        <div class="version-info">
+          <div class="version-tag" style="background:rgba(123,168,125,0.12);color:var(--success)">v1.8</div>
+          <div class="version-detail">
+            <div class="version-name">管理后台 v1.8 <span class="tag tag-active">进行中</span></div>
+            <div class="version-meta">📁 管理后台 · 🧑 李思琪 · ⏱️ 2026-06-10 · 📋 28 用例 · ✅ 通过率 88%</div>
+          </div>
+        </div>
+        <div class="version-actions"><button class="btn btn-ghost btn-xs">详情</button><button class="btn btn-ghost btn-xs">发布</button></div>
+      </div>
+      <div class="version-item">
+        <div class="version-info">
+          <div class="version-tag" style="background:rgba(212,116,92,0.12);color:var(--danger)">v3.0</div>
+          <div class="version-detail">
+            <div class="version-name">管理后台 v1.7 <span class="tag tag-danger">已回滚</span></div>
+            <div class="version-meta">📁 管理后台 · 🧑 李思琪 · ⏱️ 2026-05-28 · 📋 30 用例 · ✅ 通过率 72%</div>
+          </div>
+        </div>
+        <div class="version-actions"><button class="btn btn-ghost btn-xs">查看</button></div>
+      </div>
+      <div class="version-item">
+        <div class="version-info">
+          <div class="version-tag" style="background:rgba(123,168,125,0.12);color:var(--success)">v2.1</div>
+          <div class="version-detail">
+            <div class="version-name">支付网关 v2.1 <span class="tag tag-paused">已发布</span></div>
+            <div class="version-meta">📁 支付网关 · 🧑 王浩然 · ⏱️ 2026-06-01 · 📋 22 用例 · ✅ 通过率 98%</div>
+          </div>
+        </div>
+        <div class="version-actions"><button class="btn btn-ghost btn-xs">查看</button></div>
+      </div>
+      <div class="version-item">
+        <div class="version-info">
+          <div class="version-tag" style="background:rgba(123,168,125,0.12);color:var(--success)">v1.2</div>
+          <div class="version-detail">
+            <div class="version-name">用户中心 v1.2 <span class="tag tag-active">进行中</span></div>
+            <div class="version-meta">📁 用户中心 · 🧑 张明远 · ⏱️ 2026-06-20 · 📋 18 用例 · ✅ 通过率 91%</div>
+          </div>
+        </div>
+        <div class="version-actions"><button class="btn btn-ghost btn-xs">详情</button><button class="btn btn-ghost btn-xs">发布</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function showToast(msg,t){var d=document.createElement('div');d.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#3D2E1F;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s';d.textContent=msg||t||'操作成功';document.body.appendChild(d);setTimeout(function(){d.style.opacity='1'},10);setTimeout(function(){d.style.opacity='0';setTimeout(function(){document.body.removeChild(d)},300)},2000)}
+// 过滤器切换
+document.querySelectorAll('.filter-btn').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.filter-btn').forEach(function(x){x.classList.remove('active')});this.classList.add('active');showToast('筛选: '+this.textContent)})})
+</script>
+</body>
+</html>

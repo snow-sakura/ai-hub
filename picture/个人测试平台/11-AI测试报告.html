@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测试报告 - AI测试平台</title>
+<style>
+:root {
+  --primary: #C67B5C; --primary-light: #D49472; --primary-bg: rgba(198,123,92,0.08);
+  --accent: #D4A574; --bg: #FBF7F0; --card-bg: #FFFDF9; --sidebar-bg: #F6F0E7;
+  --text: #3D2E1F; --text-secondary: #5C4A38; --text-muted: #8B7355;
+  --border: 1px solid rgba(180,150,120,0.12); --shadow: 0 4px 14px rgba(60,40,20,0.06);
+  --success: #7BA87D; --danger: #D4745C; --radius: 8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,PingFang SC,Helvetica Neue,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:3px}
+
+/* ── Sidebar ── */
+.sidebar{width:240px;min-width:240px;background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;height:100vh;overflow-y:auto;position:sticky;top:0}
+.sidebar-logo{height:48px;display:flex;align-items:center;padding:0 20px;border-bottom:var(--border);font-size:16px;font-weight:700;color:var(--primary);gap:10px}
+.sidebar-logo::before{content:"🧪";font-size:20px}
+.sidebar-menu{padding:8px 0;flex:1}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:8px 20px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.menu-item{display:flex;align-items:center;padding:9px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;gap:10px}
+.menu-item:hover{background:rgba(198,123,92,0.06);color:var(--text)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:20px;text-align:center;font-size:16px}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.content{flex:1;padding:24px;overflow-y:auto}
+
+/* ── Page Wrap ── */
+.page-wrap{max-width:1200px;margin:0 auto}
+
+/* ── Page Header ── */
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-0.02em}
+.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light)}
+.btn-ghost{background:transparent;color:var(--text-secondary);padding:6px 12px;border:1px solid rgba(180,150,120,0.15)}
+.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-sm{padding:5px 12px;font-size:12px}
+
+/* ── Card ── */
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border);cursor:pointer;user-select:none}
+.card-header .toggle{font-size:12px;color:var(--text-muted);transition:transform .2s}
+.card-header .toggle.collapsed{transform:rotate(-90deg)}
+.card-body{padding:16px 20px}
+.card-body.collapsed{display:none}
+
+/* ── Summary Row ── */
+.summary-row{display:flex;align-items:center}
+.summary-item{display:flex;align-items:center;gap:14px;flex:1;justify-content:center;padding:10px 0}
+.summary-icon{font-size:28px;line-height:1}
+.summary-body{display:flex;flex-direction:column}
+.summary-value{font-size:26px;font-weight:700;color:var(--text);line-height:1.2}
+.summary-label{font-size:12px;color:var(--text-muted);margin-top:2px}
+.summary-divider{width:1px;height:48px;background:rgba(180,150,120,0.15)}
+
+/* ── Two Column ── */
+.row-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+
+/* ── Donut Chart ── */
+.ring-chart-wrap{display:flex;align-items:center;gap:28px;padding:4px 0}
+.ring-chart{flex-shrink:0}
+.ring-circle{width:140px;height:140px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center}
+.ring-center{background:var(--card-bg);width:80px;height:80px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-center-value{font-size:22px;font-weight:700;color:var(--text);line-height:1.1}
+.ring-center-label{font-size:11px;color:var(--text-muted)}
+.ring-legend{display:flex;flex-direction:column;gap:10px;flex:1}
+.ring-legend-item{display:flex;align-items:center;gap:8px}
+.ring-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.ring-label{color:var(--text-secondary);flex:1;font-size:13px}
+.ring-value{font-weight:600;color:var(--text);font-size:14px}
+.ring-pct{color:var(--text-muted);font-size:11px;min-width:36px;text-align:right}
+
+/* ── Status Bars ── */
+.status-bars{display:flex;flex-direction:column;gap:14px;padding:4px 0}
+.status-bar-item{display:flex;flex-direction:column;gap:6px}
+.status-bar-header{display:flex;justify-content:space-between;font-size:13px}
+.status-bar-label{color:var(--text-secondary)}
+.status-bar-count{font-weight:600;color:var(--text)}
+.status-bar-track{height:10px;background:rgba(180,150,120,0.1);border-radius:5px;overflow:hidden}
+.status-bar-fill{height:100%;border-radius:5px;transition:width .5s ease}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:0;border-bottom:var(--border)}
+.tab{padding:10px 20px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.tab-content{display:none;padding:8px 0}
+.tab-content.active{display:block}
+.tab-title{font-size:15px;font-weight:600;color:var(--text);margin:0 0 14px}
+
+/* ── Bar Chart ── */
+.bar-chart{display:flex;flex-direction:column;gap:10px}
+.bar-item{display:flex;align-items:center;gap:12px}
+.bar-label{width:80px;font-size:13px;color:var(--text-secondary);text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:22px;background:rgba(180,150,120,0.08);border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;transition:width .5s ease;min-width:4px}
+.bar-value{width:32px;font-size:13px;font-weight:600;color:var(--text);text-align:right}
+
+/* ── Metric Grid ── */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
+.metric-item{padding:14px;background:rgba(180,150,120,0.03);border-radius:8px;border:var(--border)}
+.metric-label{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:700}
+.metric-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* ── Table ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);white-space:nowrap;background:var(--sidebar-bg);font-size:12px}
+td{padding:10px 12px;border-bottom:var(--border);color:var(--text)}
+tr:nth-child(even) td{background:rgba(180,150,120,0.03)}
+tr:hover td{background:var(--primary-bg)}
+.text-muted{color:var(--text-muted)}
+
+/* ── Tag Badge ── */
+.tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:500}
+.tag-p0{background:rgba(212,116,92,0.12);color:var(--danger)}
+.tag-p1{background:rgba(212,165,116,0.12);color:var(--accent)}
+.tag-p2{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-p3{background:rgba(180,150,120,0.12);color:var(--text-muted)}
+.tag-pass{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-fail{background:rgba(212,116,92,0.12);color:var(--danger)}
+.tag-block{background:rgba(212,165,116,0.12);color:var(--accent)}
+
+/* ── Pagination ── */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px}
+.pagination-info{font-size:12px;color:var(--text-muted)}
+.pagination-btns{display:flex;gap:6px}
+.pagination-btns .btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* ── Defect Grid ── */
+.defect-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.defect-card-item{background:var(--card-bg);border:var(--border);border-radius:10px;padding:20px;text-align:center}
+.defect-level{font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
+.defect-count{font-size:32px;font-weight:700;line-height:1.1;margin-bottom:8px}
+.defect-desc{font-size:12px;color:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">AI测试平台</div>
+  <nav class="sidebar-menu">
+    <div class="menu-group">
+      <div class="menu-group-title">测试中心</div>
+      <a class="menu-item" href="01-首页-数据看板.html"><span class="icon">📊</span>数据看板</a>
+      <a class="menu-item" href="02-项目管理-列表.html"><span class="icon">📁</span>项目管理</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">测试管理</div>
+      <a class="menu-item" href="04-用例管理-列表.html"><span class="icon">📋</span>用例管理</a>
+      <a class="menu-item" href="06-用例评审-管理.html"><span class="icon">✅</span>用例评审</a>
+      <a class="menu-item" href="07-测试套件-管理.html"><span class="icon">📦</span>测试套件</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">AI 能力</div>
+      <a class="menu-item" href="08-AI用例生成-主页面.html"><span class="icon">🤖</span>AI用例生成</a>
+      <a class="menu-item" href="10-AI评测师.html"><span class="icon">🔍</span>AI评测师</a>
+      <a class="menu-item active" href="11-AI测试报告.html"><span class="icon">🧠</span>AI测试报告</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">自动化</div>
+      <a class="menu-item" href="12-API接口测试-数据看板.html"><span class="icon">🔌</span>API测试</a>
+    </div>
+    <div class="menu-group">
+      <div class="menu-group-title">系统</div>
+      <a class="menu-item" href="16-配置中心-首页.html"><span class="icon">⚙️</span>配置中心</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="breadcrumb">AI 智能 / <span>测试报告</span></div>
+  </header>
+
+  <!-- Content -->
+  <div class="content">
+
+    <div class="page-wrap">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">测试报告</h1>
+          <p class="page-sub">生成时间：2026-06-09 14:32</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" onclick="alert('预览模式')">👁️ 预览</button>
+          <button class="btn btn-primary" onclick="alert('报告导出中...')">📥 导出报告</button>
+        </div>
+      </div>
+
+      <!-- Summary Card -->
+      <div class="card" style="padding:0">
+        <div class="card-body" style="padding:0">
+          <div class="summary-row">
+            <div class="summary-item">
+              <span class="summary-icon">🗒️</span>
+              <div class="summary-body">
+                <span class="summary-value">100</span>
+                <span class="summary-label">总用例数</span>
+              </div>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+              <span class="summary-icon">✅</span>
+              <div class="summary-body">
+                <span class="summary-value">73%</span>
+                <span class="summary-label">通过率</span>
+              </div>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+              <span class="summary-icon">🎯</span>
+              <div class="summary-body">
+                <span class="summary-value">12</span>
+                <span class="summary-label">覆盖功能点</span>
+              </div>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+              <span class="summary-icon">🤖</span>
+              <div class="summary-body">
+                <span class="summary-value">8.5</span>
+                <span class="summary-label">AI 评分</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two Column: Donut + Status -->
+      <div class="row-2col">
+
+        <!-- Donut Card -->
+        <div class="card">
+          <div class="card-header" onclick="toggleCollapse(this)">
+            🎯 执行结果分布
+            <span class="toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="ring-chart-wrap">
+              <div class="ring-chart">
+                <div class="ring-circle" style="background:conic-gradient(#7BA87D 0deg 262.8deg,#D4745C 262.8deg 327.6deg,#D4A574 327.6deg 360deg)">
+                  <div class="ring-center">
+                    <span class="ring-center-value">73%</span>
+                    <span class="ring-center-label">通过率</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ring-legend">
+                <div class="ring-legend-item">
+                  <span class="ring-dot" style="background:#7BA87D"></span>
+                  <span class="ring-label">通过</span>
+                  <span class="ring-value">73</span>
+                  <span class="ring-pct">73%</span>
+                </div>
+                <div class="ring-legend-item">
+                  <span class="ring-dot" style="background:#D4745C"></span>
+                  <span class="ring-label">失败</span>
+                  <span class="ring-value">18</span>
+                  <span class="ring-pct">18%</span>
+                </div>
+                <div class="ring-legend-item">
+                  <span class="ring-dot" style="background:#D4A574"></span>
+                  <span class="ring-label">阻塞</span>
+                  <span class="ring-value">9</span>
+                  <span class="ring-pct">9%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="card">
+          <div class="card-header" onclick="toggleCollapse(this)">
+            📊 状态概览
+            <span class="toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="status-bars">
+              <div class="status-bar-item">
+                <div class="status-bar-header">
+                  <span class="status-bar-label">已通过</span>
+                  <span class="status-bar-count">73</span>
+                </div>
+                <div class="status-bar-track">
+                  <div class="status-bar-fill" style="width:73%;background:#7BA87D"></div>
+                </div>
+              </div>
+              <div class="status-bar-item">
+                <div class="status-bar-header">
+                  <span class="status-bar-label">已失败</span>
+                  <span class="status-bar-count">18</span>
+                </div>
+                <div class="status-bar-track">
+                  <div class="status-bar-fill" style="width:18%;background:#D4745C"></div>
+                </div>
+              </div>
+              <div class="status-bar-item">
+                <div class="status-bar-header">
+                  <span class="status-bar-label">阻塞</span>
+                  <span class="status-bar-count">5</span>
+                </div>
+                <div class="status-bar-track">
+                  <div class="status-bar-fill" style="width:5%;background:#D4A574"></div>
+                </div>
+              </div>
+              <div class="status-bar-item">
+                <div class="status-bar-header">
+                  <span class="status-bar-label">未执行</span>
+                  <span class="status-bar-count">4</span>
+                </div>
+                <div class="status-bar-track">
+                  <div class="status-bar-fill" style="width:4%;background:#8B7355"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tabs Card -->
+      <div class="card">
+        <div style="padding:0 20px">
+          <div class="tabs">
+            <button class="tab active" data-tab="overview">📈 统计概览</button>
+            <button class="tab" data-tab="cases">📋 用例列表</button>
+            <button class="tab" data-tab="defects">🐛 缺陷分布</button>
+          </div>
+        </div>
+
+        <!-- Tab: Overview -->
+        <div class="tab-content active" id="tab-overview">
+          <div style="padding:0 20px 20px">
+            <h3 class="tab-title">各模块用例统计</h3>
+            <div class="bar-chart">
+              <div class="bar-item">
+                <span class="bar-label">用户管理</span>
+                <div class="bar-track"><div class="bar-fill" style="width:100%;background:#C67B5C"></div></div>
+                <span class="bar-value">28</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">订单系统</span>
+                <div class="bar-track"><div class="bar-fill" style="width:85.7%;background:#D49472"></div></div>
+                <span class="bar-value">24</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">支付模块</span>
+                <div class="bar-track"><div class="bar-fill" style="width:64.3%;background:#D4A574"></div></div>
+                <span class="bar-value">18</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">消息推送</span>
+                <div class="bar-track"><div class="bar-fill" style="width:50%;background:#7BA87D"></div></div>
+                <span class="bar-value">14</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">数据分析</span>
+                <div class="bar-track"><div class="bar-fill" style="width:35.7%;background:#D4745C"></div></div>
+                <span class="bar-value">10</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">权限管理</span>
+                <div class="bar-track"><div class="bar-fill" style="width:21.4%;background:#8B7355"></div></div>
+                <span class="bar-value">6</span>
+              </div>
+            </div>
+
+            <div class="metric-grid">
+              <div class="metric-item">
+                <div class="metric-label">平均执行时间</div>
+                <div class="metric-value" style="color:var(--primary)">1.2s</div>
+                <div class="metric-sub">单用例平均耗时</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">最大失败模块</div>
+                <div class="metric-value" style="color:var(--danger)">安全策略</div>
+                <div class="metric-sub">通过率仅 52%</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">AI 分析建议</div>
+                <div class="metric-value" style="color:var(--accent)">6 项</div>
+                <div class="metric-sub">建议优先处理 3 项</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Case List -->
+        <div class="tab-content" id="tab-cases">
+          <div style="padding:0 20px 20px">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>用例名称</th>
+                    <th>优先级</th>
+                    <th>状态</th>
+                    <th>执行人</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>用户登录-正常流程</td>
+                    <td><span class="tag tag-p0">P0</span></td>
+                    <td><span class="tag tag-pass">通过</span></td>
+                    <td class="text-muted">张三</td>
+                  </tr>
+                  <tr>
+                    <td>用户登录-密码错误</td>
+                    <td><span class="tag tag-p1">P1</span></td>
+                    <td><span class="tag tag-pass">通过</span></td>
+                    <td class="text-muted">张三</td>
+                  </tr>
+                  <tr>
+                    <td>用户登录-账号锁定</td>
+                    <td><span class="tag tag-p1">P1</span></td>
+                    <td><span class="tag tag-fail">失败</span></td>
+                    <td class="text-muted">李四</td>
+                  </tr>
+                  <tr>
+                    <td>订单创建-正常流程</td>
+                    <td><span class="tag tag-p0">P0</span></td>
+                    <td><span class="tag tag-pass">通过</span></td>
+                    <td class="text-muted">李四</td>
+                  </tr>
+                  <tr>
+                    <td>订单创建-库存不足</td>
+                    <td><span class="tag tag-p1">P1</span></td>
+                    <td><span class="tag tag-block">阻塞</span></td>
+                    <td class="text-muted">王五</td>
+                  </tr>
+                  <tr>
+                    <td>订单取消-退款流程</td>
+                    <td><span class="tag tag-p2">P2</span></td>
+                    <td><span class="tag tag-pass">通过</span></td>
+                    <td class="text-muted">王五</td>
+                  </tr>
+                  <tr>
+                    <td>支付回调-签名验证</td>
+                    <td><span class="tag tag-p0">P0</span></td>
+                    <td><span class="tag tag-fail">失败</span></td>
+                    <td class="text-muted">赵六</td>
+                  </tr>
+                  <tr>
+                    <td>消息推送-批量发送</td>
+                    <td><span class="tag tag-p2">P2</span></td>
+                    <td><span class="tag tag-pass">通过</span></td>
+                    <td class="text-muted">张三</td>
+                  </tr>
+                  <tr>
+                    <td>数据分析-报表导出</td>
+                    <td><span class="tag tag-p3">P3</span></td>
+                    <td><span class="tag tag-pass">通过</span></td>
+                    <td class="text-muted">赵六</td>
+                  </tr>
+                  <tr>
+                    <td>权限管理-角色分配</td>
+                    <td><span class="tag tag-p1">P1</span></td>
+                    <td><span class="tag tag-fail">失败</span></td>
+                    <td class="text-muted">李四</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span class="pagination-info">共 100 条</span>
+              <div class="pagination-btns">
+                <button class="btn btn-ghost btn-sm" style="border:var(--border)">上一页</button>
+                <button class="btn btn-sm active" style="background:var(--primary);color:#fff;border:none">1</button>
+                <button class="btn btn-ghost btn-sm" style="border:var(--border)">2</button>
+                <button class="btn btn-ghost btn-sm" style="border:var(--border)">3</button>
+                <button class="btn btn-ghost btn-sm" style="border:var(--border)">下一页</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Defects -->
+        <div class="tab-content" id="tab-defects">
+          <div style="padding:0 20px 20px">
+            <h3 class="tab-title">缺陷等级分布</h3>
+            <div class="defect-grid">
+              <div class="defect-card-item" style="border-left:4px solid #D4745C">
+                <div class="defect-level">Critical</div>
+                <div class="defect-count" style="color:#D4745C">3</div>
+                <div class="defect-desc">核心功能阻断，需立即修复</div>
+              </div>
+              <div class="defect-card-item" style="border-left:4px solid #D4A574">
+                <div class="defect-level">Major</div>
+                <div class="defect-count" style="color:#D4A574">5</div>
+                <div class="defect-desc">主要功能异常</div>
+              </div>
+              <div class="defect-card-item" style="border-left:4px solid #8B7355">
+                <div class="defect-level">Minor</div>
+                <div class="defect-count" style="color:#8B7355">2</div>
+                <div class="defect-desc">次要问题</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+    this.classList.add('active');
+    document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+  });
+});
+
+// Collapse toggle
+function toggleCollapse(header) {
+  var body = header.nextElementSibling;
+  var toggle = header.querySelector('.toggle');
+  if (body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    if (toggle) toggle.classList.remove('collapsed');
+  } else {
+    body.classList.add('collapsed');
+    if (toggle) toggle.classList.add('collapsed');
+  }
+}
+</script>
+
+</body>
+</html>

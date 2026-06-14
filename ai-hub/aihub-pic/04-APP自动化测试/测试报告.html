@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP自动化测试 - 测试报告</title>
+<style>
+:root {
+  --primary:#C67B5C; --primary-light:#D49472; --accent:#D4A574;
+  --bg:#FBF7F0; --card-bg:#FFFDF9; --sidebar-bg:#F6F0E7;
+  --text:#3D2E1F; --text-secondary:#5C4A38; --text-muted:#8B7355;
+  --border:1px solid rgba(180,150,120,0.12);
+  --radius:8px; --radius-lg:12px;
+  --font: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+.sidebar { width:220px; background:var(--sidebar-bg); border-right:var(--border); padding:24px 0; flex-shrink:0; }
+.logo { padding:0 20px 24px; border-bottom:var(--border); margin-bottom:16px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--text-secondary); text-decoration:none; font-size:14px; transition:all .2s; border-right:3px solid transparent; }
+.nav-item:hover { background:rgba(198,123,92,0.06); color:var(--text); }
+.nav-item.active { background:rgba(198,123,92,0.1); color:var(--primary); border-right-color:var(--primary); font-weight:600; }
+.nav-item svg { flex-shrink:0; }
+.nav-section { font-size:11px; color:var(--text-muted); padding:16px 20px 6px; text-transform:uppercase; letter-spacing:.5px; }
+.main { flex:1; overflow-y:auto; }
+.topbar { display:flex; justify-content:space-between; align-items:center; padding:16px 32px; border-bottom:var(--border); background:var(--card-bg); }
+.page-title { font-size:20px; font-weight:600; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.notif-btn { position:relative; background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px; }
+.notif-dot { position:absolute; top:0; right:0; width:8px; height:8px; background:#E8735A; border-radius:50%; border:2px solid var(--card-bg); }
+.avatar { width:32px; height:32px; border-radius:50%; background:var(--primary-light); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; }
+.content { padding:24px 32px; }
+.toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.search-box { display:flex; align-items:center; background:var(--card-bg); border:var(--border); border-radius:var(--radius); padding:8px 12px; width:260px; }
+.search-box input { border:none; outline:none; background:transparent; margin-left:8px; flex:1; font-size:13px; color:var(--text); }
+.search-box input::placeholder { color:var(--text-muted); }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:var(--radius); font-size:13px; cursor:pointer; border:none; font-weight:500; transition:all .2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-light); }
+.btn-outline { background:transparent; border:var(--border); color:var(--text-secondary); }
+.btn-sm { padding:5px 12px; font-size:12px; }
+.btn-ghost { background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:4px; }
+.status-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; }
+.status-pass { background:#E8F5E9; color:#2E7D32; }
+.status-fail { background:#FFEBEE; color:#C62828; }
+
+/* Summary */
+.report-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.summary-card { background:var(--card-bg); border:var(--border); border-radius:var(--radius-lg); padding:20px; text-align:center; }
+.summary-card .snum { font-size:28px; font-weight:700; }
+.summary-card .slabel { font-size:13px; color:var(--text-muted); margin-top:4px; }
+.summary-card.pass .snum { color:#2E7D32; }
+.summary-card.fail .snum { color:#C62828; }
+.summary-card.rate .snum { color:var(--primary); }
+.summary-card.total .snum { color:var(--text); }
+
+/* Chart area */
+.chart-area { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+.chart-card { background:var(--card-bg); border:var(--border); border-radius:var(--radius-lg); padding:20px; }
+.chart-title { font-size:14px; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+
+/* Bar chart (CSS) */
+.bar-chart { display:flex; align-items:flex-end; gap:8px; height:140px; padding-top:10px; }
+.bar-item { flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; }
+.bar-item .bar { width:100%; border-radius:4px 4px 0 0; min-height:4px; transition:all .3s; }
+.bar-item .blabel { font-size:10px; color:var(--text-muted); margin-top:6px; }
+.bar-item .bvalue { font-size:10px; color:var(--text-secondary); font-weight:600; margin-bottom:2px; }
+
+/* Report table */
+.report-table { background:var(--card-bg); border:var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+table { width:100%; border-collapse:collapse; }
+th, td { padding:12px 16px; text-align:left; font-size:13px; }
+th { background:var(--sidebar-bg); color:var(--text-secondary); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.3px; }
+tr:not(:last-child) td { border-bottom:var(--border); }
+tbody tr:hover { background:rgba(198,123,92,0.02); }
+tbody tr:nth-child(even) { background:rgba(246,240,231,0.4); }
+.platform-tag { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; border-radius:4px; }
+.ios-tag { background:#E3F2FD; color:#1565C0; }
+.android-tag { background:#E8F5E9; color:#2E7D32; }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C67B5C"/><path d="M8 12h16v2H8zm0 6h12v2H8zm0-3h16v2H8z" fill="#FFFDF9"/></svg></div>
+  <div class="nav-section">测试模块</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> UI自动化</a>
+  <a href="#" class="nav-item active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> APP自动化</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> API自动化</a>
+  <div class="nav-section">平台管理</div>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设备管理</a>
+  <a href="#" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 通知列表</a>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <h1 class="page-title">APP测试报告</h1>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="alert('通知列表')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <div class="avatar">张</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select style="padding:8px 12px;border:var(--border);border-radius:var(--radius);font-size:13px;background:var(--card-bg);color:var(--text);outline:none;">
+          <option>电商平台APP</option>
+          <option>社交聊天APP</option>
+          <option>视频直播APP</option>
+        </select>
+        <select style="padding:8px 12px;border:var(--border);border-radius:var(--radius);font-size:13px;background:var(--card-bg);color:var(--text);outline:none;">
+          <option>最近7天</option>
+          <option>最近30天</option>
+          <option>最近90天</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="alert('导出报告')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          导出报告
+        </button>
+        <button class="btn btn-primary" onclick="alert('生成新报告')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          生成报告
+        </button>
+      </div>
+    </div>
+
+    <!-- 报告摘要 -->
+    <div class="report-summary">
+      <div class="summary-card total">
+        <div class="snum">342</div>
+        <div class="slabel">总用例数</div>
+      </div>
+      <div class="summary-card pass">
+        <div class="snum">298</div>
+        <div class="slabel">通过</div>
+      </div>
+      <div class="summary-card fail">
+        <div class="snum">23</div>
+        <div class="slabel">失败</div>
+      </div>
+      <div class="summary-card rate">
+        <div class="snum">92.8%</div>
+        <div class="slabel">通过率</div>
+      </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="chart-area">
+      <div class="chart-card">
+        <div class="chart-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+          每日执行趋势
+        </div>
+        <div class="bar-chart">
+          <div class="bar-item"><div class="bvalue">42</div><div class="bar" style="height:90px;background:linear-gradient(to top,#C67B5C,#D4A574);"></div><div class="blabel">06-08</div></div>
+          <div class="bar-item"><div class="bvalue">38</div><div class="bar" style="height:75px;background:linear-gradient(to top,#C67B5C,#D4A574);"></div><div class="blabel">06-09</div></div>
+          <div class="bar-item"><div class="bvalue">56</div><div class="bar" style="height:110px;background:linear-gradient(to top,#C67B5C,#D4A574);"></div><div class="blabel">06-10</div></div>
+          <div class="bar-item"><div class="bvalue">48</div><div class="bar" style="height:95px;background:linear-gradient(to top,#C67B5C,#D4A574);"></div><div class="blabel">06-11</div></div>
+          <div class="bar-item"><div class="bvalue">62</div><div class="bar" style="height:125px;background:linear-gradient(to top,#C67B5C,#D4A574);"></div><div class="blabel">06-12</div></div>
+          <div class="bar-item"><div class="bvalue">44</div><div class="bar" style="height:88px;background:linear-gradient(to top,#C67B5C,#D4A574);"></div><div class="blabel">06-13</div></div>
+          <div class="bar-item"><div class="bvalue">52</div><div class="bar" style="height:105px;background:linear-gradient(to top,#C67B5C,#D4A574);"></div><div class="blabel">06-14</div></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          平台分布
+        </div>
+        <div style="display:flex;align-items:center;gap:20px;height:140px;">
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:36px;font-weight:700;color:#1565C0;">186</div>
+            <div style="font-size:12px;color:var(--text-muted);">iOS 用例</div>
+            <div style="margin-top:4px;height:8px;background:#E3F2FD;border-radius:4px;overflow:hidden;">
+              <div style="width:54%;height:100%;background:#1565C0;border-radius:4px;"></div>
+            </div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:36px;font-weight:700;color:#2E7D32;">156</div>
+            <div style="font-size:12px;color:var(--text-muted);">Android 用例</div>
+            <div style="margin-top:4px;height:8px;background:#E8F5E9;border-radius:4px;overflow:hidden;">
+              <div style="width:46%;height:100%;background:#2E7D32;border-radius:4px;"></div>
+            </div>
+          </div>
+          <div style="width:1px;height:80px;background:var(--border);"></div>
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:36px;font-weight:700;color:var(--primary);">8</div>
+            <div style="font-size:12px;color:var(--text-muted);">设备数</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:36px;font-weight:700;color:var(--accent);">5</div>
+            <div style="font-size:12px;color:var(--text-muted);">项目数</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 报告列表 -->
+    <div class="section-title" style="font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      历史报告
+    </div>
+    <div class="report-table">
+      <table>
+        <thead>
+          <tr>
+            <th>报告名称</th>
+            <th>项目</th>
+            <th>平台</th>
+            <th>执行日期</th>
+            <th>总用例</th>
+            <th>通过</th>
+            <th>失败</th>
+            <th>通过率</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>电商APP回归测试报告</strong></td>
+            <td>电商平台APP</td>
+            <td><span class="platform-tag ios-tag">iOS</span></td>
+            <td>2026-06-14 10:33</td>
+            <td>42</td>
+            <td style="color:#2E7D32;font-weight:600;">42</td>
+            <td style="color:#9E9E9E;">0</td>
+            <td><span class="status-badge status-pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><strong>社交通讯冒烟测试报告</strong></td>
+            <td>社交聊天APP</td>
+            <td><span class="platform-tag android-tag">Android</span></td>
+            <td>2026-06-14 10:47</td>
+            <td>18</td>
+            <td style="color:#2E7D32;font-weight:600;">14</td>
+            <td style="color:#C62828;">4</td>
+            <td><span class="status-badge status-fail">77.8%</span></td>
+          </tr>
+          <tr>
+            <td><strong>全平台定时回归报告</strong></td>
+            <td>电商平台APP</td>
+            <td>iOS + Android</td>
+            <td>2026-06-13 23:00</td>
+            <td>86</td>
+            <td style="color:#2E7D32;font-weight:600;">86</td>
+            <td style="color:#9E9E9E;">0</td>
+            <td><span class="status-badge status-pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><strong>视频APP播放测试报告</strong></td>
+            <td>视频直播APP</td>
+            <td><span class="platform-tag ios-tag">iOS</span></td>
+            <td>2026-06-13 16:20</td>
+            <td>15</td>
+            <td style="color:#2E7D32;font-weight:600;">15</td>
+            <td style="color:#9E9E9E;">0</td>
+            <td><span class="status-badge status-pass">100%</span></td>
+          </tr>
+          <tr>
+            <td><strong>金融APP转账测试报告</strong></td>
+            <td>金融理财APP</td>
+            <td><span class="platform-tag android-tag">Android</span></td>
+            <td>2026-06-10 16:45</td>
+            <td>12</td>
+            <td style="color:#2E7D32;font-weight:600;">12</td>
+            <td style="color:#9E9E9E;">0</td>
+            <td><span class="status-badge status-pass">100%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</body>
+</html>

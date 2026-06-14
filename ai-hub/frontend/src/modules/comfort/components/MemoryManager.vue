@@ -102,7 +102,7 @@ onMounted(fetchMemories)
   text-align: center;
   padding: 16px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .memory-list {
@@ -116,9 +116,11 @@ onMounted(fetchMemories)
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   border-radius: 8px;
   border: 1px solid rgba(180, 150, 120, 0.08);
+  border-left: 3px solid transparent;
+  transition: border-left-color 0.2s ease, background 0.2s ease;
 }
 
 .memory-content {
@@ -138,7 +140,7 @@ onMounted(fetchMemories)
 }
 
 .memory-type-badge.fact {
-  background: rgba(123, 168, 125, 0.15);
+  background: rgba(123, 168, 125, 0.12);
   color: #7BA87D;
 }
 
@@ -150,6 +152,18 @@ onMounted(fetchMemories)
 .memory-type-badge.event {
   background: rgba(155, 142, 196, 0.15);
   color: #9B8EC4;
+}
+
+.memory-item:has(.memory-type-badge.fact) {
+  border-left-color: #7BA87D;
+}
+
+.memory-item:has(.memory-type-badge.preference) {
+  border-left-color: #C67B5C;
+}
+
+.memory-item:has(.memory-type-badge.event) {
+  border-left-color: #9B8EC4;
 }
 
 .memory-text {
@@ -177,6 +191,6 @@ onMounted(fetchMemories)
 }
 
 .mem-btn:hover {
-  background: rgba(180, 150, 120, 0.1);
+  background: var(--accent-bg);
 }
 </style>

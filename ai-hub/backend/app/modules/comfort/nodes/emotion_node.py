@@ -1,6 +1,6 @@
 """情绪分析节点 - 分析用户最新消息的情绪"""
 
-from app.shared.agent.state import AgentState
+from app.common.agent.state import AgentState
 from app.modules.comfort.emotion_analyzer import EmotionAnalyzer
 
 

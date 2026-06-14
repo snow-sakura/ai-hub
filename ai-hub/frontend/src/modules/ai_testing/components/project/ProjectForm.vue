@@ -33,153 +33,31 @@
         />
       </n-form-item>
 
-      <!-- 创建模式：初始版本和成员（可选） -->
-      <template v-if="!isEdit">
-        <n-divider />
-        <n-form-item label="初始版本名（可选）">
-          <n-input
-            v-model:value="initialVersionName"
-            placeholder="创建项目时同时创建初始版本"
-            clearable
-          />
-        </n-form-item>
-        <n-form-item label="初始成员（可选）">
-          <div class="init-members">
-            <div v-for="(m, i) in initialMembers" :key="i" class="init-member-row">
-              <n-input
-                v-model:value="m.name"
-                placeholder="成员姓名"
-                :style="{ width: '160px' }"
-                size="small"
-              />
-              <n-select
-                v-model:value="m.role"
-                :options="roleOptions"
-                :style="{ width: '110px' }"
-                size="small"
-              />
-              <n-button size="tiny" text type="error" @click="initialMembers.splice(i, 1)">
-                删除
-              </n-button>
-            </div>
-            <n-button v-if="initialMembers.length < 10" size="tiny" text @click="initialMembers.push({ name: '', role: 'tester' })">
-              + 添加成员
-            </n-button>
-          </div>
-        </n-form-item>
-      </template>
-    </n-form>
-
-    <!-- 编辑模式：关联版本和成员 -->
-    <div v-if="isEdit" class="assoc-section">
       <n-divider />
 
-      <div class="assoc-row">
-        <span class="assoc-label">关联版本</span>
-        <div class="assoc-tags">
-          <n-tag
-            v-for="v in versionStore.versions"
-            :key="v.id"
-            closable
-            :bordered="false"
-            size="small"
-            style="cursor: pointer"
-            @click="openVersionEdit(v)"
-            @close.stop="handleRemoveVersion(v.id)"
-          >
-            {{ v.name }}
-          </n-tag>
-          <span v-if="versionStore.versions.length === 0" class="assoc-empty">暂无版本</span>
-        </div>
-        <div class="assoc-add">
-          <template v-if="showVersionInput">
-            <n-input
-              v-model:value="newVersionName"
-              size="small"
-              placeholder="输入版本名"
-              :style="{ width: '180px' }"
-            />
-            <n-button size="tiny" type="primary" @click="handleQuickAddVersion">添加</n-button>
-            <n-button size="tiny" @click="showVersionInput = false; newVersionName = ''">取消</n-button>
-          </template>
-          <n-button v-else size="tiny" text @click="showVersionInput = true">
-            + 快速创建版本
-          </n-button>
-        </div>
-      </div>
+      <!-- 关联已有版本/成员（创建和编辑均显示） -->
+      <n-form-item label="关联已有版本（可选）">
+        <n-select
+          v-model:value="selectedVersionIds"
+          multiple
+          :options="standaloneVersionOptions"
+          placeholder="选择已有版本关联到此项目"
+          clearable
+          filterable
+        />
+      </n-form-item>
 
-      <div class="assoc-row">
-        <span class="assoc-label">关联成员</span>
-        <div class="assoc-tags">
-          <n-tag
-            v-for="m in store.members"
-            :key="m.id"
-            closable
-            :bordered="false"
-            size="small"
-            @close="handleRemoveMember(m.id)"
-          >
-            {{ m.name }}（{{ roleLabel(m.role) }}）
-          </n-tag>
-          <span v-if="store.members.length === 0" class="assoc-empty">暂无成员</span>
-        </div>
-        <div class="assoc-add">
-          <template v-if="showMemberInput">
-            <n-input
-              v-model:value="newMemberName"
-              size="small"
-              placeholder="成员姓名"
-              :style="{ width: '140px' }"
-            />
-            <n-select
-              v-model:value="newMemberRole"
-              size="small"
-              :options="roleOptions"
-              :style="{ width: '100px' }"
-            />
-            <n-button size="tiny" type="primary" @click="handleQuickAddMember">添加</n-button>
-            <n-button size="tiny" @click="showMemberInput = false; newMemberName = ''">取消</n-button>
-          </template>
-          <n-button v-else size="tiny" text @click="showMemberInput = true">
-            + 快速添加成员
-          </n-button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 版本编辑弹窗 -->
-    <n-modal
-      v-model:show="showVersionEditModal"
-      preset="card"
-      title="编辑版本"
-      :style="{ maxWidth: '480px' }"
-      @after-leave="editingVersion = null"
-    >
-      <n-form label-placement="top">
-        <n-form-item label="版本名称">
-          <n-input v-model:value="versionEditForm.name" placeholder="版本名称" :maxlength="200" />
-        </n-form-item>
-        <n-form-item label="版本描述">
-          <n-input
-            v-model:value="versionEditForm.description"
-            type="textarea"
-            :rows="3"
-            placeholder="版本说明..."
-          />
-        </n-form-item>
-        <n-form-item label="版本状态">
-          <n-select v-model:value="versionEditForm.status" :options="versionStatusOptions" />
-        </n-form-item>
-      </n-form>
-      <template #footer>
-        <div class="modal-actions">
-          <n-button @click="showVersionEditModal = false">取消</n-button>
-          <n-button type="primary" :loading="isVersionSaving" @click="handleSaveVersionEdit">
-            保存
-          </n-button>
-        </div>
-      </template>
-    </n-modal>
+      <n-form-item label="关联已有成员（可选）">
+        <n-select
+          v-model:value="selectedMemberIds"
+          multiple
+          :options="standaloneMemberOptions"
+          placeholder="选择已有成员关联到此项目"
+          clearable
+          filterable
+        />
+      </n-form-item>
+    </n-form>
 
     <div class="form-actions">
       <n-button @click="$emit('cancel')">取消</n-button>
@@ -195,13 +73,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { NDivider, NTag, useMessage } from 'naive-ui'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useMessage } from 'naive-ui'
 import type { FormInst } from 'naive-ui'
 import type { ProjectStatus } from '@/modules/ai_testing/types/project'
 import type { ProjectVersion } from '@/modules/ai_testing/types/version'
+import type { SelectOption } from 'naive-ui'
 import { useProjectStore } from '@/modules/ai_testing/stores/project'
 import { useVersionStore } from '@/modules/ai_testing/stores/version'
+import * as memberApi from '@/modules/ai_testing/api/project'
+import * as versionApi from '@/modules/ai_testing/api/version'
 
 const props = defineProps<{
   editData?: { id: string; name: string; description: string; status: ProjectStatus }
@@ -232,6 +113,13 @@ const statusOptions = [
   { label: '已归档', value: 'archived' },
 ]
 
+// ── 监听 editData 变化（编辑时回显数据） ──
+watch(() => props.editData, (val) => {
+  formData.name = val?.name || ''
+  formData.description = val?.description || ''
+  formData.status = (val?.status || 'active') as ProjectStatus
+}, { immediate: true })
+
 const rules = {
   name: {
     required: true,
@@ -240,9 +128,22 @@ const rules = {
   },
 }
 
-// ── 创建模式：初始版本和成员 ─────────────────────────────────
-const initialVersionName = ref('')
-const initialMembers = ref<Array<{ name: string; role: string }>>([])
+// ── 创建模式：关联已有版本/成员 ─────────────────────────────
+const standaloneVersions = ref<ProjectVersion[]>([])
+const standaloneMembers = ref<Array<{ id: string; name: string; role: string }>>([])
+const selectedVersionIds = ref<string[]>([])
+const selectedMemberIds = ref<string[]>([])
+// 记录编辑模式初始关联的成员 ID（保存时对比需要解绑的成员）
+const originalMemberIds = ref<string[]>([])
+
+const standaloneVersionOptions = computed<SelectOption[]>(() =>
+  standaloneVersions.value.map(v => ({ label: `${v.name}`, value: v.id }))
+)
+
+const standaloneMemberOptions = computed<SelectOption[]>(() =>
+  standaloneMembers.value.map(m => ({ label: `${m.name}（${roleLabel(m.role)}）`, value: m.id }))
+)
+
 
 const roleOptions = [
   { label: '负责人', value: 'owner' },
@@ -255,86 +156,30 @@ function roleLabel(role: string): string {
   return map[role] || role
 }
 
-// ── 编辑模式：关联版本 ─────────────────────────────────────
-const showVersionInput = ref(false)
-const newVersionName = ref('')
-
-async function handleQuickAddVersion() {
-  if (!newVersionName.value.trim() || !props.editData?.id) return
-  await versionStore.create(props.editData.id, { name: newVersionName.value.trim() })
-  newVersionName.value = ''
-  showVersionInput.value = false
-}
-
-async function handleRemoveVersion(versionId: string) {
-  await versionStore.remove(versionId)
-}
-
-// ── 编辑模式：版本编辑弹窗 ─────────────────────────────────
-const showVersionEditModal = ref(false)
-const editingVersion = ref<ProjectVersion | null>(null)
-const isVersionSaving = ref(false)
-
-const versionEditForm = reactive({
-  name: '',
-  description: '',
-  status: 'active' as string,
-})
-
-const versionStatusOptions = [
-  { label: '活跃', value: 'active' },
-  { label: '已发布', value: 'released' },
-  { label: '已归档', value: 'archived' },
-]
-
-function openVersionEdit(v: ProjectVersion) {
-  editingVersion.value = v
-  versionEditForm.name = v.name
-  versionEditForm.description = v.description
-  versionEditForm.status = v.status
-  showVersionEditModal.value = true
-}
-
-async function handleSaveVersionEdit() {
-  if (!editingVersion.value || !versionEditForm.name.trim()) return
-  isVersionSaving.value = true
-  try {
-    const ok = await versionStore.update(editingVersion.value.id, {
-      name: versionEditForm.name,
-      description: versionEditForm.description,
-      status: versionEditForm.status as any,
-    })
-    if (ok) message.success('版本已更新')
-    showVersionEditModal.value = false
-  } finally {
-    isVersionSaving.value = false
-  }
-}
-
-// ── 编辑模式：关联成员 ─────────────────────────────────────
-const showMemberInput = ref(false)
-const newMemberName = ref('')
-const newMemberRole = ref('tester')
-
-async function handleQuickAddMember() {
-  if (!newMemberName.value.trim() || !props.editData?.id) return
-  const ok = await store.addMember(props.editData.id, newMemberName.value.trim(), newMemberRole.value)
-  if (ok) {
-    newMemberName.value = ''
-    showMemberInput.value = false
-  }
-}
-
-async function handleRemoveMember(memberId: string) {
-  if (!props.editData?.id) return
-  await store.removeMember(memberId, props.editData.id)
-}
-
-// ── 编辑模式初始化：加载关联数据 ───────────────────────────
-onMounted(() => {
+// ── 初始化：加载关联数据或全部版本/成员列表 ────────────────
+onMounted(async () => {
   if (isEdit && props.editData?.id) {
-    versionStore.fetchVersions(props.editData.id)
-    store.fetchMembers(props.editData.id)
+    await Promise.all([
+      versionStore.fetchVersions(props.editData.id),
+      store.fetchMembers(props.editData.id),
+      versionApi.getAllVersions().then(r => { standaloneVersions.value = r.data || [] }).catch(() => {}),
+      memberApi.getAllMembers().then(r => { standaloneMembers.value = r.data || [] }).catch(() => {}),
+    ])
+    // 预选中已关联的版本和成员
+    selectedVersionIds.value = versionStore.versions.map(v => v.id)
+    selectedMemberIds.value = store.members.map(m => m.id)
+    // 保存初始成员关联，编辑保存时对比解除不再关联的成员
+    originalMemberIds.value = [...selectedMemberIds.value]
+  } else {
+    // 创建模式：加载全部已有版本和成员供选择
+    try {
+      const res = await versionApi.getAllVersions()
+      standaloneVersions.value = res.data || []
+    } catch (e) { console.warn('获取版本列表失败:', e) }
+    try {
+      const res = await memberApi.getAllMembers()
+      standaloneMembers.value = res.data || []
+    } catch (e) { console.warn('获取成员列表失败:', e) }
   }
 })
 
@@ -350,22 +195,37 @@ async function handleSubmit() {
   try {
     if (isEdit && props.editData) {
       const ok = await store.updateProject(props.editData.id, { ...formData })
-      if (ok) message.success('项目已更新')
-      else message.error('更新失败')
+      if (ok) {
+        // 关联选中的已有版本到项目
+        for (const vid of selectedVersionIds.value) {
+          try { await memberApi.linkVersionToProject(vid, props.editData.id) } catch (e) { console.warn(`关联版本 ${vid} 到项目失败:`, e) }
+        }
+        // 多对多成员关联：解绑取消的成员，绑定新增的成员
+        const newMemberIds = selectedMemberIds.value
+        const oldMemberIds = originalMemberIds.value
+        const toUnlink = oldMemberIds.filter(id => !newMemberIds.includes(id))
+        const toLink = newMemberIds.filter(id => !oldMemberIds.includes(id))
+        for (const mid of toUnlink) {
+          try { await memberApi.unlinkMemberFromProject(mid, props.editData.id) } catch (e) { console.warn(`解绑成员 ${mid} 失败:`, e) }
+        }
+        for (const mid of toLink) {
+          try { await memberApi.linkMemberToProject(mid, props.editData.id) } catch (e) { console.warn(`关联成员 ${mid} 到项目失败:`, e) }
+        }
+        message.success('项目已更新')
+      } else {
+        message.error('更新失败')
+      }
       emit('saved')
     } else {
       const project = await store.createProject(formData)
       if (project) {
-        // 创建成功后，添加初始版本和成员
-        if (initialVersionName.value.trim()) {
-          try { await versionStore.create(project.id, { name: initialVersionName.value.trim() }) }
-          catch { /* 版本创建失败不影响项目创建 */ }
+        // 关联已有版本到项目
+        for (const vid of selectedVersionIds.value) {
+          try { await memberApi.linkVersionToProject(vid, project.id) } catch (e) { console.warn(`关联版本 ${vid} 到项目失败:`, e) }
         }
-        for (const m of initialMembers.value) {
-          if (m.name.trim()) {
-            try { await store.addMember(project.id, m.name.trim(), m.role) }
-            catch { /* 成员添加失败不影响项目创建 */ }
-          }
+        // 关联已有成员到项目
+        for (const mid of selectedMemberIds.value) {
+          try { await memberApi.linkMemberToProject(mid, project.id) } catch (e) { console.warn(`关联成员 ${mid} 到项目失败:`, e) }
         }
         message.success('项目已创建')
         emit('saved')
@@ -406,52 +266,4 @@ async function handleSubmit() {
   gap: 12px;
 }
 
-/* 初始成员 */
-.init-members {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.init-member-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 关联区域 */
-.assoc-section {
-  margin: 20px 0 0;
-}
-
-.assoc-row {
-  margin-bottom: 16px;
-}
-
-.assoc-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: #5C4A38;
-  margin-bottom: 8px;
-}
-
-.assoc-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.assoc-empty {
-  font-size: 12px;
-  color: #7A6855;
-}
-
-.assoc-add {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 </style>

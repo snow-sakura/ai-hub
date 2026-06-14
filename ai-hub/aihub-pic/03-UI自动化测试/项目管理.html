@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI项目管理 - AI-HUB</title>
+<style>
+  :root {
+    --primary:#C67B5C;--primary-light:#D49472;--primary-dark:#A86545;
+    --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;
+    --sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;
+    --text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);
+    --radius:8px;--radius-lg:12px;
+    --font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+    --shadow:0 1px 3px rgba(60,45,30,0.06);
+    --shadow-md:0 4px 12px rgba(60,45,30,0.08);
+    --sidebar-width:220px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.6;}
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.25);border-radius:10px;}
+
+  .sidebar{width:var(--sidebar-width);background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+  .sidebar-logo{padding:20px 18px 14px;border-bottom:var(--border);display:flex;align-items:center;gap:10px;}
+  .sidebar-logo svg{flex-shrink:0;}
+  .sidebar-logo span{font-size:16px;font-weight:600;color:var(--text);letter-spacing:0.5px;}
+  .sidebar-logo small{display:block;font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:1px;}
+  .sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+  .nav-section-title{font-size:11px;color:var(--text-muted);padding:8px 12px 4px;letter-spacing:0.8px;font-weight:500;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);color:var(--text-secondary);text-decoration:none;font-size:13px;cursor:pointer;transition:all 0.15s;margin-bottom:1px;}
+  .nav-item:hover{background:rgba(200,170,140,0.15);color:var(--text);}
+  .nav-item.active{background:var(--primary);color:#fff;font-weight:500;}
+  .nav-item svg{flex-shrink:0;opacity:0.7;}
+  .nav-item.active svg{opacity:1;}
+
+  .main{margin-left:var(--sidebar-width);flex:1;min-height:100vh;}
+  .header{height:56px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+  .header-left .breadcrumb{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+  .header-left .breadcrumb span{color:var(--text-secondary);}
+  .header-right{display:flex;align-items:center;gap:16px;}
+  .time{font-size:12px;color:var(--text-muted);}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;}
+
+  .content{padding:24px 28px;}
+
+  .page-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+  .page-toolbar h2{font-size:18px;font-weight:600;}
+  .page-toolbar-actions{display:flex;gap:10px;}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;text-decoration:none;font-family:var(--font);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+  .btn-outline:hover{border-color:var(--primary-light);color:var(--text);}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+
+  .search-box{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:var(--border);border-radius:var(--radius);padding:0 12px;}
+  .search-box input{border:none;background:transparent;padding:8px 0;font-size:13px;outline:none;color:var(--text);width:200px;font-family:var(--font);}
+  .search-box input::placeholder{color:var(--text-muted);}
+
+  .project-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .project-card{background:var(--card-bg);border:var(--border);border-radius:var(--radius-lg);padding:20px;transition:all 0.2s;cursor:pointer;}
+  .project-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+  .project-card .project-icon{width:40px;height:40px;border-radius:10px;background:rgba(198,123,92,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .project-card h3{font-size:15px;font-weight:600;margin-bottom:4px;}
+  .project-card .project-desc{font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .project-stats{display:flex;gap:16px;padding-top:12px;border-top:var(--border);}
+  .project-stats .stat{text-align:center;}
+  .project-stats .stat .num{font-size:15px;font-weight:600;color:var(--text);}
+  .project-stats .stat .label{font-size:11px;color:var(--text-muted);}
+  .project-card .tags{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+  .project-card .tag{font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(198,123,92,0.08);color:var(--primary);}
+  .project-card .tag.green{background:rgba(123,166,124,0.1);color:#7BA67C;}
+  .project-card .tag.blue{background:rgba(139,126,189,0.1);color:#8B7EBD;}
+  .project-card .tag.amber{background:rgba(212,165,116,0.12);color:var(--accent);}
+
+  @media(max-width:1200px){.project-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:768px){
+    .sidebar{width:56px;}
+    .sidebar-logo span,.sidebar-logo small,.nav-item span,.nav-section-title{display:none;}
+    .sidebar-logo{padding:14px;justify-content:center;}
+    .nav-item{justify-content:center;padding:10px;}
+    .main{margin-left:56px;}
+    .project-grid{grid-template-columns:1fr;}
+    .page-toolbar{flex-direction:column;align-items:flex-start;gap:12px;}
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="6" fill="#C67B5C"/><path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><span>AI-HUB</span><small>测试平台</small></div></div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">导航</div>
+    <a class="nav-item" href="../00-首页仪表盘/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h3l1.5-6 3 12L11 4h3"/></svg><span>首页仪表盘</span></a>
+    <a class="nav-item" href="../01-AI智能测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg><span>AI智能测试</span></a>
+    <a class="nav-item" href="../02-API接口测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4L1 8l3 4M12 4l3 4-3 4M9 1L7 15"/></svg><span>API接口测试</span></a>
+    <a class="nav-item active" href="数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>UI自动化测试</span></a>
+    <a class="nav-item" href="../04-APP自动化测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 12h6"/></svg><span>APP自动化测试</span></a>
+    <a class="nav-item" href="../05-测试管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h2l1-3 2 6 2-5 1 2h2"/></svg><span>测试管理</span></a>
+    <a class="nav-item" href="../06-配置中心/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v1M8 14v1M1 8h1M14 8h1M3.05 3.05l.7.7M12.25 12.25l.7.7M3.05 12.95l.7-.7M12.25 3.75l.7-.7"/></svg><span>配置中心</span></a>
+    <a class="nav-item" href="../07-AI聊天室/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H5l-4 3V3z"/></svg><span>AI聊天室</span></a>
+    <a class="nav-item" href="../08-知识库/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 3v10M2 3a3 3 0 013-3h9v10H5a3 3 0 00-3 3M14 3v10"/></svg><span>知识库</span></a>
+    <a class="nav-item" href="../09-系统管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M6 6h4M6 9h4"/></svg><span>系统管理</span></a>
+  </nav>
+</aside>
+
+<div class="main">
+  <header class="header">
+    <div class="header-left"><div class="breadcrumb">AI-HUB / <span>UI自动化测试</span> / <span>项目管理</span></div></div>
+    <div class="header-right"><span class="time" id="currentTime"></span><div class="avatar">管</div></div>
+  </header>
+  <div class="content">
+    <div class="page-toolbar">
+      <h2>UI项目列表</h2>
+      <div class="page-toolbar-actions">
+        <div class="search-box"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--text-muted)" stroke-width="1.4" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5L13 13"/></svg><input type="text" placeholder="搜索项目..." id="searchInput" oninput="filterProjects()"></div>
+        <button class="btn btn-primary" onclick="alert('新建项目功能（模拟）')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>新建项目</button>
+      </div>
+    </div>
+
+    <div class="project-grid" id="projectGrid">
+      <div class="project-card" data-name="官网首页">
+        <div class="project-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4h16M4 4v14h12V4M7 8h2M11 8h2M7 11h2M11 11h2"/></svg></div>
+        <h3>官网首页</h3>
+        <p class="project-desc">公司官方网站首页的UI自动化测试项目，包含导航、Banner、产品展示等核心模块。</p>
+        <div class="tags"><span class="tag">核心</span><span class="tag green">活跃</span></div>
+        <div class="project-stats"><div class="stat"><div class="num">42</div><div class="label">页面元素</div></div><div class="stat"><div class="num">28</div><div class="label">测试用例</div></div><div class="stat"><div class="num">5</div><div class="label">脚本</div></div></div>
+      </div>
+      <div class="project-card" data-name="用户中心">
+        <div class="project-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="7" r="3"/><path d="M3 17c0-4 3-7 7-7s7 3 7 7"/></svg></div>
+        <h3>用户中心</h3>
+        <p class="project-desc">用户登录、注册、个人信息管理、密码修改等用户相关功能测试。</p>
+        <div class="tags"><span class="tag blue">用户端</span><span class="tag amber">高优先级</span></div>
+        <div class="project-stats"><div class="stat"><div class="num">68</div><div class="label">页面元素</div></div><div class="stat"><div class="num">35</div><div class="label">测试用例</div></div><div class="stat"><div class="num">12</div><div class="label">脚本</div></div></div>
+      </div>
+      <div class="project-card" data-name="商品管理后台">
+        <div class="project-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 5h16M2 5l2-3h12l2 3M2 5v12a1 1 0 001 1h14a1 1 0 001-1V5"/></svg></div>
+        <h3>商品管理后台</h3>
+        <p class="project-desc">商品上架、编辑、分类管理、库存管理等后台管理功能测试。</p>
+        <div class="tags"><span class="tag">后台</span><span class="tag green">活跃</span></div>
+        <div class="project-stats"><div class="stat"><div class="num">95</div><div class="label">页面元素</div></div><div class="stat"><div class="num">52</div><div class="label">测试用例</div></div><div class="stat"><div class="num">18</div><div class="label">脚本</div></div></div>
+      </div>
+      <div class="project-card" data-name="购物车流程">
+        <div class="project-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="17" r="1.5"/><circle cx="15" cy="17" r="1.5"/><path d="M1 1h3l2 11h9l2-7H5"/></svg></div>
+        <h3>购物车流程</h3>
+        <p class="project-desc">购物车添加、删除商品、修改数量、结算流程等功能测试。</p>
+        <div class="tags"><span class="tag amber">核心链路</span></div>
+        <div class="project-stats"><div class="stat"><div class="num">38</div><div class="label">页面元素</div></div><div class="stat"><div class="num">22</div><div class="label">测试用例</div></div><div class="stat"><div class="num">8</div><div class="label">脚本</div></div></div>
+      </div>
+      <div class="project-card" data-name="订单系统">
+        <div class="project-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+        <h3>订单系统</h3>
+        <p class="project-desc">订单创建、支付、退款、物流查询等订单全生命周期功能测试。</p>
+        <div class="tags"><span class="tag blue">用户端</span><span class="tag amber">高优先级</span></div>
+        <div class="project-stats"><div class="stat"><div class="num">56</div><div class="label">页面元素</div></div><div class="stat"><div class="num">31</div><div class="label">测试用例</div></div><div class="stat"><div class="num">14</div><div class="label">脚本</div></div></div>
+      </div>
+      <div class="project-card" data-name="搜索功能">
+        <div class="project-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L19 19"/></svg></div>
+        <h3>搜索功能</h3>
+        <p class="project-desc">全局搜索、高级筛选、搜索结果展示等功能模块测试。</p>
+        <div class="tags"><span class="tag">核心</span></div>
+        <div class="project-stats"><div class="stat"><div class="num">69</div><div class="label">页面元素</div></div><div class="stat"><div class="num">18</div><div class="label">测试用例</div></div><div class="stat"><div class="num">7</div><div class="label">脚本</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateTime(){const n=new Date();document.getElementById('currentTime').textContent=n.toLocaleString('zh-CN',{hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+  updateTime();setInterval(updateTime,10000);
+
+  function filterProjects(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.project-card').forEach(c=>{
+      c.style.display=c.dataset.name.toLowerCase().includes(q)?'':'none';
+    });
+  }
+</script>
+</body>
+</html>

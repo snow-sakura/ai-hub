@@ -4,15 +4,15 @@ import uuid
 import json
 from typing import Any
 
-from app.shared.core.database import MySQLConnection
-from app.shared.domain.exceptions import (
+from app.common.core.database import MySQLConnection
+from app.common.domain.exceptions import (
   ComfortSceneNotFoundError,
   ComfortCharacterNotFoundError,
   ComfortMemoryNotFoundError,
 )
 from app.modules.comfort.repository import ComfortRepo
 from app.modules.comfort.domain import ComfortCharacter, ComfortMemory
-from app.shared.service.conversation_service import ConversationService
+from app.common.service.conversation_service import ConversationService
 
 
 class ComfortService:
@@ -100,7 +100,6 @@ class ComfortService:
       importance=data.get("importance", 0.5),
     )
     await self.repo.create_memory(mem)
-    # 返回刚创建的记忆
     memories = await self.repo.list_memories(data["conversation_id"])
     for m in memories:
       if m["id"] == mem_id:
@@ -137,7 +136,6 @@ class ComfortService:
     title: str = "哄哄模拟器",
   ) -> dict[str, Any]:
     """创建哄哄模拟器会话，返回含会话ID和场景信息的完整数据"""
-    # 校验场景和角色
     scene = await self.repo.get_scene(scene_id)
     if not scene:
       raise ComfortSceneNotFoundError(scene_id)
@@ -151,12 +149,11 @@ class ComfortService:
       "character_id": character_id,
       "character_name": character["name"],
       "difficulty": difficulty,
-      "forgiveness": 50.0,  # 初始原谅值
-      "emotion_log": [],    # 情绪日志
-      "turn_count": 0,      # 对话轮次
+      "forgiveness": 50.0,
+      "emotion_log": [],
+      "turn_count": 0,
     }
 
-    # 创建会话
     db = self.repo.db
     conv_service = ConversationService(db)
     conv = await conv_service.create(

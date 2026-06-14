@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP环境配置 - AI-HUB</title>
+<style>
+:root{
+  --primary:#C67B5C;--primary-light:#D49472;--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--radius:8px;--radius-lg:12px;--font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;height:100vh;}
+.sidebar{width:220px;background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-header{padding:20px;border-bottom:var(--border);}
+.sidebar-header h1{font-size:18px;color:var(--primary);font-weight:700;letter-spacing:1px;}
+.sidebar-header p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.nav-tabs{list-style:none;padding:12px 0;}
+.nav-tabs li{padding:10px 20px;font-size:14px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s;border-left:3px solid transparent;}
+.nav-tabs li:hover{background:rgba(198,123,92,0.06);color:var(--text);}
+.nav-tabs li.active{background:rgba(198,123,92,0.1);color:var(--primary);border-left-color:var(--primary);font-weight:600;}
+.nav-tabs li svg{width:18px;height:18px;flex-shrink:0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.main-header{padding:16px 28px;border-bottom:var(--border);background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;}
+.main-header h2{font-size:18px;font-weight:600;}
+.breadcrumb{font-size:13px;color:var(--text-muted);}
+.breadcrumb span{color:var(--text-secondary);}
+.content{padding:24px 28px;overflow-y:auto;flex:1;}
+.card{background:var(--card-bg);border-radius:var(--radius-lg);border:var(--border);padding:24px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);}
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;}
+.form-group select,.form-group input{width:100%;padding:8px 12px;font-size:14px;font-family:var(--font);border:var(--border);border-radius:var(--radius);background:var(--card-bg);color:var(--text);outline:none;transition:border-color .2s;}
+.form-group select:focus,.form-group input:focus{border-color:var(--primary);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.btn{padding:8px 20px;font-size:14px;font-family:var(--font);border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s;font-weight:500;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-light);}
+.btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-group{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
+.toggle{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer;}
+.toggle input{display:none;}
+.toggle-slider{width:40px;height:22px;background:rgba(180,150,120,0.2);border-radius:11px;transition:all .3s;position:relative;flex-shrink:0;}
+.toggle-slider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;transition:all .3s;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+.toggle input:checked+.toggle-slider{background:var(--primary);}
+.toggle input:checked+.toggle-slider::after{left:20px;}
+.toggle-label{font-size:14px;color:var(--text-secondary);}
+.platform-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:var(--border);}
+.platform-tab{padding:10px 24px;font-size:14px;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.platform-tab:hover{color:var(--text);}
+.platform-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600;}
+.content::-webkit-scrollbar{width:6px;}
+.content::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>AI-HUB</h1>
+    <p>智能测试平台</p>
+  </div>
+  <ul class="nav-tabs">
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      AI模型配置
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      提示词配置
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      生成行为
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      UI环境
+    </li>
+    <li class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      APP环境
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      AI聊天室
+    </li>
+  </ul>
+</div>
+
+<div class="main">
+  <div class="main-header">
+    <div>
+      <h2>APP环境配置</h2>
+      <div class="breadcrumb">配置中心 / <span>APP环境配置</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 平台切换 -->
+    <div class="platform-tabs">
+      <div class="platform-tab active">Android</div>
+      <div class="platform-tab">iOS</div>
+    </div>
+
+    <!-- Android 配置 -->
+    <div class="card">
+      <div class="card-title">Android 配置</div>
+      <div class="form-group">
+        <label>ADB 路径</label>
+        <input type="text" value="/usr/local/bin/adb" placeholder="如: /usr/local/bin/adb">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Android SDK 路径</label>
+          <input type="text" value="$HOME/Library/Android/sdk" placeholder="SDK 目录路径">
+        </div>
+        <div class="form-group">
+          <label>默认设备</label>
+          <select>
+            <option>emulator-5554 (Pixel 6 API 33)</option>
+            <option>emulator-5556 (Pixel 7 API 34)</option>
+            <option>emulator-5558 (Nexus 5 API 30)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>JDK 路径</label>
+          <input type="text" value="/usr/bin/java" placeholder="JDK 路径">
+        </div>
+        <div class="form-group">
+          <label>APK 安装超时 (秒)</label>
+          <input type="number" value="120">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>应用 APK 路径 (可选)</label>
+        <input type="text" placeholder="/path/to/app.apk">
+      </div>
+    </div>
+
+    <!-- iOS 配置 -->
+    <div class="card">
+      <div class="card-title">iOS 配置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Xcode 路径</label>
+          <input type="text" value="/Applications/Xcode.app" placeholder="Xcode 路径">
+        </div>
+        <div class="form-group">
+          <label>设备 UDID</label>
+          <input type="text" placeholder="xxxxxxxx-xxxxxxxxxxxx" value="00008030-xxxxxxxxxxxx">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>iOS 版本</label>
+          <select>
+            <option>17.5</option>
+            <option>17.4</option>
+            <option>16.6</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>DerivedData 路径</label>
+          <input type="text" value="$HOME/Library/Developer/Xcode/DerivedData">
+        </div>
+      </div>
+    </div>
+
+    <!-- 连接配置 -->
+    <div class="card">
+      <div class="card-title">连接配置</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Appium 服务地址</label>
+          <input type="text" value="http://127.0.0.1:4723" placeholder="http://127.0.0.1:4723">
+        </div>
+        <div class="form-group">
+          <label>XCUITest 服务地址</label>
+          <input type="text" value="http://127.0.0.1:8100" placeholder="http://127.0.0.1:8100">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>连接超时 (秒)</label>
+          <input type="number" value="60">
+        </div>
+        <div class="form-group">
+          <label>命令超时 (秒)</label>
+          <input type="number" value="300">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="toggle">
+          <input type="checkbox" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">启动时自动连接设备</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-outline">测试连接</button>
+      <button class="btn btn-primary">保存配置</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

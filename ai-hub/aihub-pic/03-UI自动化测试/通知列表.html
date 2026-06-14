@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI通知列表 - AI-HUB</title>
+<style>
+  :root {
+    --primary:#C67B5C;--primary-light:#D49472;--primary-dark:#A86545;
+    --accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;
+    --sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;
+    --text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);
+    --radius:8px;--radius-lg:12px;
+    --font:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+    --shadow:0 1px 3px rgba(60,45,30,0.06);
+    --shadow-md:0 4px 12px rgba(60,45,30,0.08);
+    --sidebar-width:220px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.6;}
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.25);border-radius:10px;}
+
+  .sidebar{width:var(--sidebar-width);background:var(--sidebar-bg);border-right:var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+  .sidebar-logo{padding:20px 18px 14px;border-bottom:var(--border);display:flex;align-items:center;gap:10px;}
+  .sidebar-logo svg{flex-shrink:0;}
+  .sidebar-logo span{font-size:16px;font-weight:600;color:var(--text);letter-spacing:0.5px;}
+  .sidebar-logo small{display:block;font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:1px;}
+  .sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+  .nav-section-title{font-size:11px;color:var(--text-muted);padding:8px 12px 4px;letter-spacing:0.8px;font-weight:500;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);color:var(--text-secondary);text-decoration:none;font-size:13px;cursor:pointer;transition:all 0.15s;margin-bottom:1px;}
+  .nav-item:hover{background:rgba(200,170,140,0.15);color:var(--text);}
+  .nav-item.active{background:var(--primary);color:#fff;font-weight:500;}
+  .nav-item svg{flex-shrink:0;opacity:0.7;}
+  .nav-item.active svg{opacity:1;}
+
+  .main{margin-left:var(--sidebar-width);flex:1;min-height:100vh;}
+  .header{height:56px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+  .header-left .breadcrumb{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+  .header-left .breadcrumb span{color:var(--text-secondary);}
+  .header-right{display:flex;align-items:center;gap:16px;}
+  .time{font-size:12px;color:var(--text-muted);}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;}
+
+  .content{padding:24px 28px;}
+  .page-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .page-toolbar h2{font-size:18px;font-weight:600;}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:var(--font);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-outline{background:transparent;border:var(--border);color:var(--text-secondary);}
+  .btn-outline:hover{border-color:var(--primary-light);color:var(--text);}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+  .btn-danger{background:transparent;border:1px solid rgba(198,123,92,0.3);color:var(--primary);}
+  .btn-danger:hover{background:rgba(198,123,92,0.06);}
+  .btn-success{background:#7BA67C;color:#fff;}
+  .btn-success:hover{background:#6B9670;}
+
+  /* ===== Tabs ===== */
+  .tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:var(--border);}
+  .tab{padding:10px 22px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.12s;font-family:var(--font);}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .search-box{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:var(--border);border-radius:var(--radius);padding:0 12px;}
+  .search-box input{border:none;background:transparent;padding:8px 0;font-size:13px;outline:none;color:var(--text);width:200px;font-family:var(--font);}
+  .search-box input::placeholder{color:var(--text-muted);}
+
+  .filter-select{padding:6px 10px;border:var(--border);border-radius:var(--radius);font-size:12px;background:var(--card-bg);color:var(--text-secondary);outline:none;font-family:var(--font);}
+
+  /* ===== 通知配置卡 ===== */
+  .config-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;}
+  .config-card{background:var(--card-bg);border:var(--border);border-radius:var(--radius-lg);padding:20px;transition:all 0.15s;}
+  .config-card:hover{box-shadow:var(--shadow-md);}
+  .config-card .cc-icon{width:40px;height:40px;border-radius:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;}
+  .config-card:nth-child(1) .cc-icon{background:rgba(198,123,92,0.1);color:var(--primary);}
+  .config-card:nth-child(2) .cc-icon{background:rgba(139,126,189,0.1);color:#8B7EBD;}
+  .config-card:nth-child(3) .cc-icon{background:rgba(123,166,124,0.1);color:#7BA67C;}
+  .config-card:nth-child(4) .cc-icon{background:rgba(100,150,180,0.1);color:#4a8ba8;}
+  .config-card h4{font-size:14px;font-weight:600;margin-bottom:4px;}
+  .config-card .cc-desc{font-size:12px;color:var(--text-muted);margin-bottom:12px;}
+  .config-card .cc-status{display:flex;align-items:center;justify-content:space-between;}
+  .config-card .cc-status .status-tag{display:flex;align-items:center;gap:4px;font-size:12px;}
+  .switch{position:relative;display:inline-block;width:36px;height:20px;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#ccc;transition:0.2s;border-radius:20px;}
+  .slider:before{position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background:#fff;transition:0.2s;border-radius:50%;}
+  .switch input:checked+.slider{background:var(--primary);}
+  .switch input:checked+.slider:before{transform:translateX(16px);}
+  .cc-actions{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:var(--border);}
+  .cc-actions .cc-btn{padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;border:none;background:rgba(200,170,140,0.08);color:var(--text-secondary);font-family:var(--font);}
+  .cc-actions .cc-btn:hover{background:rgba(200,170,140,0.15);color:var(--text);}
+
+  /* ===== 通知日志 ===== */
+  .table-wrap{background:var(--card-bg);border:var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:10px 14px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);background:var(--bg);font-size:12px;}
+  td{padding:10px 14px;border-bottom:var(--border);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:nth-child(even) td{background:rgba(246,240,231,0.3);}
+
+  .send-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;}
+  .send-success{background:rgba(123,166,124,0.08);color:#7BA67C;}
+  .send-fail{background:rgba(198,123,92,0.08);color:var(--primary);}
+  .channel-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:11px;}
+  .channel-webhook{background:rgba(198,123,92,0.06);color:var(--primary);}
+  .channel-email{background:rgba(139,126,189,0.06);color:#8B7EBD;}
+  .channel-dingtalk{background:rgba(100,150,180,0.06);color:#4a8ba8;}
+  .channel-wechat{background:rgba(123,166,124,0.06);color:#7BA67C;}
+
+  /* ===== 弹窗 ===== */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(60,45,30,0.35);z-index:200;align-items:center;justify-content:center;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--card-bg);border-radius:var(--radius-lg);width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 12px 40px rgba(60,45,30,0.2);}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border);}
+  .modal-header h3{font-size:15px;font-weight:600;}
+  .modal-close{width:28px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+  .modal-close:hover{background:rgba(200,170,140,0.12);color:var(--text);}
+  .modal-body{padding:20px;}
+  .form-group{margin-bottom:16px;}
+  .form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;}
+  .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;border:var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text);outline:none;font-family:var(--font);}
+  .form-group textarea{resize:vertical;min-height:60px;}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary-light);}
+  .modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:var(--border);}
+  .btn-cancel{background:transparent;border:var(--border);color:var(--text-secondary);}
+  .btn-cancel:hover{background:rgba(200,170,140,0.06);}
+
+  @media(max-width:1024px){.config-grid{grid-template-columns:1fr;}}
+  @media(max-width:768px){
+    .sidebar{width:56px;}
+    .sidebar-logo span,.sidebar-logo small,.nav-item span,.nav-section-title{display:none;}
+    .sidebar-logo{padding:14px;justify-content:center;}
+    .nav-item{justify-content:center;padding:10px;}
+    .main{margin-left:56px;}
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="6" fill="#C67B5C"/><path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><span>AI-HUB</span><small>测试平台</small></div></div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">导航</div>
+    <a class="nav-item" href="../00-首页仪表盘/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h3l1.5-6 3 12L11 4h3"/></svg><span>首页仪表盘</span></a>
+    <a class="nav-item" href="../01-AI智能测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg><span>AI智能测试</span></a>
+    <a class="nav-item" href="../02-API接口测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4L1 8l3 4M12 4l3 4-3 4M9 1L7 15"/></svg><span>API接口测试</span></a>
+    <a class="nav-item active" href="数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>UI自动化测试</span></a>
+    <a class="nav-item" href="../04-APP自动化测试/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 12h6"/></svg><span>APP自动化测试</span></a>
+    <a class="nav-item" href="../05-测试管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8h2l1-3 2 6 2-5 1 2h2"/></svg><span>测试管理</span></a>
+    <a class="nav-item" href="../06-配置中心/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v1M8 14v1M1 8h1M14 8h1M3.05 3.05l.7.7M12.25 12.25l.7.7M3.05 12.95l.7-.7M12.25 3.75l.7-.7"/></svg><span>配置中心</span></a>
+    <a class="nav-item" href="../07-AI聊天室/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H5l-4 3V3z"/></svg><span>AI聊天室</span></a>
+    <a class="nav-item" href="../08-知识库/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 3v10M2 3a3 3 0 013-3h9v10H5a3 3 0 00-3 3M14 3v10"/></svg><span>知识库</span></a>
+    <a class="nav-item" href="../09-系统管理/数据看板.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M6 6h4M6 9h4"/></svg><span>系统管理</span></a>
+  </nav>
+</aside>
+
+<div class="main">
+  <header class="header">
+    <div class="header-left"><div class="breadcrumb">AI-HUB / <span>UI自动化测试</span> / <span>通知列表</span></div></div>
+    <div class="header-right"><span class="time" id="currentTime"></span><div class="avatar">管</div></div>
+  </header>
+
+  <div class="content">
+    <div class="page-toolbar">
+      <h2>通知管理</h2>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab(this,'configs')">通知配置</button>
+      <button class="tab" onclick="switchTab(this,'logs')">通知日志</button>
+    </div>
+
+    <!-- ===== 通知配置 ===== -->
+    <div class="tab-panel active" id="panel-configs">
+      <div class="config-grid">
+        <div class="config-card">
+          <div class="cc-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M17 5H3a1 1 0 00-1 1v8a1 1 0 001 1h14a1 1 0 001-1V6a1 1 0 00-1-1z"/><path d="M3 5l7 5 7-5"/></svg></div>
+          <h4>邮件通知</h4>
+          <p class="cc-desc">通过SMTP发送测试执行结果邮件报告</p>
+          <div class="cc-status">
+            <span class="status-tag"><svg width="10" height="10" viewBox="0 0 10 10" fill="#7BA67C"><circle cx="5" cy="5" r="5"/></svg> 已启用</span>
+            <label class="switch"><input type="checkbox" checked onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label>
+          </div>
+          <div class="cc-actions">
+            <button class="cc-btn" onclick="openConfigModal('邮件')">编辑配置</button>
+            <button class="cc-btn" onclick="alert('测试发送（模拟）')">测试发送</button>
+          </div>
+        </div>
+
+        <div class="config-card">
+          <div class="cc-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 8h2l2-4 3 8 3-4 2 2 2-2"/><path d="M16 8h2"/></svg></div>
+          <h4>Webhook</h4>
+          <p class="cc-desc">通过HTTP回调将结果推送到自定义接口</p>
+          <div class="cc-status">
+            <span class="status-tag"><svg width="10" height="10" viewBox="0 0 10 10" fill="#7BA67C"><circle cx="5" cy="5" r="5"/></svg> 已启用</span>
+            <label class="switch"><input type="checkbox" checked onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label>
+          </div>
+          <div class="cc-actions">
+            <button class="cc-btn" onclick="openConfigModal('Webhook')">编辑配置</button>
+            <button class="cc-btn" onclick="alert('测试发送（模拟）')">测试发送</button>
+          </div>
+        </div>
+
+        <div class="config-card">
+          <div class="cc-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4h16v12H2z"/><path d="M7 8l3 2 3-2"/></svg></div>
+          <h4>钉钉机器人</h4>
+          <p class="cc-desc">通过钉钉群机器人Webhook推送通知</p>
+          <div class="cc-status">
+            <span class="status-tag"><svg width="10" height="10" viewBox="0 0 10 10" fill="var(--text-muted)"><circle cx="5" cy="5" r="5"/></svg> 未启用</span>
+            <label class="switch"><input type="checkbox" onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label>
+          </div>
+          <div class="cc-actions">
+            <button class="cc-btn" onclick="openConfigModal('钉钉')">编辑配置</button>
+            <button class="cc-btn" onclick="alert('测试发送（模拟）')">测试发送</button>
+          </div>
+        </div>
+
+        <div class="config-card">
+          <div class="cc-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M7 6h6M7 9h6M7 12h4"/></svg></div>
+          <h4>企业微信</h4>
+          <p class="cc-desc">通过企业微信机器人Webhook推送通知</p>
+          <div class="cc-status">
+            <span class="status-tag"><svg width="10" height="10" viewBox="0 0 10 10" fill="var(--text-muted)"><circle cx="5" cy="5" r="5"/></svg> 未启用</span>
+            <label class="switch"><input type="checkbox" onchange="alert('状态已切换（模拟）')"><span class="slider"></span></label>
+          </div>
+          <div class="cc-actions">
+            <button class="cc-btn" onclick="openConfigModal('企业微信')">编辑配置</button>
+            <button class="cc-btn" onclick="alert('测试发送（模拟）')">测试发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 通知日志 ===== -->
+    <div class="tab-panel" id="panel-logs">
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">
+        <select class="filter-select"><option value="">所有渠道</option><option>邮件</option><option>Webhook</option><option>钉钉</option><option>企业微信</option></select>
+        <select class="filter-select"><option value="">所有状态</option><option>成功</option><option>失败</option></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>时间</th><th>通知渠道</th><th>内容摘要</th><th>接收方</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>2026-06-14 10:32:20</td><td><span class="channel-badge channel-email"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2H2a1 1 0 00-1 1v4a1 1 0 001 1h6a1 1 0 001-1V3a1 1 0 00-1-1z"/><path d="M2 3l3 2 3-2"/></svg>邮件</span></td><td>官网登录回归测试 - 执行通过 (8/8)</td><td>admin@example.com</td><td><span class="send-badge send-success">发送成功</span></td></tr>
+            <tr><td>2026-06-14 09:08:50</td><td><span class="channel-badge channel-webhook"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M1 4h1l1-2 1.5 4L5 3l1 1h1"/><path d="M8 4h1"/></svg>Webhook</span></td><td>用户中心全量测试 - 执行通过 (15/15)</td><td>https://hooks.example.com/test</td><td><span class="send-badge send-success">发送成功</span></td></tr>
+            <tr><td>2026-06-13 16:04:25</td><td><span class="channel-badge channel-email"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2H2a1 1 0 00-1 1v4a1 1 0 001 1h6a1 1 0 001-1V3a1 1 0 00-1-1z"/><path d="M2 3l3 2 3-2"/></svg>邮件</span></td><td>购物车流程冒烟测试 - 执行失败 (5/6)</td><td>admin@example.com</td><td><span class="send-badge send-success">发送成功</span></td></tr>
+            <tr><td>2026-06-13 08:15:30</td><td><span class="channel-badge channel-dingtalk"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="8" height="8" rx="2"/><path d="M3.5 3l2 2-2 2"/></svg>钉钉</span></td><td>每日回归测试 - 执行失败 (26/28) 告警</td><td>钉钉群: QA告警群</td><td><span class="send-badge send-fail">发送失败</span></td></tr>
+            <tr><td>2026-06-12 14:02:15</td><td><span class="channel-badge channel-email"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2H2a1 1 0 00-1 1v4a1 1 0 001 1h6a1 1 0 001-1V3a1 1 0 00-1-1z"/><path d="M2 3l3 2 3-2"/></svg>邮件</span></td><td>官网登录回归测试 - 执行通过 (8/8)</td><td>qa-team@example.com</td><td><span class="send-badge send-success">发送成功</span></td></tr>
+            <tr><td>2026-06-12 09:08:10</td><td><span class="channel-badge channel-wechat"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="6" height="6" rx="1"/><path d="M4 2V1h2v1"/></svg>企业微信</span></td><td>用户中心全量测试 - 执行失败 (14/15) 告警</td><td>企微群: QA监控</td><td><span class="send-badge send-fail">发送失败</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑配置弹窗 -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="configModalTitle">编辑通知配置</h3>
+      <button class="modal-close" onclick="closeConfigModal()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>通知名称</label><input type="text" id="cfgName" value="邮件通知"></div>
+      <div class="form-group"><label>接收地址</label><input type="text" id="cfgAddr" value="admin@example.com"></div>
+      <div class="form-group"><label>触发条件</label><select id="cfgTrigger"><option>执行完成时</option><option>仅失败时</option><option>定时发送</option></select></div>
+      <div class="form-group"><label>相关项目</label><select id="cfgProject"><option>全部项目</option><option>官网首页</option><option>用户中心</option></select></div>
+      <div class="form-group"><label>自定义消息模板</label><textarea id="cfgTemplate">【AI-HUB】套件 {{suite_name}} 执行完成，通过率 {{pass_rate}}%</textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeConfigModal()">取消</button>
+      <button class="btn btn-primary" onclick="alert('配置已保存（模拟）');closeConfigModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateTime(){const n=new Date();document.getElementById('currentTime').textContent=n.toLocaleString('zh-CN',{hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+  updateTime();setInterval(updateTime,10000);
+
+  function switchTab(tab,panel){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+panel).classList.add('active');
+  }
+
+  function openConfigModal(name){
+    document.getElementById('configModalTitle').textContent='编辑通知配置 - '+name;
+    document.getElementById('cfgName').value=name+'通知';
+    document.getElementById('configModal').classList.add('show');
+  }
+
+  function closeConfigModal(){document.getElementById('configModal').classList.remove('show');}
+  document.getElementById('configModal').addEventListener('click',function(e){if(e.target===this)closeConfigModal();});
+</script>
+</body>
+</html>

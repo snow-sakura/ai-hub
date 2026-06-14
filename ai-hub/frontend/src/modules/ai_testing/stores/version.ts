@@ -7,6 +7,16 @@ export const useVersionStore = defineStore('testingVersion', () => {
   const versions = ref<ProjectVersion[]>([])
   const loading = ref(false)
 
+  async function fetchAll() {
+    loading.value = true
+    try {
+      const res = await versionApi.getAllVersions()
+      versions.value = res.data || []
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function fetchVersions(projectId: string) {
     loading.value = true
     try {
@@ -17,14 +27,25 @@ export const useVersionStore = defineStore('testingVersion', () => {
     }
   }
 
-  async function create(projectId: string, data: VersionCreate): Promise<boolean> {
+  async function create(data: VersionCreate): Promise<ProjectVersion | null> {
+    try {
+      const res = await versionApi.createVersionStandalone(data)
+      if (res.data) {
+        versions.value.unshift(res.data)
+        return res.data
+      }
+    } catch (e) { console.warn('创建版本失败:', e) }
+    return null
+  }
+
+  async function createWithProject(projectId: string, data: VersionCreate): Promise<boolean> {
     try {
       const res = await versionApi.createVersion(projectId, data)
       if (res.data) {
         versions.value.unshift(res.data)
         return true
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('创建项目版本失败:', e) }
     return false
   }
 
@@ -36,7 +57,7 @@ export const useVersionStore = defineStore('testingVersion', () => {
         if (idx !== -1) versions.value[idx] = res.data
         return true
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('更新版本失败:', e) }
     return false
   }
 
@@ -44,8 +65,8 @@ export const useVersionStore = defineStore('testingVersion', () => {
     try {
       await versionApi.deleteVersion(versionId)
       versions.value = versions.value.filter(v => v.id !== versionId)
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('删除版本失败:', e) }
   }
 
-  return { versions, loading, fetchVersions, create, update, remove }
+  return { versions, loading, fetchAll, fetchVersions, create, createWithProject, update, remove }
 })

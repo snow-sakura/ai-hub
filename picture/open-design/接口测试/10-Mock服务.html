@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mock服务 · AI-HUB 智能工作台</title>
+<style>
+:root{--primary:#C67B5C;--primary-light:#D49472;--primary-bg:rgba(198,123,92,0.08);--accent:#D4A574;--bg:#FBF7F0;--card-bg:#FFFDF9;--sidebar-bg:#F6F0E7;--text:#3D2E1F;--text-secondary:#5C4A38;--text-muted:#8B7355;--border:1px solid rgba(180,150,120,0.12);--shadow:0 4px 14px rgba(60,40,20,0.06);--success:#7BA87D;--danger:#D4745C;--info:#5B8DEF;--radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;--font-mono:ui-monospace,'SF Mono','Fira Code','Consolas',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(180,150,120,0.2);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 20px 14px;font-size:16px;font-weight:700;color:var(--primary);border-bottom:var(--border);display:flex;align-items:center;gap:8px;cursor:pointer}
+.sidebar-logo .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.sidebar-menu{flex:1;padding:8px 0;overflow-y:auto}
+.menu-group{margin-bottom:4px}
+.menu-group-title{padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+.menu-item{display:flex;align-items:center;padding:9px 20px;color:var(--text-secondary);font-size:14px;cursor:pointer;border-left:3px solid transparent;text-decoration:none;gap:8px;transition:all 0.15s}
+.menu-item:hover{background:var(--primary-bg)}
+.menu-item.active{background:var(--primary-bg);color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.menu-item .icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 20px;border-top:var(--border);font-size:12px;color:var(--text-muted)}
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:48px;background:var(--card-bg);border-bottom:var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:50;justify-content:space-between}
+.breadcrumb{font-size:13px;color:var(--text-muted)}
+.breadcrumb span{color:var(--text-secondary)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:32px;height:32px;border-radius:6px;border:var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s}
+.topbar-btn:hover{background:var(--primary-bg);color:var(--primary);border-color:transparent}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.content{padding:24px;flex:1}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-0.02em}
+.page-sub{font-size:13px;color:var(--text-muted);margin:6px 0 0}
+.header-actions{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light);box-shadow:0 2px 8px rgba(198,123,92,0.25)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:var(--border)}
+.btn-secondary:hover{background:var(--primary-bg);color:var(--primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid rgba(180,150,120,0.15)}
+.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+.btn-sm{height:28px;padding:0 12px;font-size:12px}
+.btn-xs{height:24px;padding:0 8px;font-size:11px}
+.card{background:var(--card-bg);border:var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:14px;font-weight:600;color:var(--text);border-bottom:var(--border)}
+.card-body{padding:16px 20px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--card-bg);border:var(--border);border-radius:12px;padding:16px 18px;transition:all 0.2s}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.stat-label{font-size:12px;color:var(--text-muted);margin-bottom:6px}
+.stat-value{font-size:22px;font-weight:700}
+.mock-url-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(198,123,92,0.06);border-radius:8px;margin-bottom:16px}
+.mock-url-bar .url{font-family:var(--font-mono);font-size:13px;color:var(--primary);flex:1}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-weight:600;color:var(--text-secondary);border-bottom:var(--border);white-space:nowrap;background:var(--sidebar-bg);font-size:12px}
+td{padding:10px 12px;border-bottom:var(--border);color:var(--text)}
+tr:nth-child(even) td{background:rgba(180,150,120,0.03)}
+tr:hover td{background:var(--primary-bg)}
+.text-muted{color:var(--text-muted)}
+.method-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;color:#fff;min-width:32px;text-align:center}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag-on{background:rgba(123,168,125,0.12);color:var(--success)}
+.tag-off{background:rgba(180,150,120,0.12);color:var(--text-muted)}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(30,20,10,0.35);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--card-bg);border-radius:14px;width:92%;max-width:560px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(30,20,10,0.18);animation:modalIn 0.2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:var(--border)}
+.modal-head h3{font-size:16px;font-weight:600}
+.modal-close{width:28px;height:28px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--primary-bg);color:var(--text)}
+.modal-body{padding:20px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:var(--border)}
+.input{width:100%;height:34px;border:var(--border);border-radius:6px;padding:0 12px;font-size:13px;color:var(--text);font-family:inherit;background:var(--card-bg);outline:none}
+.input:focus,.text-area-box:focus{border-color:var(--primary)}
+.text-area-box{width:100%;min-height:80px;border:var(--border);border-radius:6px;padding:10px 12px;font-size:12px;font-family:var(--font-mono);color:var(--text);background:var(--card-bg);resize:vertical;outline:none}
+label{font-size:13px;color:var(--text-secondary);margin-bottom:4px;display:block}
+.toast{position:fixed;top:20px;right:20px;z-index:300;background:var(--card-bg);border:var(--border);border-radius:10px;padding:12px 20px;box-shadow:0 8px 30px rgba(30,20,10,0.12);display:flex;align-items:center;gap:10px;font-size:13px;animation:slideIn 0.25s ease;max-width:360px}
+.toast-success{border-left:4px solid var(--success)}
+.toast-info{border-left:4px solid var(--info)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.fade-in{animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar-logo span,.sidebar-logo .logo-icon{margin:0 auto}.sidebar-logo span,.menu-item span:not(.icon),.menu-group-title,.sidebar-footer{display:none}.sidebar-logo{padding:14px 0;justify-content:center}.menu-item{justify-content:center;padding:9px 0}.main{margin-left:60px}.stats-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='41-home-cards.html'"><div class="logo-icon">🔌</div><span>接口测试</span></div>
+  <nav class="sidebar-menu">
+    <div class="menu-group"><div class="menu-group-title">接口测试</div>
+    <a class="menu-item" href="51-接口测试模块.html"><span class="icon">📊</span><span>模块概览</span></a>
+    <a class="menu-item" href="05-接口仪表盘.html"><span class="icon">📊</span><span>数据看板</span></a>
+    <a class="menu-item" href="06-接口管理.html"><span class="icon">🔗</span><span>接口管理</span></a>
+    <a class="menu-item" href="07-接口自动化.html"><span class="icon">⚡</span><span>自动化测试</span></a>
+    <a class="menu-item" href="08-接口环境管理.html"><span class="icon">🌐</span><span>环境管理</span></a>
+    <a class="menu-item" href="09-接口请求历史.html"><span class="icon">📜</span><span>请求历史</span></a>
+    <a class="menu-item active" href="10-Mock服务.html"><span class="icon">🎭</span><span>Mock服务</span></a>
+    <a class="menu-item" href="11-接口定时任务.html"><span class="icon">⏰</span><span>定时任务</span></a>
+    <a class="menu-item" href="12-接口通知.html"><span class="icon">🔔</span><span>通知配置</span></a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">AI-HUB v2.0</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">接口测试 / <span>Mock服务</span></div>
+    <div class="topbar-right"><button class="topbar-btn" onclick="showToast('页面已刷新','info')" title="刷新">⟳</button><button class="topbar-btn" onclick="showToast('暂无新通知','info')" title="通知">🔔</button><div class="avatar-sm">张</div></div>
+  </header>
+  <div class="content">
+    <div class="page-header fade-in">
+      <div><h1 class="page-title">Mock 服务</h1><p class="page-sub">模拟 API 响应 · 加速前后端并行开发</p></div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="showToast('Mock 服务已重启','success')">🔄 重启服务</button>
+        <button class="btn btn-primary" onclick="showModal('mockModal')">+ 新建 Mock</button>
+      </div>
+    </div>
+
+    <!-- 统计行 -->
+    <div class="stats-row fade-in">
+      <div class="stat-card"><div class="stat-label">📋 Mock 总数</div><div class="stat-value" style="color:var(--primary)">24</div></div>
+      <div class="stat-card"><div class="stat-label">✅ 启用中</div><div class="stat-value" style="color:var(--success)">18</div></div>
+      <div class="stat-card"><div class="stat-label">📊 今日调用</div><div class="stat-value" style="color:var(--accent)">1,256</div></div>
+      <div class="stat-card"><div class="stat-label">⚡ 平均响应</div><div class="stat-value" style="color:var(--info)">8ms</div></div>
+    </div>
+
+    <!-- Mock Base URL -->
+    <div class="mock-url-bar fade-in">
+      <span style="font-size:13px;font-weight:600;color:var(--text)">Mock 服务地址：</span>
+      <span class="url">https://mock-api.example.com/mock/</span>
+      <button class="btn btn-ghost btn-xs" onclick="showToast('地址已复制','success')">📋 复制</button>
+    </div>
+
+    <!-- Mock 列表 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <span>📋 Mock 规则列表</span>
+        <div style="display:flex;gap:8px;font-weight:400">
+          <select style="height:28px;border:var(--border);border-radius:4px;padding:0 8px;font-size:12px;color:var(--text);font-family:inherit;background:var(--card-bg);outline:none">
+            <option>全部方法</option><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+          </select>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap">
+          <table><thead><tr><th>方法</th><th>路径</th><th>响应状态码</th><th>描述</th><th>延迟(ms)</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-tag" style="background:#7BA87D">GET</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/orders/list</td><td>200</td><td>订单列表</td><td class="text-muted">100</td><td><span class="tag tag-on">启用</span></td><td><button class="btn btn-ghost btn-xs">编辑</button><button class="btn btn-ghost btn-xs" onclick="showToast('已停用','info')">停用</button></td></tr>
+            <tr><td><span class="method-tag" style="background:#D4A574">POST</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/orders/create</td><td>201</td><td>创建订单</td><td class="text-muted">200</td><td><span class="tag tag-on">启用</span></td><td><button class="btn btn-ghost btn-xs">编辑</button><button class="btn btn-ghost btn-xs" onclick="showToast('已停用','info')">停用</button></td></tr>
+            <tr><td><span class="method-tag" style="background:#D4745C">DELETE</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/orders/{id}</td><td>204</td><td>删除订单</td><td class="text-muted">50</td><td><span class="tag tag-on">启用</span></td><td><button class="btn btn-ghost btn-xs">编辑</button><button class="btn btn-ghost btn-xs" onclick="showToast('已停用','info')">停用</button></td></tr>
+            <tr><td><span class="method-tag" style="background:#7BA87D">GET</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/users/profile</td><td>401</td><td>未授权（测试场景）</td><td class="text-muted">30</td><td><span class="tag tag-on">启用</span></td><td><button class="btn btn-ghost btn-xs">编辑</button><button class="btn btn-ghost btn-xs" onclick="showToast('已停用','info')">停用</button></td></tr>
+            <tr><td><span class="method-tag" style="background:#5B8DEF">PUT</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/users/profile</td><td>500</td><td>服务端异常模拟</td><td class="text-muted">1000</td><td><span class="tag tag-off">停用</span></td><td><button class="btn btn-ghost btn-xs">编辑</button><button class="btn btn-ghost btn-xs" onclick="showToast('已启用','success')">启用</button></td></tr>
+            <tr><td><span class="method-tag" style="background:#7BA87D">GET</span></td><td style="font-family:var(--font-mono);font-size:12px">/api/v1/payments/status</td><td>200</td><td>支付状态查询</td><td class="text-muted">150</td><td><span class="tag tag-off">停用</span></td><td><button class="btn btn-ghost btn-xs">编辑</button><button class="btn btn-ghost btn-xs" onclick="showToast('已启用','success')">启用</button></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新建 Mock 模态框 -->
+<div class="modal-overlay" id="mockModal">
+  <div class="modal-box">
+    <div class="modal-head"><h3>🔧 新建 Mock 规则</h3><button class="modal-close" onclick="hideModal('mockModal')">✕</button></div>
+    <div class="modal-body">
+      <label>请求方法</label>
+      <select class="input" style="margin-bottom:12px"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option><option>PATCH</option></select>
+      <label>请求路径</label>
+      <input class="input" placeholder="/api/v1/example" style="margin-bottom:12px;font-family:var(--font-mono)">
+      <label>响应状态码</label>
+      <input class="input" value="200" style="margin-bottom:12px">
+      <label>响应延迟 (ms)</label>
+      <input class="input" value="100" type="number" style="margin-bottom:12px">
+      <label>响应 Body (JSON)</label>
+      <textarea class="text-area-box" rows="6" placeholder='{"code":200,"data":{},"message":"success"}'></textarea>
+      <label style="margin-top:12px">响应 Headers (JSON)</label>
+      <textarea class="text-area-box" rows="2" placeholder='{"content-type":"application/json"}'></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="hideModal('mockModal')">取消</button>
+      <button class="btn btn-primary" onclick="hideModal('mockModal');showToast('Mock 规则已创建','success')">创建</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showModal(id){document.getElementById(id).classList.add('active')}
+function hideModal(id){document.getElementById(id).classList.remove('active')}
+document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('active')})});
+function showToast(msg,type){type=type||'success';var t=document.createElement('div');t.className='toast toast-'+type;t.innerHTML=(type==='success'?'✅ ':'ℹ️ ')+msg;document.body.appendChild(t);setTimeout(function(){t.remove()},2500);}
+</script>
+</body>
+</html>

@@ -1,12 +1,12 @@
 """哄哄模拟器 Agent 节点 - 角色扮演的 LLM 推理"""
 
 from langchain_core.messages import SystemMessage, AIMessage
-from app.shared.agent.state import AgentState
+from app.common.agent.state import AgentState
 from app.modules.comfort.prompts import COMFORT_SYSTEM_PROMPT, COMFORT_MEMORY_PROMPT, COMFORT_TIPS_PROMPT, LANGUAGE_CONSTRAINT
-from app.shared.core.llm_factory import LLMFactory
-from app.shared.agent.tools.web_search import web_search
-from app.shared.agent.tools.image_search import image_search
-from app.shared.agent.agent_utils import merge_tool_call_chunks
+from app.common.core.llm_factory import LLMFactory
+from app.common.tools.web_search import web_search
+from app.common.tools.image_search import image_search
+from app.common.agent.agent_utils import merge_tool_call_chunks
 
 
 async def comfort_agent_node(state: AgentState) -> dict:

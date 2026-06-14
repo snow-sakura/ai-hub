@@ -1,5 +1,6 @@
 """聊天 Service - 核心编排逻辑"""
 
+import asyncio
 import uuid
 import json
 import traceback
@@ -9,14 +10,16 @@ from typing import AsyncGenerator
 from langchain_core.messages import HumanMessage, AIMessage
 
 from app.modules.comfort.graph import get_comfort_graph
-from app.shared.core.database import get_db
-from app.shared.service.conversation_service import ConversationService
+from app.modules.chat.graph import get_agent_graph
+from app.common.core.database import get_db
+from app.common.service.conversation_service import ConversationService
 from app.config import get_settings
-from app.shared.core.logging import get_logger
-from app.shared.utils.file_parser import parse_file
+from app.common.logs import get_logger
+from app.common.domain.exceptions import ConversationNotFoundError
+from app.common.utils.file_parser import parse_file
 
 logger = get_logger("chat.service")
-from app.shared.utils.sse_helper import (
+from app.common.utils.sse_helper import (
   format_sse_event,
   format_token_event,
   format_tool_start_event,
@@ -53,10 +56,20 @@ class ChatService:
       db = await get_db()
       conv_service = ConversationService(db)
 
+      expected_type = "comfort" if comfort_mode else "chat"
       try:
-        await conv_service.get(conversation_id)
-      except Exception:
-        conv = await conv_service.create("新会话")
+        conv = await conv_service.get(conversation_id)
+        # 校验会话类型与 comfort_mode 匹配，防止模块间数据混入
+        if conv.get("type") and conv["type"] != expected_type:
+          logger.warning(
+            "[stream_chat] 会话 %s 类型不匹配 (期望=%s, 实际=%s)，创建新会话",
+            conversation_id, expected_type, conv["type"],
+          )
+          conv = await conv_service.create("新会话", conv_type=expected_type)
+          conversation_id = conv["id"]
+      except (KeyError, ValueError, ConversationNotFoundError) as e:
+        logger.info("[stream_chat] 会话 %s 不存在，创建新会话: %s", conversation_id, e)
+        conv = await conv_service.create("新会话", conv_type=expected_type)
         conversation_id = conv["id"]
 
       await conv_service.save_message(conversation_id, "user", message)
@@ -209,8 +222,8 @@ class ChatService:
       if db is not None:
         try:
           await db.close()
-        except Exception:
-          pass  # 忽略关闭时的错误
+        except Exception as close_err:
+          logger.warning("[stream_chat] 关闭数据库连接时出错: %s", close_err)
 
   async def _load_attachment(self, file_id: str) -> dict | None:
     """加载并解析附件文件内容"""
@@ -242,12 +255,13 @@ class ChatService:
     meta = await repo.get_conversation_metadata(conv_id)
     if not meta or "scene_id" not in meta:
       return {}
-    scene = await repo.get_scene(meta.get("scene_id", ""))
-    character = await repo.get_character(meta.get("character_id", ""))
-    memories = await repo.list_memories(conv_id)
-    meta["scene"] = scene or {}
-    meta["character"] = character or {}
-    meta["memories"] = memories[:5]
+    # 顺序查询（aiomysql 同一连接不支持并发读）
+    scene_result = await repo.get_scene(meta.get("scene_id", ""))
+    character_result = await repo.get_character(meta.get("character_id", ""))
+    memories_result = await repo.list_memories(conv_id)
+    meta["scene"] = scene_result or {}
+    meta["character"] = character_result or {}
+    meta["memories"] = memories_result[:5]
     return meta
 
   async def _handle_comfort_post(
@@ -298,6 +312,7 @@ class ChatService:
             comfort_score=forgiveness_data.get("current") if forgiveness_data else None,
           )
     except Exception as e:
+      logger.error("[_handle_comfort_post] 错误: %s", e, exc_info=True)
       yield format_thinking_event(
         "observation", f"哄哄后处理警告: {str(e)[:100]}"
       )

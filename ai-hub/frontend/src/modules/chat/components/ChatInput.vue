@@ -6,7 +6,7 @@
         v-model:value="inputText"
         type="textarea"
         :autosize="{ minRows: 1, maxRows: 6 }"
-        placeholder="输入消息... Enter 发送，Shift+Enter 换行"
+        placeholder="输入消息，Enter 发送，Shift+Enter 换行"
         class="composer-input"
         @keydown="handleKeydown"
       />
@@ -85,6 +85,7 @@ const chatStore = useChatStore()
 const convStore = useConversationStore()
 const settingsStore = useSettingsStore()
 const knowledgeStore = useKnowledgeStore()
+const docs = computed(() => knowledgeStore?.documents ?? [])
 const message = useMessage()
 const { sendChat, abort, cleanupAll } = useSseStream()
 
@@ -106,7 +107,7 @@ const selectedKnowledgeDocIds = ref<string[]>([])
 
 /** 用户在知识库弹窗中勾选的文档（从 store 中过滤） */
 const selectedKnowledgeDocs = computed<KnowledgeDoc[]>(() =>
-  knowledgeStore.documents.filter(d => selectedKnowledgeDocIds.value.includes(d.id))
+  docs.value.filter(d => selectedKnowledgeDocIds.value.includes(d.id))
 )
 
 /** 切换/新建对话时清空附件和知识库选择 */
@@ -251,15 +252,15 @@ onUnmounted(() => cleanupAll())
   width: 100%;
   background: var(--bg-card);
   border: 1px solid rgba(180, 150, 120, 0.15);
-  border-radius: 20px;
-  padding: 12px 16px;
-  box-shadow: 0 2px 12px rgba(60, 40, 20, 0.06);
+  border-radius: 24px;
+  padding: 14px 18px;
+  box-shadow: var(--shadow-md);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .composer:focus-within {
   border-color: rgba(198, 123, 92, 0.35);
-  box-shadow: 0 2px 16px rgba(198, 123, 92, 0.08);
+  box-shadow: var(--shadow-lg);
 }
 
 /* 输入框 */

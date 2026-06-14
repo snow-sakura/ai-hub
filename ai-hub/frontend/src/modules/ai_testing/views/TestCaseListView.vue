@@ -62,6 +62,7 @@
         clearable
         :style="{ width: '240px' }"
         @update:value="handleSearch"
+        @keyup.enter="() => handleSearch(keyword)"
       />
       <n-select
         v-model:value="store.filters.project_id"
@@ -136,6 +137,7 @@ import type { TestCase } from '@/modules/ai_testing/types/testcase'
 import { useTestCaseStore } from '@/modules/ai_testing/stores/testcase'
 import { useProjectStore } from '@/modules/ai_testing/stores/project'
 import PriorityBadge from '@/modules/ai_testing/components/common/PriorityBadge.vue'
+import { importCases } from '@/modules/ai_testing/api/testcase'
 
 const router = useRouter()
 const message = useMessage()
@@ -276,7 +278,7 @@ function rowProps(row: TestCase): Record<string, string> {
 }
 
 function handleCheckedChange(keys: (string | number)[]) {
-  store.selectedIds = keys as string[]
+  store.selectedIds = keys.map(String)
 }
 
 const handleSearch = useDebounceFn((val: string) => {
@@ -354,24 +356,13 @@ async function handleImport(e: Event) {
   const file = input.files?.[0]
   if (!file) return
 
-  const formData = new FormData()
-  formData.append('file', file)
   const projectId = store.filters.project_id || ''
-  if (projectId) formData.append('project_id', projectId)
 
   try {
-    const res = await fetch('/api/v1/testing/cases/import', {
-      method: 'POST',
-      body: formData,
-    })
-    const data = await res.json()
-    if (data.code === 0) {
-      const count = data.data?.imported_count || 0
-      message.success(`已导入 ${count} 条用例`)
-      store.fetchCases()
-    } else {
-      message.error(data.message || '导入失败')
-    }
+    const res = await importCases(file, projectId || undefined)
+    const count = res.data?.imported_count || 0
+    message.success(`已导入 ${count} 条用例`)
+    store.fetchCases()
   } catch (err) {
     message.error('导入失败，请检查文件格式')
   } finally {
@@ -480,5 +471,14 @@ onMounted(async () => {
   justify-content: flex-end;
   padding: 16px 20px;
   border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 768px) {
+  .page-wrap { padding: 16px 12px 48px; }
+  .page-header { flex-wrap: wrap; gap: 10px; }
+  .stats-row { gap: 10px; }
+  .filter-section { flex-direction: column; align-items: stretch; }
+  .filter-section > * { width: 100%; }
+  :deep(.n-data-table-wrapper) { overflow-x: auto; }
 }
 </style>

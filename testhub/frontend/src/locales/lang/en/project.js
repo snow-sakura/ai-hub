@@ -100,10 +100,7 @@ export default {
     configCenterDesc: 'System environment, AI model and notification configuration',
 
     // Messages
-    featureInDevelopment: 'Feature is under development......',
-    mobileTipTitle: 'Please use on desktop',
-    mobileTipDesc: 'TestHub must be used in a desktop browser. Please switch to a computer to continue.',
-    mobileTipOk: 'Got it'
+    featureInDevelopment: 'Feature is under development......'
   },
   profile: {
     // Page

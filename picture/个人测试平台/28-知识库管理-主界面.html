@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库管理</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: #FBF7F0;
+    color: #3D2E1F;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+  /* Top bar */
+  .top-bar {
+    margin-bottom: 28px;
+  }
+  .back-link {
+    display: inline-block;
+    font-size: 13px;
+    color: #8B7355;
+    text-decoration: none;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #C67B5C; }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .header-left { }
+  .header-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #3D2E1F;
+    margin-bottom: 4px;
+  }
+  .header-sub {
+    font-size: 13px;
+    color: #8B7355;
+  }
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(180, 150, 120, 0.25);
+    color: #8B7355;
+  }
+  .btn-secondary:hover {
+    border-color: #C67B5C;
+    color: #C67B5C;
+    background: rgba(198, 123, 92, 0.04);
+  }
+  .btn-primary {
+    background: #C67B5C;
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: #B86A4A;
+    box-shadow: 0 2px 10px rgba(198, 123, 92, 0.3);
+  }
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    flex: 1;
+    background: #FFFDF9;
+    border: 1px solid rgba(180, 150, 120, 0.12);
+    border-radius: 12px;
+    padding: 20px 24px;
+    transition: box-shadow 0.2s;
+  }
+  .stat-card:hover {
+    box-shadow: 0 4px 14px rgba(60, 40, 20, 0.06);
+  }
+  .stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: #C67B5C;
+    margin-bottom: 2px;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: #8B7355;
+  }
+  .type-tags {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+  }
+  .type-tag {
+    font-size: 13px;
+    color: #3D2E1F;
+    background: rgba(180, 150, 120, 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  /* Search */
+  .search-bar {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .search-bar input {
+    width: 100%;
+    padding: 10px 16px 10px 40px;
+    border: 1px solid rgba(180, 150, 120, 0.18);
+    border-radius: 8px;
+    background: #FFFDF9;
+    font-size: 14px;
+    color: #3D2E1F;
+    outline: none;
+    transition: all 0.25s;
+  }
+  .search-bar input::placeholder { color: #B5A590; }
+  .search-bar input:focus {
+    border-color: #C67B5C;
+    box-shadow: 0 0 0 3px rgba(198, 123, 92, 0.08);
+  }
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  /* Table */
+  .table-card {
+    background: #FFFDF9;
+    border: 1px solid rgba(180, 150, 120, 0.12);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .table th {
+    font-size: 12px;
+    color: #8B7355;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 18px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(180, 150, 120, 0.06);
+    background: rgba(251, 247, 240, 0.5);
+  }
+  .table td {
+    padding: 0 18px;
+    height: 44px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(180, 150, 120, 0.06);
+    transition: background 0.15s;
+  }
+  .table tr:last-child td { border-bottom: none; }
+  .table tr:hover td { background: rgba(198, 123, 92, 0.03); }
+  .file-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .badge-pdf { background: rgba(74, 144, 226, 0.1); color: #4A90E2; }
+  .badge-word { background: rgba(74, 144, 226, 0.08); color: #4A90E2; }
+  .badge-txt { background: rgba(180, 150, 120, 0.1); color: #8B7355; }
+  .delete-btn {
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    padding: 4px;
+    border: none;
+    background: none;
+    font-size: 16px;
+  }
+  .table tr:hover .delete-btn { opacity: 1; }
+  /* States */
+  .state-wrapper {
+    padding: 60px 20px;
+    text-align: center;
+  }
+  .state-wrapper .icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+  .state-wrapper .title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #3D2E1F;
+    margin-bottom: 6px;
+  }
+  .state-wrapper .desc {
+    font-size: 14px;
+    color: #8B7355;
+    margin-bottom: 16px;
+  }
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(198, 123, 92, 0.15);
+    border-top-color: #C67B5C;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* State visibility */
+  .state { display: none; }
+  .state.active { display: block; }
+  /* Drag overlay */
+  .drag-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(198, 123, 92, 0.06);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  .drag-overlay.show { display: flex; }
+  .drag-box {
+    width: 440px;
+    height: 260px;
+    border: 2px dashed #C67B5C;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 253, 249, 0.85);
+    gap: 10px;
+  }
+  .drag-box .big-icon { font-size: 42px; }
+  .drag-box .text1 { font-size: 18px; font-weight: 600; color: #3D2E1F; }
+  .drag-box .text2 { font-size: 13px; color: #8B7355; }
+  .drag-icons { display: flex; gap: 14px; font-size: 28px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Top bar -->
+  <div class="top-bar">
+    <a class="back-link">← AI-HUB工作台</a>
+    <div class="header-row">
+      <div class="header-left">
+        <div class="header-title">📚 知识库管理</div>
+        <div class="header-sub">共 12 个文档 · 256 个片段</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="alert('索引重建中…')">重建索引</button>
+        <button class="btn btn-primary" id="uploadBtn">＋ 上传文档</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number">12</div>
+      <div class="stat-label">文档总数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">256</div>
+      <div class="stat-label">片段总数</div>
+    </div>
+    <div class="stat-card">
+      <div class="type-tags">
+        <span class="type-tag">📕 PDF 5</span>
+        <span class="type-tag">📘 Word 4</span>
+        <span class="type-tag">📄 TXT 3</span>
+      </div>
+      <div class="stat-label">按类型</div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="搜索文件名…" oninput="handleSearch(this.value)">
+  </div>
+
+  <!-- Table card with states -->
+  <div class="table-card">
+    <table class="table" id="dataTable">
+      <thead>
+        <tr><th>文件名</th><th>类型</th><th>大小</th><th>片段</th><th>上传日期</th><th>操作</th></tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Filled by JS -->
+      </tbody>
+    </table>
+
+    <!-- Loading state -->
+    <div class="state active" id="stateLoading">
+      <div class="state-wrapper">
+        <div class="spinner"></div>
+        <div class="title">加载中...</div>
+        <div class="desc">正在获取知识库文档</div>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div class="state" id="stateError">
+      <div class="state-wrapper">
+        <div class="icon">⚠️</div>
+        <div class="title">加载失败</div>
+        <div class="desc">加载失败，请稍后重试</div>
+        <button class="btn btn-primary" onclick="loadData()">重试</button>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="state" id="stateEmpty">
+      <div class="state-wrapper">
+        <div class="icon">📂</div>
+        <div class="title">知识库为空</div>
+        <div class="desc">知识库为空，上传文档开始使用</div>
+        <button class="btn btn-primary" onclick="document.getElementById('uploadBtn').click()">上传文档</button>
+      </div>
+    </div>
+
+    <!-- Search empty state -->
+    <div class="state" id="stateSearchEmpty">
+      <div class="state-wrapper">
+        <div class="icon">🔍</div>
+        <div class="title">未找到匹配文档</div>
+        <div class="desc" id="searchEmptyDesc">没有匹配「xxx」的文档</div>
+        <div class="desc" style="margin-bottom:0">试试其他关键词</div>
+      </div>
+    </div>
+
+    <!-- Normal table state -->
+    <div class="state" id="stateNormal">
+      <table class="table">
+        <thead>
+          <tr><th>文件名</th><th>类型</th><th>大小</th><th>片段</th><th>上传日期</th><th>操作</th></tr>
+        </thead>
+        <tbody id="normalBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Drag overlay -->
+<div class="drag-overlay" id="dragOverlay">
+  <div class="drag-box">
+    <div class="big-icon">📄</div>
+    <div class="text1">释放以上传文件</div>
+    <div class="text2">支持 PDF、Word、TXT 格式</div>
+    <div class="drag-icons">📕 📘 📄</div>
+  </div>
+</div>
+
+<script>
+  const docs = [
+    { name: '项目需求文档V3.pdf', type: 'PDF', size: '2.3 MB', chunks: 48, date: '2026-06-01', badge: 'badge-pdf', icon: '📕' },
+    { name: 'API接口文档.docx', type: 'Word', size: '1.1 MB', chunks: 32, date: '2026-05-28', badge: 'badge-word', icon: '📘' },
+    { name: '部署说明.txt', type: 'TXT', size: '24 KB', chunks: 3, date: '2026-05-25', badge: 'badge-txt', icon: '📄' },
+    { name: '系统架构设计V2.pdf', type: 'PDF', size: '3.5 MB', chunks: 62, date: '2026-05-22', badge: 'badge-pdf', icon: '📕' },
+    { name: '用户手册.docx', type: 'Word', size: '890 KB', chunks: 28, date: '2026-05-18', badge: 'badge-word', icon: '📘' },
+    { name: '测试用例汇总.pdf', type: 'PDF', size: '1.8 MB', chunks: 41, date: '2026-05-15', badge: 'badge-pdf', icon: '📕' },
+    { name: '接口变更说明.txt', type: 'TXT', size: '12 KB', chunks: 2, date: '2026-05-12', badge: 'badge-txt', icon: '📄' },
+    { name: '数据库设计文档.docx', type: 'Word', size: '2.0 MB', chunks: 36, date: '2026-05-10', badge: 'badge-word', icon: '📘' },
+  ];
+  let currentSearch = '';
+
+  function renderTable(target, data) {
+    target.innerHTML = data.map(d => `
+      <tr>
+        <td><span class="file-cell">${d.icon} ${d.name}</span></td>
+        <td><span class="badge ${d.badge}">${d.type}</span></td>
+        <td>${d.size}</td>
+        <td>${d.chunks}</td>
+        <td>${d.date}</td>
+        <td><button class="delete-btn" onclick="alert('确认删除 ${d.name}？')">🗑️</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function showState(id) {
+    document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+
+  function handleSearch(val) {
+    currentSearch = val.trim();
+    if (!currentSearch) {
+      showState('stateNormal');
+      return;
+    }
+    const filtered = docs.filter(d => d.name.toLowerCase().includes(currentSearch.toLowerCase()));
+    if (filtered.length === 0) {
+      document.getElementById('searchEmptyDesc').textContent = `没有匹配「${currentSearch}」的文档`;
+      showState('stateSearchEmpty');
+    } else {
+      renderTable(document.getElementById('normalBody'), filtered);
+      showState('stateNormal');
+    }
+  }
+
+  function loadData() {
+    showState('stateLoading');
+    setTimeout(() => {
+      renderTable(document.getElementById('normalBody'), docs);
+      showState('stateNormal');
+    }, 800);
+  }
+
+  // Drag overlay
+  document.addEventListener('dragover', e => {
+    e.preventDefault();
+    document.getElementById('dragOverlay').classList.add('show');
+  });
+  document.addEventListener('dragleave', e => {
+    if (!e.relatedTarget || e.relatedTarget === document.documentElement) {
+      document.getElementById('dragOverlay').classList.remove('show');
+    }
+  });
+  document.addEventListener('drop', e => {
+    e.preventDefault();
+    document.getElementById('dragOverlay').classList.remove('show');
+  });
+
+  // Simulate: show loading on load
+  showState('stateLoading');
+  setTimeout(() => {
+    renderTable(document.getElementById('normalBody'), docs);
+    showState('stateNormal');
+  }, 1200);
+</script>
+</body>
+</html>

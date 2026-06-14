@@ -66,8 +66,6 @@ components:
     properties:
       value:
         type: string
-      send_enter:
-        type: boolean
       selector:
         type: string
       image_scope:
@@ -78,7 +76,6 @@ components:
         type: number
   default_config:
     value: ''
-    send_enter: false
     selector: ''
     image_scope: common
     selector_type: image
