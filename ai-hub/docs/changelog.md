@@ -1,5 +1,29 @@
 # 版本更新日志
 
+## [v2.1] - 2026-07-04
+
+### 文档体系完善
+
+- 更新根目录 `README.md` — 整合 ai-hub 和 testhub 两个项目的介绍，建立统一项目概览
+- 更新 `docs/architecture.md` — 同步 shared→common 目录变更，更新模块状态和目录结构
+- 更新 `docs/database-design.md` — 完善数据库表结构文档，同步配置中心表定义
+- 更新 `docs/dev-plan.md` — 更新阶段状态，标记配置中心已完成
+- 更新 `docs/project-rules.md` — 完善编码规范和安全规则
+- 更新 `ai-hub/claude.md` — 同步目录结构变更，更新模块状态和新增文件
+
+### 前端变更
+
+- 新增 `AuthView.vue` — 统一认证视图组件
+- 新增 `user.ts` store — 用户状态管理
+- 更新路由配置 `router/index.ts` — 优化路由结构和导航守卫
+- 更新国际化配置 — 完善中英文翻译
+- 更新 `vite.config.ts` — 优化构建配置
+- 更新 `tsconfig.json` — 完善 TypeScript 配置
+
+### 数据库变更
+
+- 配置中心模块表结构完整定义（config_models, config_prompts, config_behaviors, config_chat, config_ui_env, config_app_env）
+
 ## [v2.0] - 2026-06-14
 
 ### 重构开始

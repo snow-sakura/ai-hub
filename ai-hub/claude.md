@@ -14,7 +14,7 @@ AI 测试平台（AI Test Platform）——基于 LangGraph 的全栈 AI 应用�
 
 ## 技术栈
 
-- **后端**：Python FastAPI + LangGraph + LangChain + SQLite + ChromaDB
+- **后端**：Python FastAPI + LangGraph + LangChain + MySQL + ChromaDB
 - **前端**：Vue 3 + TypeScript + Vite + Naive UI + Pinia
 
 ## 常用命令
@@ -74,7 +74,7 @@ backend/
 │   │       ├── schemas.py        # Pydantic 请求/响应模型
 │   │       ├── service.py        # 业务逻辑层
 │   │       ├── repository.py     # 数据访问层（全 CRUD）
-│   │       ├── database.py       # 6 张表 DDL
+│   │       ├── database.py       # 20 张表 DDL（含 15 个迁移版本）
 │   │       ├── domain.py         # 纯业务实体
 │   │       ├── graph.py          # LangGraph 图构建（4 步流水线）
 │   │       ├── prompts.py        # 4 个 Prompt 模板
@@ -85,10 +85,11 @@ backend/
 │   │           ├── write_node.py     # Step2: 用例编写
 │   │           ├── review_node.py    # Step3: AI 评审（JSON 输出）
 │   │           └── revise_node.py    # Step4: 用例修订
-│   ├── shared/                   # 公共模块
+│   ├── common/                   # 公共模块（原 shared/）
 │   │   ├── agent/                # LangGraph Agent 基础设施
 │   │   │   ├── state.py          # AgentState 定义
 │   │   │   ├── prompts.py        # 系统提示词模板
+│   │   │   ├── agent_utils.py    # Agent 工具函数
 │   │   │   ├── nodes/
 │   │   │   │   ├── agent_node.py     # LLM 推理节点（dispatch_custom_event）
 │   │   │   │   ├── rag_node.py       # ChromaDB 检索节点
@@ -102,21 +103,51 @@ backend/
 │   │   │       ├── downloader.py     # 资源下载
 │   │   │       └── terminal.py       # 终端执行
 │   │   ├── core/
-│   │   │   ├── database.py       # SQLite 连接管理
+│   │   │   ├── database.py       # MySQL 连接管理（连接池模式）
 │   │   │   ├── llm_factory.py    # LLM 工厂（reasoning_effort + thinking mode）
-│   │   │   └── embedding_factory.py
+│   │   │   ├── embedding_factory.py # Embedding 工厂
+│   │   │   ├── logging.py        # 日志配置
+│   │   │   ├── managed_graph.py  # LangGraph 图生命周期管理
+│   │   │   └── mysql_saver.py    # MySQL checkpoint saver
+│   │   ├── api/v1/               # 共享 API 接口
+│   │   │   ├── __init__.py
+│   │   │   ├── models.py         # 模型列表 API
+│   │   │   ├── modules.py        # 模块信息 API
+│   │   │   └── tools.py          # 工具列表 API
+│   │   ├── api/schemas/          # 共享 Pydantic 模型
+│   │   │   ├── __init__.py
+│   │   │   └── common.py         # 通用响应模型
+│   │   ├── auth.py               # JWT 认证（签发/验证/密码哈希）
 │   │   ├── service/              # 共享服务
+│   │   │   ├── __init__.py
 │   │   │   └── conversation_service.py
 │   │   ├── repository/           # 共享数据访问
+│   │   │   ├── __init__.py
 │   │   │   ├── conversation_repo.py
 │   │   │   └── knowledge_repo.py
 │   │   ├── domain/
+│   │   │   ├── __init__.py
 │   │   │   ├── entities.py
 │   │   │   ├── comfort_entities.py
 │   │   │   └── exceptions.py
-│   │   └── utils/
-│   │       ├── sse_helper.py     # SSE 事件格式化
-│   │       └── file_parser.py
+│   │   ├── logs/                 # 日志系统
+│   │   │   ├── __init__.py
+│   │   │   └── operation_logger.py  # 操作日志（文件系统 JSON Lines）
+│   │   ├── tools/                # 工具函数
+│   │   │   ├── __init__.py
+│   │   │   ├── downloader.py
+│   │   │   ├── file_ops.py
+│   │   │   ├── image_search.py
+│   │   │   ├── terminal.py
+│   │   │   └── web_scraper.py
+│   │   ├── utils/
+│   │   │   ├── __init__.py
+│   │   │   ├── sse_helper.py     # SSE 事件格式化
+│   │   │   ├── file_parser.py
+│   │   │   └── encryption.py     # 加密工具
+│   │   └── docs/                 # 文档解析
+│   │       ├── __init__.py
+│   │       └── parser.py
 │   ├── config.py                 # Pydantic Settings 配置
 │   └── main.py                   # FastAPI 应用入口
 ├── requirements.txt
@@ -195,11 +226,16 @@ SSE 格式化函数位于 `backend/app/common/utils/sse_helper.py`。
 
 ### 数据库表结构
 
-表在 `app/common/core/database.py` 的 `init_db()` 中创建。模块特有的表在各模块 repo 中创建：
-- 聊天相关：`conversations`、`messages` + `_graph.db`（LangGraph checkpoint）
-- 知识库相关：`documents`、`chunks` + ChromaDB（向量检索）
-- 哄哄模拟器：`comfort_scenes`、`comfort_characters`、`comfort_memories`、`emotion_stats`
-- 内置场景/角色数据在 `app/comfort/scene_seed.py` 中通过 `seed_builtin_data()` 初始化
+所有业务数据存储在 **MySQL** 中，通过 `app/common/core/database.py` 统一管理。模块特有的表在各模块 `database.py` 中定义（`main.py` lifespan 中顺序初始化）：
+- 共享表（8 张）：`conversations`、`messages`、`users`、`knowledge_docs`、`langgraph_checkpoints`、`langgraph_checkpoint_writes`、`shared_schema_version`
+- 系统管理（5 张）：`system_roles`、`system_user_profiles`、`system_user_roles`、`system_audit_logs`、`system_settings`
+- 哄哄模拟器（4 张）：`comfort_scenes`、`comfort_characters`、`comfort_memories`、`emotion_statistics`
+- AI 测试助手（20 张）：`testing_projects`、`testing_project_members`、`testing_cases`、`testing_generation_tasks`、`testing_generation_results`、`testing_reviews` 等
+- 配置中心（6 张）：`config_models`、`config_prompts`、`config_behaviors`、`config_chat`、`config_ui_env`、`config_app_env`
+
+完整表结构文档详见 `docs/技术/数据库/`。
+
+LangGraph 执行状态（checkpoint）仍使用独立的 **SQLite** 文件存储（`_graph.db`、`_comfort_graph.db`、`_testing_graph.db`）。
 
 ### AI 测试助手 Agent 执行流
 
@@ -234,16 +270,41 @@ START → analyze_node → write_node → review_node → [conditional]
 
 ### AI 测试助手数据库表
 
-在 `app/modules/ai_testing/database.py` 的 `init_testing_tables()` 中创建（`main.py` lifespan 调用）：
+在 `app/modules/ai_testing/database.py` 的 `init_testing_tables()` 中创建（`main.py` lifespan 调用），目前共 **20 张表**（经过 15 个迁移版本累积）：
 
+**核心业务表（6 张）**：
 | 表名 | 主要字段 |
 |------|----------|
 | `testing_projects` | id, name, description, status(active/paused/completed/archived), created_at |
 | `testing_project_members` | id, project_id FK, name, role(owner/tester/viewer) |
-| `testing_cases` | id, project_id FK, title, version, priority(P0-P3), case_type, preconditions/steps/expected_results(Markdown), tags(JSON), status, source(manual/ai/import), ai_task_id |
-| `testing_generation_tasks` | id, project_id FK, input_text, file_path, file_type, file_name, model, status(pending/running/completed/failed), generated_count |
-| `testing_generation_results` | id, task_id FK, stage(analyze/write/review/revise/final), content |
-| `testing_config` | id, key, value, category(model/prompt/behavior) |
+| `testing_project_member_links` | (project_id, member_id) PK，多对多关联 |
+| `testing_cases` | id, project_id FK, title, version, priority(P0-P3), case_type, preconditions/steps/expected_results, tags(JSON), status, source, ai_task_id |
+| `testing_generation_tasks` | id, project_id FK, input_text, file_path, file_type, file_name, model, status, generated_count |
+| `testing_generation_results` | id, task_id FK, stage, content |
+
+**扩展业务表（5 张）**：
+| 表名 | 主要字段 |
+|------|----------|
+| `testing_reviews` | 评审主表：project_id, title, priority, status, progress |
+| `testing_review_cases` | 评审-用例关联：review_id, case_id, status |
+| `testing_review_reviewers` | 评审人：review_id, member_id, status, progress |
+| `testing_config` | 配置表：key, value, category(model/prompt/behavior/secret) |
+| `testing_project_versions` | 项目版本：name, description, status, pass_rate |
+
+**辅助表（9 张）**：
+| 表名 | 主要字段 |
+|------|----------|
+| `testing_case_attachments` | 用例附件：file_name, file_path, file_type |
+| `testing_case_comments` | 用例评论：content, author |
+| `testing_operation_logs` | 操作日志：entity_type, entity_id, action |
+| `testing_task_generated_cases` | 生成任务-用例桥接 |
+| `testing_generated_case_items` | 生成候选用例项 |
+| `testing_ai_tester_sessions` | AI 评测师会话 |
+| `testing_ai_tester_messages` | AI 评测师消息 |
+| `testing_scheduled_tasks` | 定时任务配置 |
+| `testing_scheduled_task_logs` | 定时任务执行日志 |
+
+完整字段定义见 `docs/技术/数据库/AI测试助手模块.md`。
 
 ## 前端架构
 
@@ -352,9 +413,8 @@ frontend/src/
 
 ## 数据持久化
 
-- **聊天 SQLite**：存储会话（conversations）和消息（messages），以及 LangGraph 的 checkpoint（`_graph.db`）。
-- **哄哄 SQLite**：`comfort_scenes`、`comfort_characters`、`comfort_memories`、`emotion_stats` 表 + 独立的 checkpoint（`_comfort_graph.db`）。
-- **AI 测试 SQLite**：`testing_projects`、`testing_project_members`、`testing_cases`、`testing_generation_tasks`、`testing_generation_results`、`testing_config` 6 张表 + 独立的 checkpoint（`_testing_graph.db`）。
+- **业务数据（MySQL）**：所有模块的业务数据存储在 MySQL 中（conversations, messages, users, comfort_*, testing_*, config_*, system_* 等 40+ 张表），通过 `app/common/core/database.py` 的 aiomysql 连接池管理。
+- **LangGraph 执行状态（SQLite）**：各模块的 LangGraph graph 使用独立的 SQLite 文件存储 thread checkpoint（`_graph.db`、`_comfort_graph.db`、`_testing_graph.db`）。
 - **ChromaDB**：向量数据库，用于知识库文档的 embedding 存储与相似度检索，持久化目录由 `CHROMA_PERSIST_DIR` 指定。
 - **文件存储**：上传的知识库文件存入 `UPLOAD_DIR`，应用生成的文件存入 `WORKSPACE_DIR`。
 
@@ -379,6 +439,6 @@ frontend/src/
 - 哄哄模拟器使用独立于聊天模块的 LangGraph graph 和 checkpoint 数据库，两者通过共享的 `AgentState` 类型进行状态传递
 - 内置场景/角色数据在应用启动时通过 `seed_builtin_data()` 自动初始化，重复启动不会重复插入
 - Graph 对象通过模块级变量（`_agent_graph` / `_comfort_graph`）缓存为单例，修改节点逻辑后需重启后端才能生效
-- `duck checker`：后端使用**双 checkpointer** 模式——主 SQLite（`app.db`）存储消息和会话元数据，独立的 `_graph.db` / `_comfort_graph.db` / `_testing_graph.db` 存储各模块 LangGraph 执行状态（thread checkpoint）
+- `duck checker`：后端使用**双存储**模式——MySQL 存储所有业务数据（消息、会话、用例等），独立的 SQLite 文件（`_graph.db` / `_comfort_graph.db` / `_testing_graph.db`）存储各模块 LangGraph 执行状态（thread checkpoint）
 - 事件管道：所有 node 通过 `dispatch_custom_event()` 发送自定义事件，service.py 通过 `graph.astream_events(version="v2")` 消费。**不要使用 `StreamWriter`**（已被 `astream_events` 忽略）
 - 递归限制：`recursion_limit=100` 设置在 `service.py` 的 config 中，而非 `graph.compile()` — 后者不支持该参数

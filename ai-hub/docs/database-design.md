@@ -1,6 +1,6 @@
 # 数据库设计文档
 
-> 最后更新：2026-06-14
+> 最后更新：2026-07-04
 
 ## 概述
 
@@ -230,8 +230,14 @@ CREATE TABLE shared_schema_version (
 
 ## 数据库变更记录
 
-### v1 (初始)
-- 创建共享层、ai_testing、comfort 的所有基础表
+### v4 (2026-07-04 — 文档完善)
+- 完善配置中心表结构文档，补充完整字段定义
+- 同步系统管理模块表结构更新
+- 补充哄哄模拟器表结构详细定义
+
+### v3 (2026-06-14 — Phase 1 修正)
+- 新增 config_center 6 张表（config_models, config_prompts, config_behaviors, config_chat, config_ui_env, config_app_env）
+- 删除 api_testing、ui_automation 模块及其对应表（参见 database-changelog.md）
 
 ### v2 (重构 v2.0 — 2026-06-14)
 - 新增 `system_roles` — 角色定义 + 4 个默认角色
@@ -241,6 +247,5 @@ CREATE TABLE shared_schema_version (
 - 新增 `system_settings` — 系统设置
 - 无破坏性变更
 
-### v3 (2026-06-14 — Phase 1 修正)
-- 新增 config_center 6 张表（config_models, config_prompts, config_behaviors, config_chat, config_ui_env, config_app_env）
-- 删除 api_testing、ui_automation 模块及其对应表（参见 database-changelog.md）
+### v1 (初始)
+- 创建共享层、ai_testing、comfort 的所有基础表

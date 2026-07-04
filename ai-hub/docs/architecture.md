@@ -1,6 +1,6 @@
 # 系统架构文档
 
-> 最后更新：2026-06-14
+> 最后更新：2026-07-04
 
 ## 项目概述
 
@@ -51,13 +51,28 @@ ai-hub/
 │   │       ├── core/                      # 核心基础设施
 │   │       │   ├── database.py            # MySQL 连接池 + 共享表
 │   │       │   ├── llm_factory.py         # LLM 工厂
-│   │       │   └── embedding_factory.py   # Embedding 工厂
-│   │       ├── auth.py                    # JWT 认证
+│   │       │   ├── embedding_factory.py   # Embedding 工厂
+│   │       │   ├── logging.py             # 日志配置
+│   │       │   ├── managed_graph.py       # LangGraph 图生命周期管理
+│   │       │   └── mysql_saver.py         # MySQL checkpoint saver
+│   │       ├── auth.py                    # JWT 认证（签发/验证/密码哈希）
 │   │       ├── agent/                     # LangGraph Agent 基础设施
+│   │       │   ├── state.py               # AgentState 定义
+│   │       │   ├── prompts.py             # 系统提示词模板
+│   │       │   ├── agent_utils.py         # Agent 工具函数
+│   │       │   ├── nodes/                 # LLM 推理/检索/工具节点
+│   │       │   └── tools/                 # 7 大工具（搜索/抓取/图片/PDF/文件/下载/终端）
+│   │       ├── api/v1/                   # 共享 API 接口（models, modules, tools）
+│   │       ├── api/schemas/              # 共享 Pydantic 模型
 │   │       ├── logs/                      # 日志系统
 │   │       │   ├── logger.py             # 应用日志
-│   │       │   └── operation_logger.py   # 操作日志
-│   │       └── api/v1/                   # 共享接口
+│   │       │   └── operation_logger.py   # 操作日志（文件系统 JSON Lines）
+│   │       ├── service/                   # 共享服务
+│   │       ├── repository/                # 共享数据访问
+│   │       ├── domain/                    # 领域实体与异常
+│   │       ├── tools/                     # 工具函数
+│   │       ├── utils/                     # 工具类（sse_helper, file_parser, encryption）
+│   │       └── docs/                      # 文档解析
 │   └── data/                              # 运行时数据
 ├── frontend/
 │   └── src/
