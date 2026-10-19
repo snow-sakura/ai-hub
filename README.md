@@ -2,7 +2,7 @@
 
 本仓库是一个 monorepo，包含两个核心测试平台项目：
 
-- **AI-HUB** — 基于 LangGraph 的全栈 AI 智能平台
+- **AI-HUB** — 基于 LangGraph 的全栈 AI 智能平台（[文档](ai-hub/README.md) · [在线 Demo](https://snow-sakura.github.io/ai-hub/)）
 - **TestHub** — 基于 Django + Vue 的智能测试管理平台
 
 ---
@@ -14,7 +14,8 @@ qoder_one/
 ├── ai-hub/                # AI 智能测试平台（LangGraph + FastAPI + Vue 3）
 │   ├── backend/           # Python FastAPI 后端
 │   ├── frontend/          # Vue 3 + TypeScript 前端
-│   ├── docs/              # 技术文档
+│   ├── demo/              # 在线 Demo（GitHub Pages 自动部署）
+│   ├── docs/              # 技术文档 + 验证截图
 │   └── docker-compose.yml # Docker 部署配置
 ├── testhub/               # 智能测试管理平台（Django + Vue 3）
 │   ├── apps/              # Django 应用模块
@@ -23,9 +24,6 @@ qoder_one/
 │   ├── ai_doc/            # AI 生成的需求文档
 │   └── docs/              # 技术文档
 ├── picture/               # 设计原型图片资源
-├── .qoder/                # Qoder 平台配置
-│   ├── agents/            # AI Agent 定义
-│   └── rules/             # 项目规范
 ├── claude.md              # Claude Code 协作指引
 └── README.md              # 本文件
 ```
