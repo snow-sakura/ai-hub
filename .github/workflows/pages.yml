@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'ai-hub/demo/**'
+      - 'ai-hub/docs/screenshots/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -24,6 +26,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Pages 未启用时 deploy 链必失败；用 GITHUB_TOKEN（pages:write 权限）幂等启用并切到 Actions 源
+      - name: Ensure GitHub Pages is enabled (Actions source)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAGES_API: https://api.github.com/repos/${{ github.repository }}/pages
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" "$PAGES_API")
+          echo "GET /pages -> $code"
+          if [ "$code" = "404" ]; then
+            echo "Pages 未启用，POST CREATE (build_type=workflow)..."
+            curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -f build_type=workflow "$PAGES_API" >/dev/null
+          elif [ "$code" = "200" ]; then
+            src=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$PAGES_API" | grep -o '"build_type":"[^"]*"' | head -1 | cut -d'"' -f4)
+            echo "当前源: $src"
+            if [ "$src" != "workflow" ]; then
+              echo "切换为 workflow 源..."
+              curl -sf -X PUT -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                -f build_type=workflow "$PAGES_API" >/dev/null
+            fi
+          else
+            echo "意外状态码 $code，交由 configure-pages 处理"
+          fi
+
+      - name: Build demo site (copy screenshots + data into demo/)
+        run: node ai-hub/demo/build.mjs
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

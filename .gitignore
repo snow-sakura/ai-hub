@@ -53,3 +53,6 @@ ai-hub/frontend/.env.local
 
 # 文档资产图片（README/操作说明截图）允许提交
 !ai-hub/docs/screenshots/*.png
+
+# demo 构建生成物（build.mjs 从 docs/screenshots 复制）
+ai-hub/demo/assets/
