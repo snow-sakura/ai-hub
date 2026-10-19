@@ -10,6 +10,12 @@ import type {
   DocumentUploadResponse,
 } from '@/modules/ai_testing/types/generation'
 
+import type {
+  GenerationSequence,
+  SequenceCreateRequest,
+  SequenceListResponse,
+} from '@/modules/ai_testing/types/sequence'
+
 // ─── AI 生成 ──────────────────────────────────────
 
 /** 创建 AI 生成任务 */
@@ -118,4 +124,48 @@ export function testConnection(data: {
   base_url?: string
 }): Promise<ApiResponse<{ reply: string; success: boolean }>> {
   return request.post('/testing/config/test-connection', data)
+}
+
+// ─── 生成序列（免费串行 / 付费并行） ─────────────────────
+
+
+/** 创建生成序列（自动拆分需求并按模型 tier 调度） */
+export function createGenerationSequence(
+  data: SequenceCreateRequest,
+): Promise<ApiResponse<GenerationSequence>> {
+  return request.post('/testing/sequences', data)
+}
+
+/** 生成序列列表 */
+export function listGenerationSequences(params: {
+  project_id?: string | null
+  status?: string | null
+  page?: number
+  page_size?: number
+}): Promise<ApiResponse<SequenceListResponse>> {
+  return request.get('/testing/sequences', { params })
+}
+
+/** 生成序列详情（含按序子任务） */
+export function getGenerationSequence(seqId: string): Promise<ApiResponse<GenerationSequence>> {
+  return request.get(`/testing/sequences/${seqId}`)
+}
+
+/** 取消序列 */
+export function cancelGenerationSequence(
+  seqId: string,
+): Promise<ApiResponse<{ cancelled_subtasks: number }>> {
+  return request.post(`/testing/sequences/${seqId}/cancel`)
+}
+
+/** 重跑失败/取消的子任务 */
+export function retryFailedSequence(
+  seqId: string,
+): Promise<ApiResponse<{ retried: number; message?: string }>> {
+  return request.post(`/testing/sequences/${seqId}/retry-failed`)
+}
+
+/** 删除序列 */
+export function deleteGenerationSequence(seqId: string): Promise<ApiResponse<boolean>> {
+  return request.delete(`/testing/sequences/${seqId}`)
 }

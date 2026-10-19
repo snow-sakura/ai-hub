@@ -62,6 +62,21 @@
         <n-form-item label="Cron 表达式" path="cron_expr">
           <n-input v-model:value="formData.cron_expr" placeholder="如 0 8 * * *（每天 8:00）" />
         </n-form-item>
+        <n-grid :cols="2" :x-gap="16">
+          <n-grid-item>
+            <n-form-item label="关联项目（可选）">
+              <n-select v-model:value="formData.project_id" :options="projectOptions" clearable placeholder="不关联项目" />
+            </n-form-item>
+          </n-grid-item>
+          <n-grid-item>
+            <n-form-item label="生成模型（可选）">
+              <n-select v-model:value="formData.model" :options="modelOptions" clearable placeholder="不指定" />
+            </n-form-item>
+          </n-grid-item>
+        </n-grid>
+        <n-form-item label="定时生成需求（可选，填写后到点自动跑 AI 用例生成）">
+          <n-input v-model:value="formData.input_text" type="textarea" :rows="3" placeholder="## 模块A…&#10;## 模块B…（留空则仅记录一次心跳执行）" />
+        </n-form-item>
       </n-form>
       <template #footer>
         <n-space justify="end">
@@ -81,7 +96,8 @@
           <template #header>
             {{ log.status === 'success' ? '执行成功' : log.status === 'failed' ? '执行失败' : '执行中' }}
           </template>
-          {{ log.duration ? `耗时: ${log.duration}` : '' }}
+          <div>{{ log.summary || '' }}</div>
+          <div v-if="log.duration" style="opacity: .7">耗时: {{ log.duration }}</div>
         </n-timeline-item>
       </n-timeline>
       <n-empty v-else description="暂无执行记录" />
@@ -101,6 +117,8 @@ import {
   deleteScheduledTask, executeScheduledTask, getScheduledTaskLogs,
 } from '@/modules/ai_testing/api/scheduledTask'
 import type { ScheduledTask, ScheduledTaskCreate, TaskModule } from '@/modules/ai_testing/types/scheduledTask'
+import { getProjects } from '@/modules/ai_testing/api/project'
+import { getConfigDefaults } from '@/modules/ai_testing/api/generation'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -127,7 +145,26 @@ const formData = reactive({
   name: '',
   module: 'api' as TaskModule,
   cron_expr: '0 8 * * *',
+  project_id: null as string | null,
+  model: null as string | null,
+  input_text: '',
 })
+
+const projectOptions = ref<Array<{ label: string; value: string }>>([])
+const modelOptions = ref<Array<{ label: string; value: string }>>([])
+
+async function loadSelectOptions() {
+  try {
+    const [projRes, defRes] = await Promise.all([getProjects({ page: 1, page_size: 100 }), getConfigDefaults()])
+    projectOptions.value = (projRes.data?.items ?? []).map((p: any) => ({ label: p.name, value: p.id }))
+    modelOptions.value = (defRes.data?.models ?? []).map(m => ({
+      label: `${m.display_name}${m.tier ? ` · ${m.tier === 'free' ? '免费' : '付费'}` : ''}`,
+      value: m.id || `${m.provider}:${m.model}`,
+    }))
+  } catch (e) {
+    console.error('加载项目/模型选项失败:', e)
+  }
+}
 
 const formRules: FormRules = {
   name: { required: true, message: '请输入任务名称', trigger: 'blur' },
@@ -166,6 +203,9 @@ function openCreateModal() {
   formData.name = ''
   formData.module = 'api'
   formData.cron_expr = '0 8 * * *'
+  formData.project_id = null
+  formData.model = null
+  formData.input_text = ''
   showModal.value = true
 }
 
@@ -175,6 +215,9 @@ function openEditModal(task: ScheduledTask) {
   formData.name = task.name
   formData.module = task.module
   formData.cron_expr = task.cron_expr
+  formData.project_id = task.project_id ?? null
+  formData.model = task.model ?? null
+  formData.input_text = task.input_text ?? ''
   showModal.value = true
 }
 
@@ -191,6 +234,9 @@ async function handleModalSubmit() {
         name: formData.name,
         module: formData.module,
         cron_expr: formData.cron_expr,
+        project_id: formData.project_id,
+        model: formData.model,
+        input_text: formData.input_text || null,
       })
       message.success('任务已更新')
     } else {
@@ -198,6 +244,9 @@ async function handleModalSubmit() {
         name: formData.name,
         module: formData.module,
         cron_expr: formData.cron_expr,
+        project_id: formData.project_id,
+        model: formData.model,
+        input_text: formData.input_text || null,
       })
       message.success('任务已创建')
     }
@@ -365,6 +414,7 @@ const columns: DataTableColumns<ScheduledTask> = [
 
 onMounted(() => {
   loadTasks()
+  loadSelectOptions()
 })
 </script>
 

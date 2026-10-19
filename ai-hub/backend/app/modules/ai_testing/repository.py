@@ -1360,18 +1360,20 @@ class TestingRepo:
     return await cursor.fetchone()
 
   async def create_scheduled_task(self, id: str, name: str, module: str,
-    cron_expr: str, suite_id: str | None = None, suite_name: str = "") -> str:
-    """创建定时任务，返回新 ID"""
+    cron_expr: str, suite_id: str | None = None, suite_name: str = "",
+    project_id: str | None = None, model: str = "", input_text: str | None = None) -> str:
+    """创建定时任务，返回新 ID（project_id/model/input_text 用于真实执行）"""
     await self.db.execute(
-      "INSERT INTO testing_scheduled_tasks (id, name, module, suite_id, suite_name, cron_expr, enabled) "
-      "VALUES (?, ?, ?, ?, ?, ?, 1)",
-      (id, name, module, suite_id, suite_name, cron_expr),
+      "INSERT INTO testing_scheduled_tasks (id, name, module, suite_id, suite_name, cron_expr, "
+      "enabled, project_id, model, input_text) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)",
+      (id, name, module, suite_id, suite_name, cron_expr, project_id, model, input_text),
     )
     return id
 
   async def update_scheduled_task(self, task_id: str, **fields: Any) -> bool:
     """更新定时任务"""
-    allowed = {"name", "module", "suite_id", "suite_name", "cron_expr", "enabled", "last_run_at", "next_run_at"}
+    allowed = {"name", "module", "suite_id", "suite_name", "cron_expr", "enabled",
+               "last_run_at", "next_run_at", "project_id", "model", "input_text"}
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if not updates:
       return False
@@ -1387,11 +1389,13 @@ class TestingRepo:
     cursor = await self.db.execute("DELETE FROM testing_scheduled_tasks WHERE id = ?", (task_id,))
     return cursor.rowcount > 0
 
-  async def create_scheduled_task_log(self, id: str, task_id: str, status: str = "running") -> str:
-    """创建定时任务执行日志"""
+  async def create_scheduled_task_log(self, id: str, task_id: str, status: str = "running",
+                                      exec_ref: str | None = None, summary: str = "") -> str:
+    """创建定时任务执行日志（exec_ref 关联实际生成任务）"""
     await self.db.execute(
-      "INSERT INTO testing_scheduled_task_logs (id, task_id, status) VALUES (?, ?, ?)",
-      (id, task_id, status),
+      "INSERT INTO testing_scheduled_task_logs (id, task_id, status, exec_ref, summary) "
+      "VALUES (?, ?, ?, ?, ?)",
+      (id, task_id, status, exec_ref, summary),
     )
     return id
 
@@ -1411,3 +1415,179 @@ class TestingRepo:
       (task_id, limit),
     )
     return await cursor.fetchall() or []
+
+  # ─── 生成序列（Sequence）──────────────────────────────
+
+  async def create_generation_sequence(self, **fields: Any) -> str:
+    """创建生成序列，返回新 ID"""
+    seq_id = str(uuid.uuid4())
+    await self.db.execute(
+      "INSERT INTO testing_generation_sequences "
+      "(id, project_id, title, requirement_text, model, model_tier, strategy, max_parallel, "
+      " status, total, created_by, created_at, updated_at) "
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+      (
+        seq_id,
+        fields.get("project_id"),
+        fields.get("title", ""),
+        fields.get("requirement_text", ""),
+        fields.get("model", ""),
+        fields.get("model_tier", "free"),
+        fields.get("strategy", "sequential"),
+        fields.get("max_parallel", 1),
+        fields.get("status", "pending"),
+        fields.get("total", 0),
+        fields.get("created_by", ""),
+      ),
+    )
+    await self.db.commit()
+    return seq_id
+
+  async def get_generation_sequence(self, seq_id: str) -> dict[str, Any] | None:
+    cursor = await self.db.execute(
+      "SELECT * FROM testing_generation_sequences WHERE id = ?", (seq_id,)
+    )
+    row = await cursor.fetchone()
+    return dict(row) if row else None
+
+  async def list_generation_sequences(
+    self, project_id: str | None = None, status: str | None = None,
+    page: int = 1, page_size: int = 20,
+  ) -> tuple[list[dict[str, Any]], int]:
+    where_parts: list[str] = []
+    params: list[Any] = []
+    if project_id:
+      where_parts.append("project_id = ?")
+      params.append(project_id)
+    if status:
+      where_parts.append("status = ?")
+      params.append(status)
+    where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
+    cursor = await self.db.execute(
+      f"SELECT COUNT(*) as cnt FROM testing_generation_sequences {where_clause}", params
+    )
+    row = await cursor.fetchone()
+    total = (row or {}).get("cnt", 0)
+    offset = (page - 1) * page_size
+    cursor = await self.db.execute(
+      f"SELECT * FROM testing_generation_sequences {where_clause} "
+      "ORDER BY created_at DESC LIMIT ? OFFSET ?",
+      params + [page_size, offset],
+    )
+    items = await cursor.fetchall() or []
+    return [dict(r) for r in items], total
+
+  async def update_generation_sequence(self, seq_id: str, **fields: Any) -> bool:
+    """更新序列（仅允许白名单字段）"""
+    allowed = {
+      "status", "total", "success_count", "failed_count", "running_count",
+      "error_message", "max_parallel", "strategy", "model_tier",
+    }
+    updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+    if not updates:
+      return False
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    values = list(updates.values()) + [seq_id]
+    cursor = await self.db.execute(
+      f"UPDATE testing_generation_sequences SET {set_clause}, updated_at = NOW() WHERE id = ?",
+      values,
+    )
+    await self.db.commit()
+    return cursor.rowcount > 0
+
+  async def delete_generation_sequence(self, seq_id: str) -> bool:
+    """删除序列及其子任务（子任务保留为孤儿任务时无引用意义，一并删除结果）"""
+    await self.db.execute(
+      "DELETE FROM testing_generation_results WHERE task_id IN "
+      "(SELECT id FROM testing_generation_tasks WHERE sequence_id = ?)", (seq_id,)
+    )
+    await self.db.execute(
+      "DELETE FROM testing_generation_tasks WHERE sequence_id = ?", (seq_id,)
+    )
+    cursor = await self.db.execute(
+      "DELETE FROM testing_generation_sequences WHERE id = ?", (seq_id,)
+    )
+    await self.db.commit()
+    return cursor.rowcount > 0
+
+  async def list_sequence_subtasks(self, seq_id: str) -> list[dict[str, Any]]:
+    """序列的全部子任务（严格按 seq_index 排序 — 前端按序循环渲染）"""
+    cursor = await self.db.execute(
+      "SELECT id, seq_index, seq_title, model, status, seq_stage, generated_count, "
+      "error_message, created_at, updated_at "
+      "FROM testing_generation_tasks WHERE sequence_id = ? ORDER BY seq_index ASC",
+      (seq_id,),
+    )
+    return [dict(r) for r in (await cursor.fetchall() or [])]
+
+  async def get_sequence_progress_counts(self, seq_id: str) -> dict[str, int]:
+    """按子任务状态实时聚合计数（调度器与 SSE 共用）"""
+    cursor = await self.db.execute(
+      "SELECT "
+      "  COUNT(*) AS total, "
+      "  SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS success_count, "
+      "  SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed_count, "
+      "  SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) AS running_count, "
+      "  SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_count "
+      "FROM testing_generation_tasks WHERE sequence_id = ?",
+      (seq_id,),
+    )
+    row = await cursor.fetchone() or {}
+    return {
+      "total": int(row.get("total") or 0),
+      "success_count": int(row.get("success_count") or 0),
+      "failed_count": int(row.get("failed_count") or 0),
+      "running_count": int(row.get("running_count") or 0),
+      "cancelled_count": int(row.get("cancelled_count") or 0),
+    }
+
+  async def update_task_stage(self, task_id: str, stage: str | None) -> bool:
+    """更新子任务当前执行阶段（analyze/write/review/revise）"""
+    cursor = await self.db.execute(
+      "UPDATE testing_generation_tasks SET seq_stage = ?, updated_at = NOW() WHERE id = ?",
+      (stage, task_id),
+    )
+    await self.db.commit()
+    return cursor.rowcount > 0
+
+  async def mark_sequence_tasks_cancelled(self, seq_id: str) -> int:
+    """将序列内 pending/running 子任务标记为 cancelled（DB 状态位，流水线阶段边界会检测）"""
+    cursor = await self.db.execute(
+      "UPDATE testing_generation_tasks SET status = 'cancelled', updated_at = NOW() "
+      "WHERE sequence_id = ? AND status IN ('pending', 'running')",
+      (seq_id,),
+    )
+    await self.db.commit()
+    return cursor.rowcount or 0
+
+  async def reset_failed_sequence_tasks(self, seq_id: str) -> int:
+    """将 failed/cancelled 子任务重置为 pending（用于重跑）"""
+    cursor = await self.db.execute(
+      "UPDATE testing_generation_tasks SET status = 'pending', seq_stage = NULL, "
+      "error_message = NULL, updated_at = NOW() "
+      "WHERE sequence_id = ? AND status IN ('failed', 'cancelled')",
+      (seq_id,),
+    )
+    await self.db.commit()
+    return cursor.rowcount or 0
+
+  async def attach_task_sequence(self, task_id: str, seq_id: str, seq_index: int,
+                                 seq_title: str) -> bool:
+    """将生成任务挂接到序列（写入 sequence_id / seq_index / seq_title）"""
+    cursor = await self.db.execute(
+      "UPDATE testing_generation_tasks SET sequence_id = ?, seq_index = ?, seq_title = ?, "
+      "updated_at = NOW() WHERE id = ?",
+      (seq_id, seq_index, seq_title, task_id),
+    )
+    await self.db.commit()
+    return cursor.rowcount > 0
+
+  async def get_latest_task_input(self, project_id: str) -> dict[str, Any] | None:
+    """取项目最近一条生成任务的输入与模型（定时任务默认复用）"""
+    cursor = await self.db.execute(
+      "SELECT input_text, model FROM testing_generation_tasks "
+      "WHERE project_id = ? ORDER BY created_at DESC LIMIT 1",
+      (project_id,),
+    )
+    row = await cursor.fetchone()
+    return dict(row) if row else None

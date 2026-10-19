@@ -18,8 +18,8 @@
           <p class="behavior-desc">{{ item.description }}</p>
           <div style="margin-top:10px">
             <n-input v-if="item.key.includes('prompt') || item.key.includes('template') || item.key.includes('format')" v-model:value="item.value" type="textarea" :rows="3" placeholder="输入配置值" @blur="handleSave(item)" />
-            <n-switch v-else-if="item.value === 'true' || item.value === 'false'" :value="item.value === 'true'" @update:value="(v) => { item.value = String(v); handleSave(item) }" />
-            <n-input-number v-else-if="!isNaN(Number(item.value))" :value="Number(item.value)" style="width:200px" @update:value="(v) => { item.value = String(v); handleSave(item) }" />
+            <n-switch v-else-if="item.value === 'true' || item.value === 'false'" :value="item.value === 'true'" @update:value="(v: boolean) => { item.value = String(v); handleSave(item) }" />
+            <n-input-number v-else-if="!isNaN(Number(item.value))" :value="Number(item.value)" style="width:200px" @update:value="(v: number | null) => { item.value = String(v); handleSave(item) }" />
             <n-input v-else v-model:value="item.value" placeholder="输入配置值" @blur="handleSave(item)" />
           </div>
         </n-card>

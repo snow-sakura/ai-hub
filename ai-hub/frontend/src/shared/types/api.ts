@@ -7,9 +7,15 @@ export interface ApiResponse<T = unknown> {
 
 /** LLM 模型信息 */
 export interface ModelInfo {
-  provider: 'deepseek' | 'qwen' | 'zhipu' | 'openai' | 'ollama' | string
+  provider: 'deepseek' | 'qwen' | 'zhipu' | 'openai' | 'ollama' | 'mock' | string
   model: string
   displayName: string
+  /** 序列调度用：provider:model */
+  id?: string
+  /** 计费分级：free=免费(序列串行) / paid=付费(序列并行) */
+  tier?: 'free' | 'paid' | string
+  /** 序列并发策略提示文案 */
+  sequence_hint?: string
 }
 
 /** 工具信息 */

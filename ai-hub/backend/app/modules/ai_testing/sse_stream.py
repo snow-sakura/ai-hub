@@ -58,9 +58,20 @@ def _parse_model_field(model_str: str) -> tuple[str, str]:
 
 
 def _count_generated_cases(content: str) -> int:
-  """从最终内容中统计生成的用例数"""
+  """从最终内容中统计生成的用例数
+
+  优先使用与落库同源的 markdown 解析器（避免两套标准导致
+  “列表有用例但计数为 0”的不一致）；失败时回退到宽松正则。
+  """
   if not content:
     return 0
+  try:
+    from app.common.utils.markdown_parser import parse_markdown_to_cases
+    count = len(parse_markdown_to_cases(content))
+    if count > 0:
+      return count
+  except Exception as e:
+    logger.debug("[_count_generated_cases] markdown 解析失败，回退正则: %s", e)
   case_blocks = re.split(r'\n-{3,}\n', content)
   count = 0
   for block in case_blocks:
@@ -84,6 +95,17 @@ async def _run_pipeline_events(
   """
   graph = await get_testing_graph()
   config = {"configurable": {"thread_id": task_id}}
+
+  async def _is_cancelled() -> bool:
+    """取消检查：进程内 set + DB 状态位（多 worker 部署也能取消）"""
+    if task_id in _cancelled_tasks:
+      return True
+    try:
+      async with get_db_context() as db:
+        task = await TestingService(db).get_generation_task(task_id)
+        return bool(task) and task.get("status") == "cancelled"
+    except Exception:
+      return False
 
   current_stage = ""
   stage_contents: dict[str, str] = {}
@@ -111,17 +133,16 @@ async def _run_pipeline_events(
       metadata = event.get("metadata", {})
       node_name = metadata.get("langgraph_node", "")
 
-      # 取消检查
-      if task_id in _cancelled_tasks:
-        _cancelled_tasks.discard(task_id)
-        yield ("testing_error", {"code": "CANCELLED", "message": "用户已停止生成"})
-        yield ("_done", {"error": True, "cancelled": True, "err_msg": "用户已停止生成",
-                         "stage_contents": {}, "review_result": {},
-                         "final_content": "", "generated_count": 0})
-        return
-
       # ── 节点级 chain 开始：阶段切换 ──────────────────────────────
       if kind == "on_chain_start" and node_name in NODE_TO_STAGE:
+        # 阶段边界检查取消（含 DB 状态位，跨进程生效）
+        if await _is_cancelled():
+          _cancelled_tasks.discard(task_id)
+          yield ("testing_error", {"code": "CANCELLED", "message": "用户已停止生成"})
+          yield ("_done", {"error": True, "cancelled": True, "err_msg": "用户已停止生成",
+                           "stage_contents": {}, "review_result": {},
+                           "final_content": "", "generated_count": 0})
+          return
         stage = NODE_TO_STAGE[node_name]
         if stage in stage_contents and stage_contents[stage]:
           # 已有预填充内容，跳过此阶段的流式事件
@@ -171,7 +192,11 @@ async def _run_pipeline_events(
   except Exception as e:
     err_msg = str(e)[:500]
     logger.error(f"[_run_pipeline_events] LangGraph 执行错误: {e}", exc_info=True)
-    yield ("testing_error", {"code": "EXECUTION_ERROR", "message": "AI 生成过程中发生错误，请重试"})
+    # 透出真实原因（截断），避免“生成失败但无从诊断”
+    yield ("testing_error", {
+      "code": "EXECUTION_ERROR",
+      "message": f"AI 生成失败：{err_msg[:200] or e.__class__.__name__}",
+    })
     yield ("_done", {"error": True, "err_msg": err_msg,
                      "stage_contents": stage_contents, "review_result": review_result})
     return

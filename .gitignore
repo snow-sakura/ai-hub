@@ -46,3 +46,10 @@ ai-hub/frontend/tsconfig.tsbuildinfo
 # Testhub runtime
 testhub/logs/
 testhub/media/
+# Playwright MCP 会话缓存
+.playwright-mcp/
+# vite 本地端口配置
+ai-hub/frontend/.env.local
+
+# 文档资产图片（README/操作说明截图）允许提交
+!ai-hub/docs/screenshots/*.png

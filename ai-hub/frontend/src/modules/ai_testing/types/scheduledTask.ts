@@ -9,6 +9,10 @@ export interface ScheduledTaskLog {
   duration: string
   started_at: string
   completed_at: string | null
+  /** 执行引用（如生成的用例集/报告 ID） */
+  exec_ref?: string | null
+  /** 执行摘要（如「生成 N 条用例」） */
+  summary?: string | null
 }
 
 /** 定时任务记录 */
@@ -18,6 +22,12 @@ export interface ScheduledTask {
   module: TaskModule
   cron_expr: string
   enabled: boolean
+  /** 关联项目（AI 用例生成型任务） */
+  project_id?: string | null
+  /** 生成模型（provider:model 格式） */
+  model?: string | null
+  /** 定时生成的需求文本 */
+  input_text?: string | null
   last_run_at: string | null
   next_run_at: string | null
   recent_runs?: ScheduledTaskLog[]
@@ -30,6 +40,9 @@ export interface ScheduledTaskCreate {
   name: string
   module: TaskModule
   cron_expr: string
+  project_id?: string | null
+  model?: string | null
+  input_text?: string | null
 }
 
 /** 更新定时任务请求 */
@@ -38,4 +51,7 @@ export interface ScheduledTaskUpdate {
   module?: TaskModule
   cron_expr?: string
   enabled?: boolean
+  project_id?: string | null
+  model?: string | null
+  input_text?: string | null
 }

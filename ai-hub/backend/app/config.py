@@ -76,6 +76,13 @@ class Settings(BaseSettings):
   # Operation Logs
   operation_log_dir: str = "./logs/operations"
 
+  # ── 序列任务调度 ──
+  # 免费模型 ID 名单（逗号分隔，元素格式 provider:model 或 model）
+  # 命中名单 → tier=free → 序列强制串行；未命中 → tier=paid → 序列可并行
+  free_model_ids: str = ""
+  # 付费模型序列最大并行度（实际并发 = min(子任务数, 该值)）
+  sequence_max_parallel_paid: int = 3
+
   model_config = {
     "env_file": str(ENV_FILE) if ENV_FILE.exists() else ".env",
     "env_file_encoding": "utf-8",

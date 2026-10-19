@@ -136,6 +136,17 @@ export function useGenerationStream() {
       progress.value = data
     })
 
+    // 结果保存进度（修复：后端 testing_save_progress 事件无监听，保存阶段无反馈）
+    eventSource.addEventListener('testing_save_progress', (e: MessageEvent) => {
+      const data = JSON.parse(e.data) as { stage?: string; generated_count?: number }
+      progress.value = {
+        ...progress.value,
+        current: 4,
+        total: 4,
+        message: `正在保存生成结果（${data.generated_count ?? 0} 条）...`,
+      }
+    })
+
     // ── 完成 ──────────────────────────────────────────────────
     eventSource.addEventListener('testing_done', (e: MessageEvent) => {
       const data = JSON.parse(e.data) as DoneEvent

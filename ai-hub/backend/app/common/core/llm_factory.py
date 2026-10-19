@@ -7,6 +7,7 @@ from langchain_ollama import ChatOllama
 
 from app.config import get_settings, ENV_FILE
 from app.common.domain.entities import ModelConfig
+from app.common.core.mock_chat_model import MockChatModel
 
 # --------------------------------------------------------------
 # Monkey-patch: DeepSeek thinking mode 适配
@@ -55,6 +56,17 @@ _lc_base._convert_message_to_dict = _patched_convert_message_to_dict
 
 
 AVAILABLE_MODELS: list[ModelConfig] = [
+  # ---- Mock 演示系列（离线、无需 API Key） ----
+  ModelConfig(
+    provider="mock", model="mock-demo",
+    display_name="演示模型（免费 · 串行）",
+    tier="free",
+  ),
+  ModelConfig(
+    provider="mock", model="mock-pro",
+    display_name="演示模型（付费 · 可并行）",
+    tier="paid",
+  ),
   # ---- DeepSeek V4 系列（2026） ----
   # deepseek-chat / deepseek-reasoner 已于 2026-07-24 停用
   ModelConfig(
@@ -116,16 +128,36 @@ AVAILABLE_MODELS: list[ModelConfig] = [
     provider="zhipu", model="glm-4-flash",
     display_name="智谱 GLM-4 Flash",
   ),
-  # ---- Ollama 本地模型 ----
+  # ---- Ollama 本地模型（免费） ----
   ModelConfig(
     provider="ollama", model="qwen2.5:7b",
     display_name="Ollama Qwen2.5 7B",
+    tier="free",
   ),
   ModelConfig(
     provider="ollama", model="llama3.2:3b",
     display_name="Ollama Llama 3.2 3B",
+    tier="free",
   ),
 ]
+
+
+def get_model_tier(provider: str, model: str) -> str:
+  """获取模型计费分级：free / paid
+
+  优先级：环境变量 FREE_MODEL_IDS 名单 > AVAILABLE_MODELS 标注 > provider 兼容兼底
+  """
+  model_id = f"{provider}:{model}"
+  free_ids = {
+    s.strip().lower() for s in get_settings().free_model_ids.split(",") if s.strip()
+  }
+  if model_id.lower() in free_ids or model.lower() in free_ids:
+    return "free"
+  for cfg in AVAILABLE_MODELS:
+    if cfg.provider == provider and cfg.model == model:
+      return cfg.tier
+  # 兼容未登记模型：本地类 provider 视为免费
+  return "free" if provider in ("ollama",) else "paid"
 
 # 各 provider 所需的配置字段
 _PROVIDER_REQUIRED_FIELDS: dict[str, tuple[str, str]] = {
@@ -237,6 +269,10 @@ class LLMFactory:
         temperature=0.7,
         timeout=60,
       )
+    elif provider == "mock":
+      # 离线演示模型：无需 API Key，确定性流式输出
+      delay = 0.004 if (model_name or "mock-demo") == "mock-pro" else 0.012
+      return MockChatModel(delay=delay)
     else:
       # 默认 fallback 到国产 DeepSeek
       effective_key = api_key or settings.deepseek_api_key
@@ -259,12 +295,16 @@ class LLMFactory:
 
   @staticmethod
   def get_available_models() -> list[dict[str, str]]:
-    """获取可用模型列表"""
+    """获取可用模型列表（含计费分级 tier 与序列调度提示）"""
+    max_paid = get_settings().sequence_max_parallel_paid
     return [
       {
+        "id": f"{m.provider}:{m.model}",
         "provider": m.provider,
         "model": m.model,
         "display_name": m.display_name,
+        "tier": get_model_tier(m.provider, m.model),
+        "sequence_hint": "串行（单任务）" if get_model_tier(m.provider, m.model) == "free" else f"并行（最多 {max_paid} 任务）",
       }
       for m in AVAILABLE_MODELS
     ]

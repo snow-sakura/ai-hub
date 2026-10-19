@@ -2,6 +2,7 @@
 
 from app.common.core.llm_factory import LLMFactory
 from app.modules.ai_testing.prompts import analyze_prompt
+from app.modules.ai_testing.nodes.node_utils import astream_collect
 
 
 async def analyze_node(state: dict) -> dict:
@@ -21,9 +22,9 @@ async def analyze_node(state: dict) -> dict:
     project_context = f"## 项目背景\n{state['project_context']}"
 
   chain = analyze_prompt | llm
-  result = await chain.ainvoke({
+  content = await astream_collect(chain, {
     "requirement_text": state["requirement_text"],
     "project_context": project_context,
   })
 
-  return {"analysis_result": result.content}
+  return {"analysis_result": content}

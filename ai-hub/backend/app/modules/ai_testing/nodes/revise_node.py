@@ -2,6 +2,7 @@
 
 from app.common.core.llm_factory import LLMFactory
 from app.modules.ai_testing.prompts import revise_prompt
+from app.modules.ai_testing.nodes.node_utils import astream_collect
 
 
 async def revise_node(state: dict) -> dict:
@@ -47,7 +48,7 @@ async def revise_node(state: dict) -> dict:
   )
 
   chain = revise_prompt | llm
-  result = await chain.ainvoke({
+  content = await astream_collect(chain, {
     "requirement_text": state["requirement_text"],
     "test_cases": state["test_cases_draft"],
     "review_score": review_result.get("overall_score", 5),
@@ -56,4 +57,4 @@ async def revise_node(state: dict) -> dict:
     "custom_suggestions_hint": custom_suggestions_hint,
   })
 
-  return {"final_test_cases": result.content}
+  return {"final_test_cases": content}

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
@@ -6,7 +6,12 @@ import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
 import viteCompression from 'vite-plugin-compression'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // 加载 .env / .env.local（优先级含 VITE_BACKEND_URL），支持本机多项目共存时端口自定义
+  const env = loadEnv(mode, process.cwd(), '')
+  const backendTarget = env.VITE_BACKEND_URL || 'http://localhost:8000'
+
+  return {
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -36,10 +41,11 @@ export default defineConfig({
     }),
   ],
   server: {
-    port: 5173,
+    port: Number(env.VITE_DEV_PORT) || 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        // 可通过 frontend/.env.local 的 VITE_BACKEND_URL 覆盖（本机多项目共存时避免端口冲突）
+        target: backendTarget,
         changeOrigin: true,
       },
     },
@@ -101,4 +107,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })

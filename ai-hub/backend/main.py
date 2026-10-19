@@ -38,9 +38,33 @@ async def lifespan(app: FastAPI):
   finally:
     await db.close()
 
+  # 启动回收：把服务重启遗留的 running 任务/序列标记为中断（修复僵尸任务）
+  try:
+    from app.modules.ai_testing.database import recover_interrupted_tasks
+    db = await get_db()
+    try:
+      await recover_interrupted_tasks(db)
+    finally:
+      await db.close()
+  except Exception as e:
+    logger.warning("启动回收任务失败: %s", e)
+
+  # 定时任务 cron 调度循环
+  import asyncio
+  cron_stop = asyncio.Event()
+  cron_task = None
+  try:
+    from app.modules.ai_testing.sequence_scheduler import scheduled_task_cron_loop
+    cron_task = asyncio.create_task(scheduled_task_cron_loop(cron_stop))
+  except Exception as e:
+    logger.warning("cron 调度循环启动失败: %s", e)
+
   try:
     yield
   finally:
+    cron_stop.set()
+    if cron_task:
+      cron_task.cancel()
     # 清理 LangGraph 数据库连接，避免资源泄漏
     from app.modules.chat.graph import close_agent_graph
     from app.modules.comfort.graph import close_comfort_graph

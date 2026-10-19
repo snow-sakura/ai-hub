@@ -81,6 +81,7 @@ export const MODULE_MENUS: Record<string, ModuleConfig> = {
         label: 'AI 智能生成',
         items: [
           { icon: '⚡', label: 'AI 用例生成', path: '/ai-testing/generate' },
+          { icon: '🔗', label: '序列生成', path: '/ai-testing/generate/sequences' },
           { icon: '📊', label: 'AI 生成记录', path: '/ai-testing/generate/records' },
         ],
       },
@@ -110,6 +111,8 @@ export const MODULE_MENUS: Record<string, ModuleConfig> = {
           { icon: '📝', label: 'AI 提示词配置', path: '/ai-testing/config/prompt' },
           { icon: '⚡', label: '生成行为配置', path: '/ai-testing/config/generation' },
           { icon: '🖥️', label: '智能模式配置', path: '/ai-testing/config/ai-mode' },
+          { icon: '🧾', label: '评测器配置', path: '/ai-testing/config/evaluator' },
+          { icon: '⏰', label: '定时任务', path: '/ai-testing/config/tasks' },
         ],
       },
     ],

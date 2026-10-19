@@ -12,6 +12,9 @@
             <n-button quaternary size="small" @click="$router.push('/ai-testing/settings')" title="设置">
               📋
             </n-button>
+            <n-button size="small" tertiary type="primary" @click="$router.push('/ai-testing/generate/sequences')" title="序列生成（免费串行 / 付费并行）">
+              🔗 序列生成
+            </n-button>
           </n-space>
         </template>
         <template #subtitle>
@@ -207,7 +210,8 @@ const modelOptions = computed(() => {
   for (const m of defaults.models) {
     const key = m.provider
     if (!groups[key]) groups[key] = []
-    groups[key].push({ label: m.display_name, value: `${m.provider}:${m.model}` })
+    const tierBadge = m.tier === 'free' ? ' · 免费' : m.tier === 'paid' ? ' · 付费' : ''
+    groups[key].push({ label: m.display_name + tierBadge, value: `${m.provider}:${m.model}` })
   }
   // 转为 n-select 分组格式
   return Object.entries(groups).map(([provider, children]) => ({

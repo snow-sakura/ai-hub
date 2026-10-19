@@ -82,7 +82,14 @@ export interface ConfigItem {
 /** 配置默认值（来自后端 /config/defaults） */
 export interface ConfigDefaults {
   prompts: Record<string, string>  // { analyze, write, review, revise }
-  models: Array<{ provider: string; model: string; display_name: string }>
+  models: Array<{
+    provider: string
+    model: string
+    display_name: string
+    id?: string
+    tier?: string
+    sequence_hint?: string
+  }>
   base_urls?: Record<string, string>  // provider → 默认 API Base URL
 }
 

@@ -1,5 +1,29 @@
 # 版本更新日志
 
+## [v2.2] - 2026-10-18（迭代代号 v1.4：生成修复与序列调度）
+
+### 新增
+- **生成序列调度**：长需求按 Markdown 标题自动拆分为子任务序列；免费模型串行×1、付费模型并行×3（`SEQUENCE_MAX_PARALLEL_PAID` 可调）；序列 SSE（sequence_progress/sequence_subtask/sequence_done）、取消、失败重跑、槽位泳道可视化
+- **模型分级**：ModelConfig.tier（free/paid）+ `FREE_MODEL_IDS` 环境变量 + ollama 自动识别；模型选择器展示「·免费/·付费」
+- **离线 mock provider**：`mock:mock-demo`（免费串行）/ `mock:mock-pro`（付费并行），无 API Key 全流程可验证（确定性输出）
+- **定时任务真实执行**：关联项目/模型/需求文本，cron 到点自动创建真实生成任务；日志含耗时/结果摘要/exec_ref
+- 前端新页：序列列表/详情、定时任务配置升级（项目+模型+需求字段）、设置导航中心；补登 7 个配置页路由
+- 在线 Demo：`ai-hub/demo/` 纯静态数据快照 + GitHub Actions 自动部署 Pages
+
+### 修复（生成结果缺失根因）
+- 生成流式：四节点 ainvoke→astream（修复无 token 流）；stream_generation_task 导入缺失；project_context NameError；评审端点/定时端点 current_user NameError（统一 get_optional_user）
+- 结果统计恒为 0 → 改用 parse_markdown_to_cases 真实计数
+- 用例保存 422（SaveTaskCasesRequest）→ 「采用→保存入用例库」闭环恢复
+- 僵尸任务：启动时 recover_interrupted_tasks 自动回收中断任务
+- 定时任务后台协程复用请求级连接崩溃 + 未 commit 回滚 → 自取连接 + 显式提交
+- 评审解析失败不再静默；LangGraph 异常透出真实原因；前端补监听 testing_save_progress
+
+### 数据迁移
+- v16：新表 testing_generation_sequences；tasks 加 sequence_id/seq_index/seq_title/seq_stage；scheduled_tasks/logs 加 project_id/model/input_text/exec_ref/summary
+
+### 文档
+- 新增 docs/requirements-v1.4.md、technical-v1.4.md、user-guide.md；全新 ai-hub/README.md 图文全流程；docs/screenshots/ 验证截图 14 张
+
 ## [v2.1] - 2026-07-04
 
 ### 文档体系完善

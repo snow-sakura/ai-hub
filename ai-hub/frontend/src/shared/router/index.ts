@@ -123,6 +123,17 @@ const router = createRouter({
           name: 'testing-generate-records',
           component: () => import('@/modules/ai_testing/views/GenerationRecordsView.vue'),
         },
+        // ── 序列生成（免费串行 / 付费并行） ──────────────
+        {
+          path: 'generate/sequences',
+          name: 'testing-sequences',
+          component: () => import('@/modules/ai_testing/views/sequenced/SequenceListView.vue'),
+        },
+        {
+          path: 'generate/sequences/:id',
+          name: 'testing-sequence-detail',
+          component: () => import('@/modules/ai_testing/views/sequenced/SequenceDetailView.vue'),
+        },
         // ── AI 评测师 ────────────────────────────────────
         {
           path: 'ai-tester',
@@ -140,10 +151,45 @@ const router = createRouter({
           name: 'testing-reports',
           component: () => import('@/modules/ai_testing/views/TestReportView.vue'),
         },
-        // ── 配置中心（独立模块，Phase 3 实现） ──────────────
+        // ── AI 配置（孤儿页面注册，修复菜单 404） ──────────
         {
           path: 'config',
           redirect: '/ai-testing/config/model',
+        },
+        {
+          path: 'config/model',
+          name: 'testing-config-model',
+          component: () => import('@/modules/ai_testing/views/config/AIModelConfigView.vue'),
+        },
+        {
+          path: 'config/prompt',
+          name: 'testing-config-prompt',
+          component: () => import('@/modules/ai_testing/views/config/PromptConfigView.vue'),
+        },
+        {
+          path: 'config/generation',
+          name: 'testing-config-generation',
+          component: () => import('@/modules/ai_testing/views/config/GenerationConfigView.vue'),
+        },
+        {
+          path: 'config/ai-mode',
+          name: 'testing-config-ai-mode',
+          component: () => import('@/modules/ai_testing/views/config/AIModeConfigView.vue'),
+        },
+        {
+          path: 'config/evaluator',
+          name: 'testing-config-evaluator',
+          component: () => import('@/modules/ai_testing/views/config/AIEvaluatorConfigView.vue'),
+        },
+        {
+          path: 'config/tasks',
+          name: 'testing-config-tasks',
+          component: () => import('@/modules/ai_testing/views/config/ConfigTasksView.vue'),
+        },
+        {
+          path: 'settings',
+          name: 'testing-settings',
+          component: () => import('@/modules/ai_testing/views/SettingsView.vue'),
         },
       ],
     },

@@ -553,3 +553,86 @@ async def _run_migrations(db: MySQLConnection) -> None:
                 "ADD COLUMN rating VARCHAR(10) DEFAULT NULL COMMENT '用户评分: up/down/null'"
             )
         await db.execute("INSERT INTO testing_schema_version (version) VALUES (15)")
+
+    # ── v16: 生成序列表 + 任务序列字段 + 定时任务真实执行字段 ──
+    if current_version < 16:
+        # 生成序列表（免费串行 / 付费并行的调度单元）
+        await db.execute(
+            "CREATE TABLE IF NOT EXISTS testing_generation_sequences ("
+            "  id VARCHAR(36) PRIMARY KEY,"
+            "  project_id VARCHAR(36),"
+            "  title VARCHAR(255) NOT NULL,"
+            "  requirement_text MEDIUMTEXT NOT NULL,"
+            "  model VARCHAR(120) NOT NULL DEFAULT '',"
+            "  model_tier VARCHAR(10) NOT NULL DEFAULT 'free',"
+            "  strategy VARCHAR(20) NOT NULL DEFAULT 'sequential',"
+            "  max_parallel INT NOT NULL DEFAULT 1,"
+            "  status VARCHAR(20) NOT NULL DEFAULT 'pending',"
+            "  total INT NOT NULL DEFAULT 0,"
+            "  success_count INT NOT NULL DEFAULT 0,"
+            "  failed_count INT NOT NULL DEFAULT 0,"
+            "  running_count INT NOT NULL DEFAULT 0,"
+            "  error_message TEXT,"
+            "  created_by VARCHAR(64) DEFAULT '',"
+            "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+            "  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        )
+
+        # 生成任务表 → 序列字段
+        task_cols = [
+            ("sequence_id", "ADD COLUMN sequence_id VARCHAR(36) DEFAULT NULL"),
+            ("seq_index", "ADD COLUMN seq_index INT NOT NULL DEFAULT 0"),
+            ("seq_title", "ADD COLUMN seq_title VARCHAR(255) DEFAULT NULL"),
+            ("seq_stage", "ADD COLUMN seq_stage VARCHAR(20) DEFAULT NULL"),
+        ]
+        for col, ddl in task_cols:
+            if not await _column_exists(db, "testing_generation_tasks", col):
+                await db.execute(f"ALTER TABLE testing_generation_tasks {ddl}")
+
+        # 定时任务 → 真实执行所需字段
+        sched_cols = [
+            ("testing_scheduled_tasks", "project_id", "ADD COLUMN project_id VARCHAR(36) DEFAULT NULL"),
+            ("testing_scheduled_tasks", "model", "ADD COLUMN model VARCHAR(120) DEFAULT ''"),
+            ("testing_scheduled_tasks", "input_text", "ADD COLUMN input_text MEDIUMTEXT"),
+            ("testing_scheduled_task_logs", "exec_ref", "ADD COLUMN exec_ref VARCHAR(36) DEFAULT NULL"),
+            ("testing_scheduled_task_logs", "summary", "ADD COLUMN summary VARCHAR(500) DEFAULT ''"),
+        ]
+        for table, col, ddl in sched_cols:
+            if not await _column_exists(db, table, col):
+                await db.execute(f"ALTER TABLE {table} {ddl}")
+
+        for idx in (
+            "CREATE INDEX idx_sequences_project ON testing_generation_sequences(project_id)",
+            "CREATE INDEX idx_sequences_status ON testing_generation_sequences(status)",
+            "CREATE INDEX idx_tasks_sequence ON testing_generation_tasks(sequence_id)",
+        ):
+            try:
+                await db.execute(idx)
+            except Exception:
+                pass
+
+        await db.execute("INSERT INTO testing_schema_version (version) VALUES (16)")
+
+
+async def recover_interrupted_tasks(db: MySQLConnection) -> int:
+    """启动时回收因服务重启而永久滞留 running 的任务与序列（修复僵尸任务）。
+
+    返回回收的任务数。
+    """
+    cursor = await db.execute(
+        "UPDATE testing_generation_tasks "
+        "SET status = 'failed', error_message = '服务重启导致任务中断，请重新发起', updated_at = NOW() "
+        "WHERE status = 'running'"
+    )
+    recovered = cursor.rowcount or 0
+    await db.execute(
+        "UPDATE testing_generation_sequences "
+        "SET status = 'interrupted', running_count = 0, updated_at = NOW() "
+        "WHERE status IN ('running', 'pending')"
+    )
+    await db.commit()
+    if recovered:
+        import logging
+        logging.getLogger(__name__).info("[recover] 已将 %d 个滞留 running 的生成任务标记为中断", recovered)
+    return recovered

@@ -49,9 +49,15 @@ class ToolInfo:
 
 @dataclass
 class ModelConfig:
-  """模型配置实体"""
+  """模型配置实体
+
+  tier: 计费分级（驱动序列调度策略）
+    - free: 免费模型 → 序列任务强制单任务串行执行
+    - paid: 付费模型 → 序列任务可多任务并行执行
+  """
   provider: str
   model: str
   api_key: str = ""
   base_url: str = ""
   display_name: str = ""
+  tier: str = "paid"

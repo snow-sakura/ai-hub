@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.common.core.llm_factory import LLMFactory
 from app.modules.ai_testing.prompts import review_prompt
+from app.modules.ai_testing.nodes.node_utils import astream_collect
 
 logger = logging.getLogger(__name__)
 
@@ -84,17 +85,19 @@ async def review_node(state: dict) -> dict:
     logger.debug(f"[review_node] 结构化输出失败，降级为 JSON 解析: {e}")
     review_data = None
 
-  # 降级：普通调用 + 手动解析 JSON
+  # 降级：普通流式调用 + 手动解析 JSON
   if review_data is None:
     try:
-      result = await chain.ainvoke({
+      content = await astream_collect(chain, {
         "requirement_text": state["requirement_text"],
         "test_cases": state["test_cases_draft"],
       })
-      review_data = _parse_review_json(result.content)
+      review_data = _parse_review_json(content)
     except Exception as e:
-      logger.warning(f"[review_node] JSON 解析失败: {e}")
+      # 解析失败不再静默：记入日志并在 summary 中明确标注，便于前端诊断
+      logger.warning(f"[review_node] 评审 JSON 解析失败，使用默认评审: {e}")
       review_data = _default_review()
+      review_data["summary"] = f"评审结果解析失败（已降级）：{str(e)[:120]}"
 
   # 安全校验：确保关键字段存在
   review_data.setdefault("overall_score", 5)
