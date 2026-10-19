@@ -31,23 +31,20 @@ jobs:
       - name: Ensure GitHub Pages is enabled (Actions source)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PAGES_API: https://api.github.com/repos/${{ github.repository }}/pages
+          REPO: ${{ github.repository }}
         run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" "$PAGES_API")
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/pages")
           echo "GET /pages -> $code"
           if [ "$code" = "404" ]; then
             echo "Pages 未启用，POST CREATE (build_type=workflow)..."
-            curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              -f build_type=workflow "$PAGES_API" >/dev/null
+            gh api "repos/$REPO/pages" --method POST -f build_type=workflow -q '.html_url'
           elif [ "$code" = "200" ]; then
-            src=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$PAGES_API" | grep -o '"build_type":"[^"]*"' | head -1 | cut -d'"' -f4)
+            src=$(gh api "repos/$REPO/pages" -q .build_type)
             echo "当前源: $src"
             if [ "$src" != "workflow" ]; then
               echo "切换为 workflow 源..."
-              curl -sf -X PUT -H "Authorization: Bearer $GH_TOKEN" \
-                -H "Accept: application/vnd.github+json" \
-                -f build_type=workflow "$PAGES_API" >/dev/null
+              gh api "repos/$REPO/pages" --method PUT -f build_type=workflow -q '.html_url'
             fi
           else
             echo "意外状态码 $code，交由 configure-pages 处理"
