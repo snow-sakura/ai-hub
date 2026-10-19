@@ -13,6 +13,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  issues: write   # 调试渠道：Pages API 失败时公开错误详情（公开仓库匿名可读）
 
 concurrency:
   group: pages
@@ -36,18 +37,26 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/$REPO/pages")
           echo "GET /pages -> $code"
+          dbg() {
+            # 失败诊断：发布到 issue（可匿名查看），随后仍让流程继续尝试 configure-pages
+            gh api "repos/$REPO/issues" \
+              -f title="[pages-debug] code=$code" \
+              -f "body=GET status: $code | build_type src: ${src:-N/A} | api output: $1" \
+              -q .html_url || true
+          }
           if [ "$code" = "404" ]; then
             echo "Pages 未启用，POST CREATE (build_type=workflow)..."
-            gh api "repos/$REPO/pages" --method POST -f build_type=workflow -q '.html_url'
+            out=$(gh api "repos/$REPO/pages" --method POST -f build_type=workflow -q '.html_url' 2>&1) || { echo "ENABLE-FAIL: $out"; dbg "$out"; }
+            echo "RESULT: $out"
           elif [ "$code" = "200" ]; then
             src=$(gh api "repos/$REPO/pages" -q .build_type)
             echo "当前源: $src"
             if [ "$src" != "workflow" ]; then
-              echo "切换为 workflow 源..."
-              gh api "repos/$REPO/pages" --method PUT -f build_type=workflow -q '.html_url'
+              out=$(gh api "repos/$REPO/pages" --method PUT -f build_type=workflow -q '.html_url' 2>&1) || { echo "SWITCH-FAIL: $out"; dbg "$out"; }
+              echo "RESULT: $out"
             fi
           else
-            echo "意外状态码 $code，交由 configure-pages 处理"
+            dbg "unexpected GET status $code"
           fi
 
       - name: Build demo site (copy screenshots + data into demo/)
