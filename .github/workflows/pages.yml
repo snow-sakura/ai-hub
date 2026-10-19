@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write   # 允许推送 gh-pages 分支
+  issues: write     # TEMP：清理 [pages-debug] 调试 issue，完成后移除
 
 concurrency:
   group: pages
@@ -26,6 +27,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # TEMP：删除调试期发布的 [pages-debug] issue（DELETE 不允许时降级为关闭）
+      - name: Cleanup debug issues
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          nums=$(gh api "repos/$REPO/issues?state=all&per_page=50" \
+            --jq '.[] | select(.title | startswith("[pages-debug]")) | .number')
+          if [ -z "$nums" ]; then echo "无调试 issue"; fi
+          for n in $nums; do
+            if gh api -X DELETE "repos/$REPO/issues/$n" 2>/dev/null; then
+              echo "已删除 #$n"
+            else
+              gh api -X PATCH "repos/$REPO/issues/$n" -f state=closed >/dev/null && echo "已关闭 #$n（DELETE 不被允许）"
+            fi
+          done
 
       - name: Build demo site (screenshots + data → demo/)
         run: node ai-hub/demo/build.mjs
