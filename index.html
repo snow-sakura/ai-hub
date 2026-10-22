@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+<title>AI-HUB 智能测试平台 · Demo 数据快照</title>
+<style>
+  :root { --ink:#3d3536; --sub:#8a7f7c; --warm:#C67B5C; --sand:#D4A574; --sage:#7BA87D; --bg:#faf6f2; --card:#ffffff; --line:#eee3da; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); line-height:1.7; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 20px 64px; }
+  header { text-align:center; padding:56px 0 28px; }
+  header h1 { font-size:34px; letter-spacing:1px; }
+  header h1 em { color:var(--warm); font-style:normal; }
+  header p { color:var(--sub); margin-top:8px; }
+  .badge { display:inline-block; margin-top:14px; padding:4px 14px; border-radius:999px; background:#f3e2d7; color:#a05a3c; font-size:13px; }
+  h2 { font-size:22px; margin:44px 0 6px; display:flex; align-items:center; gap:10px; }
+  h2 .no { display:inline-flex; width:28px; height:28px; border-radius:50%; background:var(--warm); color:#fff; align-items:center; justify-content:center; font-size:15px; flex:none; }
+  .desc { color:var(--sub); font-size:14px; margin-bottom:16px; }
+  .grid { display:grid; gap:14px; }
+  .steps { grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:0 2px 10px rgba(160,110,80,.05); }
+  .card b { display:block; margin-bottom:4px; }
+  .card small { color:var(--sub); }
+  .kpi { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+  .kpi .card { text-align:center; padding:22px 10px; }
+  .kpi .num { font-size:32px; font-weight:700; color:var(--warm); }
+  .kpi .lab { color:var(--sub); font-size:13px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:12px; overflow:hidden; font-size:14px; }
+  th { background:#f6ece4; text-align:left; padding:10px 14px; color:#7c6a5e; font-weight:600; }
+  td { padding:10px 14px; border-top:1px solid var(--line); }
+  .tag { display:inline-block; padding:1px 10px; border-radius:999px; font-size:12px; }
+  .ok { background:#e4efe3; color:#4c7a4f; } .free { background:#e9eef7; color:#5470a3; } .paid { background:#f7ecd9; color:#a3703a; } .bad { background:#f8e3e0; color:#a35454; }
+  figure { margin:18px 0; }
+  figure img { width:100%; border:1px solid var(--line); border-radius:12px; }
+  figcaption { text-align:center; color:var(--sub); font-size:13px; margin-top:8px; }
+  a { color:var(--warm); }
+  footer { margin-top:56px; padding-top:22px; border-top:1px dashed var(--line); color:var(--sub); font-size:13px; text-align:center; }
+  .flow { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:10px 0 4px; color:var(--sub); font-size:14px; }
+  .flow span { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:4px 12px; }
+  .flow i { font-style:normal; color:var(--sand); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AI-HUB <em>智能测试平台</em> · 在线 Demo</h1>
+    <p>需求文档 → AI 四步工作流 → 测试用例全生命周期 · 纯 GitHub Pages 数据快照演示</p>
+    <span class="badge">数据来源：v1.4 Loop Engineering 全流程验证（离线 mock 模型 · 确定性输出）</span>
+  </header>
+
+  <div class="grid kpi" id="kpi"></div>
+
+  <h2><span class="no">1</span>核心工作流</h2>
+  <p class="desc">一条需求从输入到入库，AI 自动完成「分析 → 编写 → 评审 → 修订」四步闭环，人工只需最后确认采用。</p>
+  <div class="flow">
+    <span>📄 需求输入</span><i>→</i><span>🔍 需求分析</span><i>→</i><span>✍️ 用例编写</span><i>→</i><span>⭐ AI 评审</span><i>→</i><span>♻️ 用例修订</span><i>→</i><span>📥 采用入库</span>
+  </div>
+  <div class="grid steps" style="grid-template-columns:1fr">
+    <div class="card"><b>⚡ 单任务流式生成</b><small>SSE 实时推送每一步思考与 token 流，任务中断重启后自动回收恢复。</small></div>
+  </div>
+
+  <h2><span class="no">2</span>模型分级与序列调度（v1.4 核心）</h2>
+  <p class="desc">同一份长需求按 Markdown 标题（# / ##）自动拆分为子任务序列：<b>免费模型 → 串行（并发 1）</b>保护配额；<b>付费模型 → 并行（≤3 槽位）</b>提升吞吐。</p>
+  <div class="grid steps">
+    <div class="card">🆓 <b>免费 · 串行</b><small>ollama / 标注免费模型，严格逐个执行，失败即暂停可重跑。</small></div>
+    <div class="card">💎 <b>付费 · 并行</b><small>Semaphore 并发槽位（默认 3），泳道可视化，单任务失败不影响其它槽位。</small></div>
+  </div>
+  <div id="seqTable" style="margin-top:14px"></div>
+
+  <h2><span class="no">3</span>定时任务 · 真实执行</h2>
+  <p class="desc">cron 到点后自动创建真实生成任务（exec_ref 可跳转），日志记录真实耗时与结果。</p>
+  <div id="schedBox"></div>
+
+  <h2><span class="no">4</span>界面截图</h2>
+  <div id="shots"></div>
+
+  <h2><span class="no">5</span>本地运行</h2>
+  <div class="card" style="font-family:ui-monospace,monospace;font-size:13px;white-space:pre">cd ai-hub/backend  && python3 -m venv .venv && source .venv/bin/activate \
+                  && pip install -r requirements.txt \
+                  && cp .env.example .env   # 不填 Key 也能跑：内置离线 mock 模型
+cd ai-hub/frontend && npm install && npm run dev
+# 打开 http://localhost:5173 ，演示账号 admin / admin123</div>
+
+  <footer>
+    AI-HUB v1.4 · 本页面为 GitHub Actions 自动部署的纯静态数据快照（<a href="data/run.json">run.json</a>）<br>
+    完整项目源码与文档：<a href="https://github.com/snow-sakura/ai-hub">github.com/snow-sakura/ai-hub</a>
+  </footer>
+</div>
+
+<script>
+const RAW = 'assets';
+const shots = [
+  ['01-dashboard.png', '数据看板：项目 / 用例 / 生成趋势总览'],
+  ['04-generate-done.png', '单任务四步工作流完成（含 AI 评审评分卡）'],
+  ['09-seq-serial-done.png', '免费模型串行序列：4 个子任务按序执行全部成功'],
+  ['10-seq-parallel.png', '付费模型并行序列：3 执行槽位泳道'],
+  ['07-testcases-library.png', '生成用例审核采用后进入用例库'],
+  ['11-scheduled-task.png', '定时任务真实执行：3.2s 生成 3 条用例'],
+];
+fetch('data/run.json').then(r => r.json()).then(d => {
+  const s = d.generate_stats || {};
+  document.getElementById('kpi').innerHTML = [
+    [s.total_tasks ?? '-', '累计生成任务'],
+    [s.completed_tasks ?? '-', '成功完成'],
+    [s.total_cases ?? '-', '生成用例数'],
+    [(d.sequences || []).length, '序列调度次数'],
+  ].map(([n, l]) => `<div class="card"><div class="num">${n}</div><div class="lab">${l}</div></div>`).join('');
+
+  const rows = (d.sequences || []).map(q => {
+    const sub = (q.subtasks || []).map(t => `<span class="tag ${t.status === 'completed' ? 'ok' : 'bad'}">#${(t.idx ?? 0) + 1} ${t.cases ?? 0} 例</span>`).join(' ');
+    return `<tr><td>${q.title || '-'}</td>
+      <td><span class="tag ${q.strategy === 'sequential' ? 'free' : 'paid'}">${q.strategy === 'sequential' ? '🆓 串行×1' : '💎 并行×' + q.max_parallel}</span></td>
+      <td>${q.model || '-'}</td><td>${sub}</td>
+      <td><span class="tag ${q.status === 'completed' ? 'ok' : q.status}">${q.status === 'completed' ? '成功' : q.status}</span></td></tr>`;
+  }).join('');
+  document.getElementById('seqTable').innerHTML =
+    `<table><tr><th>序列</th><th>调度策略</th><th>模型</th><th>子任务（编号 · 用例数）</th><th>状态</th></tr>${rows}</table>`;
+
+  const st = d.scheduled_task || {};
+  const logs = (d.scheduled_runs || []).map(l =>
+    `<tr><td><span class="tag ${l.status === 'completed' ? 'ok' : 'bad'}">${l.status === 'completed' ? '成功' : '失败'}</span></td><td>${l.duration || '-'}</td><td>${l.summary || ''}</td></tr>`).join('');
+  document.getElementById('schedBox').innerHTML =
+    `<p class="desc">任务「${st.name || '-'}」 · cron <code>${st.cron || '-'}</code> · 模型 ${st.model || '-'}</p>
+     <table><tr><th>状态</th><th>耗时</th><th>执行摘要</th></tr>${logs}</table>`;
+
+  document.getElementById('shots').innerHTML = shots.map(([f, cap]) =>
+    `<figure><img loading="lazy" src="${RAW}/${f}" alt="${cap}"><figcaption>${cap}</figcaption></figure>`).join('');
+}).catch(() => {
+  document.getElementById('kpi').innerHTML = '<div class="card">数据加载失败，请通过 GitHub Pages 访问本页面。</div>';
+});
+</script>
+</body>
+</html>

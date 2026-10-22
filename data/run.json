@@ -1,0 +1,198 @@
+{
+ "generated_at": "2026-10-18T23:15:00+08:00",
+ "note": "Loop Engineering 全流程验证真实数据快照（mock provider，离线确定性模型）",
+ "generate_stats": {
+  "total_tasks": 14,
+  "completed_tasks": 14,
+  "total_cases": 53
+ },
+ "sequences": [
+  {
+   "title": "电商核心模块用例序列（演示）",
+   "strategy": "sequential",
+   "max_parallel": 1,
+   "status": "completed",
+   "total_count": null,
+   "completed_count": null,
+   "model": "mock:mock-demo",
+   "subtasks": [
+    {
+     "idx": 0,
+     "titles": "用户注册与登录",
+     "status": "completed",
+     "cases": 4
+    },
+    {
+     "idx": 1,
+     "titles": "商品与库存",
+     "status": "completed",
+     "cases": 5
+    },
+    {
+     "idx": 2,
+     "titles": "订单与支付",
+     "status": "completed",
+     "cases": 4
+    },
+    {
+     "idx": 3,
+     "titles": "物流与售后",
+     "status": "completed",
+     "cases": 4
+    }
+   ]
+  },
+  {
+   "title": "冒烟-付费并行序列",
+   "strategy": "parallel",
+   "max_parallel": 3,
+   "status": "completed",
+   "total_count": null,
+   "completed_count": null,
+   "model": "mock:mock-pro",
+   "subtasks": [
+    {
+     "idx": 0,
+     "titles": "模块A 支付",
+     "status": "completed",
+     "cases": 5
+    },
+    {
+     "idx": 1,
+     "titles": "模块B 退款",
+     "status": "completed",
+     "cases": 4
+    },
+    {
+     "idx": 2,
+     "titles": "模块C 对账",
+     "status": "completed",
+     "cases": 3
+    },
+    {
+     "idx": 3,
+     "titles": "模块D 账单",
+     "status": "completed",
+     "cases": 5
+    }
+   ]
+  },
+  {
+   "title": "冒烟-免费串行序列",
+   "strategy": "sequential",
+   "max_parallel": 1,
+   "status": "completed",
+   "total_count": null,
+   "completed_count": null,
+   "model": "mock:mock-demo",
+   "subtasks": [
+    {
+     "idx": 0,
+     "titles": "用户登录模块",
+     "status": "completed",
+     "cases": 4
+    },
+    {
+     "idx": 1,
+     "titles": "订单模块",
+     "status": "completed",
+     "cases": 3
+    }
+   ]
+  }
+ ],
+ "generation_tasks": [
+  {
+   "status": "completed",
+   "model": "mock:mock-demo",
+   "cases": 3,
+   "created": "2026-10-18T23:04:19",
+   "title": "[定时] 每日回归用例生成"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-demo",
+   "cases": 3,
+   "created": "2026-10-18T23:01:13",
+   "title": "[定时] 每日回归用例生成"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-demo",
+   "cases": 3,
+   "created": "2026-10-18T22:55:14",
+   "title": "[定时] 每日回归用例生成"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-demo",
+   "cases": 4,
+   "created": "2026-10-18T22:43:54",
+   "title": "电商核心模块用例序列（演示） #3 订单与支付"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-demo",
+   "cases": 4,
+   "created": "2026-10-18T22:43:54",
+   "title": "电商核心模块用例序列（演示） #1 用户注册与登录"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-demo",
+   "cases": 4,
+   "created": "2026-10-18T22:43:54",
+   "title": "电商核心模块用例序列（演示） #4 物流与售后"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-demo",
+   "cases": 5,
+   "created": "2026-10-18T22:43:54",
+   "title": "电商核心模块用例序列（演示） #2 商品与库存"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-demo",
+   "cases": 3,
+   "created": "2026-10-18T22:28:31",
+   "title": "电商中台 - 用户登录与订单中心"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-pro",
+   "cases": 4,
+   "created": "2026-10-18T20:27:19",
+   "title": "冒烟-付费并行序列 #2 模块B 退款"
+  },
+  {
+   "status": "completed",
+   "model": "mock:mock-pro",
+   "cases": 3,
+   "created": "2026-10-18T20:27:19",
+   "title": "冒烟-付费并行序列 #3 模块C 对账"
+  }
+ ],
+ "scheduled_task": {
+  "name": "每日回归用例生成",
+  "cron": "0 8 * * *",
+  "model": "mock:mock-demo"
+ },
+ "scheduled_runs": [
+  {
+   "status": "completed",
+   "duration": "3.2s",
+   "summary": "生成完成，共 3 条用例（exec_ref 可跳转详情）"
+  },
+  {
+   "status": "failed",
+   "duration": "",
+   "summary": "进程重启导致执行中断（历史残留，已修正）"
+  },
+  {
+   "status": "failed",
+   "duration": "",
+   "summary": "进程重启导致执行中断（历史残留，已修正）"
+  }
+ ]
+}
