@@ -21,6 +21,9 @@ __pycache__/
 
 # Data files
 data/
+# Demo 数据快照必须入库（CI 发布站点的数据源，勿删）
+!demo/data/
+!demo/data/run.json
 *.db
 
 # OS

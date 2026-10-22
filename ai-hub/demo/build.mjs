@@ -11,7 +11,7 @@
  *
  * 用法：node ai-hub/demo/build.mjs   （CI 与本地通用）
  */
-import { cpSync, mkdirSync, writeFileSync, existsSync, readdirSync } from 'node:fs'
+import { cpSync, mkdirSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -32,11 +32,17 @@ const dataDir = join(here, 'data')
 mkdirSync(dataDir, { recursive: true })
 const runJson = join(dataDir, 'run.json')
 if (!existsSync(runJson)) {
+  console.warn('[demo-build][WARN] 数据快照缺失：ai-hub/demo/data/run.json 不存在（可能被 .gitignore 误忽略未入库），已生成空态占位。线上页面将显示全 0，请检查数据源是否已提交。')
   writeFileSync(runJson, JSON.stringify({
     generated_at: new Date().toISOString(),
     note: '未提供数据快照源（ai-hub/demo/data/run.json），页面显示空态。',
     generate_stats: { total_tasks: 0, completed_tasks: 0, total_cases: 0 },
     sequences: [], generation_tasks: [], scheduled_runs: [],
   }))
+} else {
+  const bytes = statSync(runJson).size
+  if (bytes < 1000) {
+    console.warn(`[demo-build][WARN] run.json 仅 ${bytes} 字节，疑似占位/截断数据，请确认数据快照完整性。`)
+  }
 }
 console.log(`[demo-build] 截图 ${pngs.length} 张 → assets/ ；数据 data/run.json 就绪`)
